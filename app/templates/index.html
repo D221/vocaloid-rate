@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Vocaloid Rater</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script>
+        // Apply theme immediately to prevent flashing
+        (function () {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                // If the user has made a choice, respect it
+                document.documentElement.dataset.theme = savedTheme;
+            } else {
+                // Otherwise, check the device's preference
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.dataset.theme = prefersDark ? 'dark' : 'light';
+            }
+        })();
+    </script>
+</head>
+
+<body>
+    <div class="header-container">
+        <h1>Vocaloid Tracks</h1>
+        <div class="header-controls">
+            <a href="/rated_tracks" class="header-button">View Rated Tracks</a>
+            <div class="theme-switcher" id="theme-switcher">
+                <span id="theme-icon">&#127769;</span>
+                <span id="theme-text">Dark Mode</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="filter-container">
+        <form id="filter-form">
+            <div class="filter-group">
+                <label>Chart Status:</label>
+                <input type="radio" id="rank_ranked" name="rank_filter" value="ranked" checked>
+                <label for="rank_ranked">On Chart</label>
+
+                <input type="radio" id="rank_unranked" name="rank_filter" value="unranked">
+                <label for="rank_unranked">Expired (Archive)</label>
+
+                <input type="radio" id="rank_all" name="rank_filter" value="all">
+                <label for="rank_all">Show All</label>
+            </div>
+
+            <label for="rated_filter">Rating:</label>
+            <select name="rated_filter" id="rated_filter">
+                <option value="all">All</option>
+                <option value="rated">Rated</option>
+                <option value="unrated">Unrated</option>
+            </select>
+            <label for="producer_filter">Producer:</label>
+            <div class="input-wrapper">
+                <input type="text" name="producer_filter" id="producer_filter" list="producers-list" autocomplete="off">
+                <button type="button" class="clear-input-btn" aria-label="Clear producer filter">&times;</button>
+            </div>
+            <datalist id="producers-list">
+                {% for producer in all_producers %}<option value="{{ producer }}">{% endfor %}
+            </datalist>
+
+            <label for="voicebank_filter">Voicebank:</label>
+            <div class="input-wrapper">
+                <input type="text" name="voicebank_filter" id="voicebank_filter" list="voicebanks-list"
+                    autocomplete="off">
+                <button type="button" class="clear-input-btn" aria-label="Clear voicebank filter">&times;</button>
+            </div>
+            <datalist id="voicebanks-list">
+                {% for voicebank in all_voicebanks %}<option value="{{ voicebank }}">{% endfor %}
+            </datalist>
+            <a href="/" class="clear button">Clear</a>
+
+            <!-- Update button is now inside the filter form for alignment -->
+            <button type="button" id="scrape-button">Update Tracks</button>
+            <span id="scrape-status"></span>
+        </form>
+    </div>
+    <div class="table-wrapper">
+        <table>
+            <thead id="tracks-table-head">
+                <tr>
+                    <th>Image</th>
+                    <th><a href="/?sort_by=rank" data-sort="rank">Rank</a></th>
+                    <th class="truncate-cell"><a href="/?sort_by=title" data-sort="title">Title</a></th>
+                    <th class="truncate-cell"><a href="/?sort_by=producer" data-sort="producer">Producer</a></th>
+                    <th class="truncate-cell"><a href="/?sort_by=voicebank" data-sort="voicebank">Voicebank</a></th>
+                    <th><a href="/?sort_by=published_date" data-sort="published_date">Published</a></th>
+                    <th><a href="/?sort_by=rating" data-sort="rating">My Rating</a></th>
+                </tr>
+            </thead>
+            <tbody id="tracks-table-body" data-update-url="/_/tracks_table_body">
+                {% include "partials/tracks_table_body.html" %}
+            </tbody>
+        </table>
+    </div>
+
+    <footer>
+        <p>Data sourced from <a href="https://vocaloard.injpok.tokyo/en/" target="_blank">Vocaloard</a>. This is an
+            independent project.</p>
+    </footer>
+
+    <script src="/static/js/main.js"></script>
+</body>
+
+</html>

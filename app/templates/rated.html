@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Rated Vocaloid Tracks</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script>
+        // Apply theme immediately to prevent flashing
+        (function () {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                // If the user has made a choice, respect it
+                document.documentElement.dataset.theme = savedTheme;
+            } else {
+                // Otherwise, check the device's preference
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.dataset.theme = prefersDark ? 'dark' : 'light';
+            }
+        })();
+    </script>
+</head>
+
+<body>
+    <div class="header-container">
+        <h1>Rated Tracks</h1>
+        <div class="header-controls">
+            <a href="/" class="header-button">Back to Main Chart</a>
+            <div class="theme-switcher" id="theme-switcher">
+                <span id="theme-icon">&#127769;</span>
+                <span id="theme-text">Dark Mode</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="stats-container">
+        <div class="stat-card">
+            <h3>Average Rating</h3>
+            <div class="value">{{ stats.average_rating }} ★</div>
+            <div class="detail">Across {{ stats.total_ratings }} ratings</div>
+        </div>
+        <div class="stat-card">
+            <h3>Median Rating</h3>
+            <div class="value">{{ stats.median_rating }} ★</div>
+            <div class="detail">The middle-point of your ratings</div>
+        </div>
+        <div class="stat-card">
+            <h3>Favorite Producer</h3>
+            <div class="value">{{ stats.favorite_producer.name }}</div>
+            <!-- CORRECTED DETAIL TEXT -->
+            <div class="detail">Avg: {{ stats.favorite_producer.avg_rating }} ★ (min. 3 rated)</div>
+        </div>
+        <div class="stat-card">
+            <h3>Favorite Voicebank</h3>
+            <div class="value">{{ stats.favorite_voicebank.name }}</div>
+            <!-- CORRECTED DETAIL TEXT -->
+            <div class="detail">Avg: {{ stats.favorite_voicebank.avg_rating }} ★ (min. 3 rated)</div>
+        </div>
+        {% if stats.total_ratings > 0 %}
+        <div class="stat-card chart-container">
+            <h3>Rating Distribution</h3>
+            <div class="chart">
+                {% for rating, count in stats.rating_distribution.items() %}
+                <div class="chart-row">
+                    <div class="chart-label">{{ rating }} ★</div>
+                    <div class="chart-bar-bg">
+                        <div class="chart-bar" data-width="{{ (count / stats.total_ratings) * 100 }}">
+                            {{ count }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="filter-container">
+        <form id="filter-form">
+            <label for="producer_filter">Producer:</label>
+            <!-- CORRECTED INPUT WITH WRAPPER AND CLEAR BUTTON -->
+            <div class="input-wrapper">
+                <input type="text" name="producer_filter" id="producer_filter" list="producers-list" autocomplete="off">
+                <button type="button" class="clear-input-btn" aria-label="Clear producer filter">&times;</button>
+            </div>
+            <datalist id="producers-list">
+                {% for producer in all_producers %}<option value="{{ producer }}">{% endfor %}
+            </datalist>
+
+            <label for="voicebank_filter">Voicebank:</label>
+            <!-- CORRECTED INPUT WITH WRAPPER AND CLEAR BUTTON -->
+            <div class="input-wrapper">
+                <input type="text" name="voicebank_filter" id="voicebank_filter" list="voicebanks-list"
+                    autocomplete="off">
+                <button type="button" class="clear-input-btn" aria-label="Clear voicebank filter">&times;</button>
+            </div>
+            <datalist id="voicebanks-list">
+                {% for voicebank in all_voicebanks %}<option value="{{ voicebank }}">{% endfor %}
+            </datalist>
+
+            <a href="/rated_tracks" class="clear button">Clear Filters</a>
+        </form>
+    </div>
+    <div class="table-wrapper">
+        <table>
+            <thead id="tracks-table-head">
+                <tr>
+                    <th>Image</th>
+                    <th><a href="/rated_tracks?sort_by=rank" data-sort="rank">Rank</a></th>
+                    <th class="truncate-cell"><a href="/?sort_by=title" data-sort="title">Title</a></th>
+                    <th class="truncate-cell"><a href="/?sort_by=producer" data-sort="producer">Producer</a></th>
+                    <th class="truncate-cell"><a href="/?sort_by=voicebank" data-sort="voicebank">Voicebank</a></th>
+                    <th><a href="/rated_tracks?sort_by=published_date" data-sort="published_date">Published</a></th>
+                    <th><a href="/rated_tracks?sort_by=rating" data-sort="rating">My Rating</a></th>
+                </tr>
+            </thead>
+            <tbody id="tracks-table-body" data-update-url="/_/rated_tracks_table_body">
+                {% include "partials/tracks_table_body.html" %}
+            </tbody>
+        </table>
+    </div>
+
+    <footer>
+        <p>Data sourced from <a href="https://vocaloard.injpok.tokyo/en/" target="_blank">Vocaloard</a>. This is an
+            independent project.</p>
+    </footer>
+
+    <script src="/static/js/main.js"></script>
+</body>
+
+</html>
