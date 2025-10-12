@@ -30,7 +30,19 @@ const updateSortIndicators = () => {
     const params = new URLSearchParams(window.location.search);
     let sortBy = params.get('sort_by');
     let sortDir = params.get('sort_dir');
-    if (!sortBy) { sortBy = 'rank'; sortDir = 'asc'; }
+
+    if (!sortBy) {
+        // Check which page we are on to determine the correct default
+        if (window.location.pathname.includes('rated_tracks')) {
+            sortBy = 'rating';
+            sortDir = 'desc';
+        } else {
+            // Default for the main index page
+            sortBy = 'rank';
+            sortDir = 'asc';
+        }
+    }
+
     document.querySelectorAll('th a[data-sort]').forEach(a => {
         a.classList.remove('active');
         a.textContent = a.textContent.replace(/ [▲▼]/, '');
