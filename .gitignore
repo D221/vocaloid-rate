@@ -1,2 +1,3 @@
 app/__pycache__/
 *.db
+scrape_status.txt

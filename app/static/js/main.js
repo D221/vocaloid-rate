@@ -175,14 +175,23 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const scrapeStatus = document.getElementById('scrape-status');
             scrapeButton.disabled = true;
-            scrapeButton.textContent = 'Scraping...';
+            scrapeButton.textContent = 'Checking...'; // New initial text
+            
             fetch('/scrape', { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {
                     scrapeStatus.textContent = data.message;
                     const interval = setInterval(() => {
                         fetch('/api/scrape-status').then(res => res.json()).then(statusData => {
-                            if (statusData.status === 'completed') {
+                            
+                            if (statusData.status === 'no_changes') {
+                                clearInterval(interval);
+                                scrapeStatus.textContent = 'Ranking is already up-to-date.';
+                                scrapeButton.disabled = false;
+                                scrapeButton.textContent = 'Update Tracks';
+                                setTimeout(() => { scrapeStatus.textContent = ''; }, 4000);
+                            } 
+                            else if (statusData.status === 'completed') {
                                 clearInterval(interval);
                                 scrapeStatus.textContent = 'Completed! Reloading...';
                                 window.location.reload();
@@ -191,11 +200,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                 scrapeStatus.textContent = 'An error occurred. Check server logs.';
                                 scrapeButton.disabled = false;
                                 scrapeButton.textContent = 'Update Tracks';
-                            } else {
-                                scrapeStatus.textContent = 'Scraping is in progress...';
+                            } else if (statusData.status === 'in_progress') {
+                                scrapeButton.textContent = 'Scraping...';
+                                scrapeStatus.textContent = 'Changes found, updating...';
                             }
                         });
-                    }, 3000);
+                    }, 2000);
                 });
         });
     }

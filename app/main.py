@@ -36,24 +36,54 @@ def get_db():
 def scrape_and_populate_task():
     db = SessionLocal()
     try:
+        # 1. Scrape only page 1 to check for changes.
+        logging.info("Smart Scrape: Checking page 1 for changes...")
+        scraped_page_1 = scraper._scrape_single_page(1)  # Using the new helper
+        if not scraped_page_1:
+            raise Exception(
+                "Failed to scrape page 1, cannot determine if an update is needed."
+            )
+
+        # Create a simple representation of the new ranking: {rank: link}
+        scraped_ranks = {track["rank"]: track["link"] for track in scraped_page_1}
+
+        # 2. Get the current top 50 tracks from our database.
+        db_top_50 = (
+            db.query(models.Track).filter(models.Track.rank.between(1, 50)).all()
+        )
+        db_ranks = {track.rank: track.link for track in db_top_50}
+
+        # 3. Compare them. If they are identical, stop the process.
+        if scraped_ranks == db_ranks:
+            logging.info(
+                "Smart Scrape: No changes found on page 1. The ranking is already up-to-date."
+            )
+            with open(SCRAPE_STATUS_FILE, "w") as f:
+                f.write("no_changes")  # Write the new status for the frontend
+            return  # Exit the task early
+
+        # If we reach here, it means changes were found. Proceed with the full scrape.
+        logging.info("Smart Scrape: Changes detected! Proceeding with full scrape.")
         with open(SCRAPE_STATUS_FILE, "w") as f:
             f.write("in_progress")
 
         final_status = "completed"
         try:
-            logging.info("Starting scrape...")
-            tracks_from_scraper = scraper.scrape_tracks()
+            # We already have page 1, now scrape the rest.
+            remaining_pages_tracks = []
+            for page in range(2, 7):
+                remaining_pages_tracks.extend(scraper._scrape_single_page(page))
+
+            all_scraped_tracks = scraped_page_1 + remaining_pages_tracks
             logging.info(
-                f"Scraping finished. Found {len(tracks_from_scraper)} tracks. Processing database..."
+                f"Full scrape finished. Found {len(all_scraped_tracks)} tracks. Processing database..."
             )
 
-            logging.info(
-                "Resetting all track ranks to NULL before applying new ranks..."
-            )
+            # The rest of the logic remains the same
+            logging.info("Resetting all track ranks to NULL...")
             db.query(models.Track).update({"rank": None})
 
-            # Fetch existing tracks from the DB that are in the new scrape list
-            scraped_links = [t["link"] for t in tracks_from_scraper]
+            scraped_links = [t["link"] for t in all_scraped_tracks]
             existing_tracks_map = {
                 track.link: track
                 for track in db.query(models.Track)
@@ -64,21 +94,14 @@ def scrape_and_populate_task():
             new_tracks_count = 0
             updated_tracks_count = 0
 
-            for track_data in tracks_from_scraper:
+            for track_data in all_scraped_tracks:
                 link = track_data["link"]
-
-                # Check if the track is already in our database
                 db_track = existing_tracks_map.get(link)
-
                 if db_track:
-                    is_changed = False
-                    # Now, a change in rank is guaranteed for any existing track
-                    if (
+                    is_changed = (
                         db_track.rank != track_data["rank"]
                         or db_track.title != track_data["title"]
-                    ):
-                        is_changed = True
-
+                    )
                     if is_changed:
                         for key, value in track_data.items():
                             setattr(db_track, key, value)
