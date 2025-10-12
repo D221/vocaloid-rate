@@ -340,7 +340,8 @@ footer {
     font-weight: normal;
 }
 
-.filter-link:hover {
+.filter-link:hover,
+.top-list a.filter-link:hover {
     color: var(--link-color);
     text-decoration: underline;
 }
@@ -703,4 +704,8 @@ input[type="search"]::-webkit-search-results-decoration {
     background-color: #28a745;
     color: white;
     border-color: #28a745;
+}
+
+.top-list .name {
+    font-weight: bold;
 }

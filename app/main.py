@@ -173,6 +173,7 @@ def read_rated_tracks(
     voicebank_filter: Optional[str] = None,
     sort_by: Optional[str] = None,
     sort_dir: str = "asc",
+    exact_rating_filter: Optional[int] = None,
 ):
     if not sort_by:
         sort_by = "rating"
@@ -185,6 +186,8 @@ def read_rated_tracks(
         voicebank_filter=voicebank_filter,
         sort_by=sort_by,
         sort_dir=sort_dir,
+        exact_rating_filter=exact_rating_filter,
+        rank_filter="all",
     )
 
     all_db_tracks = crud.get_tracks(db, limit=1000)
@@ -227,6 +230,7 @@ def get_rated_tracks_table_body(
     voicebank_filter: Optional[str] = None,
     sort_by: Optional[str] = None,
     sort_dir: str = "asc",
+    exact_rating_filter: Optional[int] = None,
 ):
     # Same logic, just for the partial
     tracks = crud.get_tracks(
@@ -236,6 +240,7 @@ def get_rated_tracks_table_body(
         voicebank_filter=voicebank_filter,
         sort_by=sort_by,
         sort_dir=sort_dir,
+        exact_rating_filter=exact_rating_filter,
     )
     return templates.TemplateResponse(
         "partials/tracks_table_body.html", {"request": request, "tracks": tracks}

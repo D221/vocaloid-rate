@@ -56,7 +56,10 @@
             <ul class="top-list">
                 {% for producer in stats.top_producers %}
                 <li>
-                    <span class="name">{{ producer.name }}</span>
+                    <a href="#" class="filter-link" data-filter-type="producer_filter"
+                        data-filter-value="{{ producer.name }}">
+                        <span class="name">{{ producer.name }}</span>
+                    </a>
                     <span class="avg">{{ producer.avg_rating }} ★ avg</span>
                 </li>
                 {% endfor %}
@@ -73,7 +76,10 @@
             <ul class="top-list">
                 {% for voicebank in stats.top_voicebanks %}
                 <li>
-                    <span class="name">{{ voicebank.name }}</span>
+                    <a href="#" class="filter-link" data-filter-type="voicebank_filter"
+                        data-filter-value="{{ voicebank.name }}">
+                        <span class="name">{{ voicebank.name }}</span>
+                    </a>
                     <span class="avg">{{ voicebank.avg_rating }} ★ avg</span>
                 </li>
                 {% endfor %}

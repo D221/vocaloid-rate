@@ -143,9 +143,24 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = labels.map(label => ratingsData[label]);
             const isDarkMode = document.documentElement.dataset.theme === 'dark';
 
-            // Set chart colors based on theme
             const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
             const ticksColor = isDarkMode ? '#e0e0e0' : '#333';
+
+            const handleChartClick = (event, elements, chart) => {
+                if (elements.length > 0) {
+                    const clickedElementIndex = elements[0].index;
+                    const ratingToFilter = chart.data.labels[clickedElementIndex].replace(' ★', '');
+
+                    // Clear existing filters and set the new exact rating filter
+                    const params = new URLSearchParams();
+                    params.set('sort_by', 'rating');
+                    params.set('sort_dir', 'desc');
+                    params.set('exact_rating_filter', ratingToFilter);
+
+                    window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+                    updateTracks();
+                }
+            };
 
             new Chart(chartCanvas, {
                 type: 'bar',
@@ -160,24 +175,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     }]
                 },
                 options: {
+                    // ADD THIS ONCLICK HANDLER
+                    onClick: handleChartClick,
+
+                    // Make it obvious the bars are clickable
+                    onHover: (event, chartElement) => {
+                        event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                    },
+
                     scales: {
                         y: {
                             beginAtZero: true,
-                            ticks: {
-                                stepSize: 1,
-                                color: ticksColor
-                            },
-                            grid: {
-                                color: gridColor
-                            }
+                            ticks: { stepSize: 1, color: ticksColor },
+                            grid: { color: gridColor }
                         },
                         x: {
-                            ticks: {
-                                color: ticksColor
-                            },
-                            grid: {
-                                display: false
-                            }
+                            ticks: { color: ticksColor },
+                            grid: { display: false }
                         }
                     },
                     plugins: {
