@@ -81,11 +81,11 @@ const updateTracks = async () => {
     const browserUrl = `${window.location.pathname}?${params.toString()}`;
 
     try {
-    const response = await fetch(fetchUrl);
+        const response = await fetch(fetchUrl);
         // When the fetch completes, clear the timer BEFORE updating the DOM.
         clearTimeout(skeletonTimer);
-    const html = await response.text();
-    tableBody.innerHTML = html;
+        const html = await response.text();
+        tableBody.innerHTML = html;
     } catch (error) {
         clearTimeout(skeletonTimer); // Also clear on error
         console.error("Failed to update tracks:", error);
@@ -119,6 +119,16 @@ const toggleClearButton = (input) => {
     }
 };
 
+const debounce = (func, delay) => {
+    let timeoutId;
+    return (...args) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+            func.apply(this, args);
+        }, delay);
+    };
+};
+
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
     formatAllDates();
@@ -138,16 +148,20 @@ document.addEventListener('DOMContentLoaded', () => {
         updateThemeUI();
     });
 
+    const debouncedUpdateTracks = debounce(updateTracks, 200);
+
     const filterForm = document.getElementById('filter-form');
     if (filterForm) {
         filterForm.addEventListener('input', (e) => {
             if (e.target.matches('input[type="text"], input[type="search"]')) {
                 toggleClearButton(e.target);
             }
-            updateTracks();
-        });
-        filterForm.querySelectorAll('input[type="text"], input[type="search"]').forEach(input => {
-            toggleClearButton(input);
+            if (e.target.matches('input[type="text"], input[type="search"]')) {
+                debouncedUpdateTracks();
+            } else {
+                // For dropdowns/radios, update instantly
+                updateTracks();
+            }
         });
     }
 
