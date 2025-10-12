@@ -579,3 +579,34 @@ input[type="search"]::-webkit-search-results-decoration {
     border-radius: 6px;
     border: 3px solid #2e2e2e;
 }
+
+@keyframes skeleton-glow {
+    from {
+        background-color: rgba(180, 180, 180, 0.1);
+    }
+
+    to {
+        background-color: rgba(180, 180, 180, 0.3);
+    }
+}
+
+.skeleton-row td {
+    padding: 0;
+    /* Remove padding for the skeleton bar */
+}
+
+.skeleton-bar {
+    width: 90%;
+    height: 20px;
+    margin: 12px;
+    border-radius: 4px;
+    background-color: rgba(180, 180, 180, 0.1);
+    animation: skeleton-glow 1.5s linear infinite alternate;
+}
+
+.skeleton-row td:first-child .skeleton-bar {
+    width: 120px;
+    height: 67px;
+    /* Matches the aspect ratio of the thumbnail */
+    margin: 5px;
+}

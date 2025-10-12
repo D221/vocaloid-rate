@@ -46,6 +46,29 @@ const updateTracks = async () => {
     const filterForm = document.getElementById('filter-form');
     const baseUrl = tableBody.dataset.updateUrl;
     if (!baseUrl) return;
+
+    let skeletonTimer;
+
+    // --- SMART SKELETON LOGIC ---
+    // Set a timer. If the fetch takes longer than 250ms, THEN show the skeleton.
+    const showSkeleton = () => {
+        const skeletonRowHTML = `
+            <tr class="skeleton-row">
+                <td><div class="skeleton-bar"></div></td>
+                <td><div class="skeleton-bar"></div></td>
+                <td><div class="skeleton-bar"></div></td>
+                <td><div class="skeleton-bar"></div></td>
+                <td><div class="skeleton-bar"></div></td>
+                <td><div class="skeleton-bar"></div></td>
+                <td><div class="skeleton-bar"></div></td>
+            </tr>
+        `;
+        tableBody.innerHTML = skeletonRowHTML.repeat(10);
+    };
+
+    // Start a 250ms timer.
+    skeletonTimer = setTimeout(showSkeleton, 250);
+
     const params = new URLSearchParams(window.location.search);
     if (filterForm) {
         const formData = new FormData(filterForm);
@@ -56,9 +79,19 @@ const updateTracks = async () => {
     }
     const fetchUrl = `${baseUrl}?${params.toString()}`;
     const browserUrl = `${window.location.pathname}?${params.toString()}`;
+
+    try {
     const response = await fetch(fetchUrl);
+        // When the fetch completes, clear the timer BEFORE updating the DOM.
+        clearTimeout(skeletonTimer);
     const html = await response.text();
     tableBody.innerHTML = html;
+    } catch (error) {
+        clearTimeout(skeletonTimer); // Also clear on error
+        console.error("Failed to update tracks:", error);
+        tableBody.innerHTML = '<tr><td colspan="7">Error loading tracks. Please try again.</td></tr>';
+    }
+
     window.history.pushState({}, '', browserUrl);
     formatAllDates();
     updateSortIndicators();
