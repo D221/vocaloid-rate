@@ -58,18 +58,7 @@
         {% if stats.total_ratings > 0 %}
         <div class="stat-card chart-container">
             <h3>Rating Distribution</h3>
-            <div class="chart">
-                {% for rating, count in stats.rating_distribution.items() %}
-                <div class="chart-row">
-                    <div class="chart-label">{{ rating }} ★</div>
-                    <div class="chart-bar-bg">
-                        <div class="chart-bar" data-width="{{ (count / stats.total_ratings) * 100 }}">
-                            {{ count }}
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
+            <canvas id="ratingDistributionChart" data-ratings='{{ stats.rating_distribution|tojson|safe }}'></canvas>
         </div>
         {% endif %}
     </div>
@@ -129,6 +118,7 @@
     </footer>
 
     <script src="/static/js/main.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 
 </html>

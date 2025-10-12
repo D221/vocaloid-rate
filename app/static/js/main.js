@@ -135,10 +135,76 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSortIndicators();
     updateThemeUI();
 
-    document.querySelectorAll('.chart-bar').forEach(bar => {
-        const width = bar.dataset.width;
-        if (width) bar.style.width = width + '%';
-    });
+    const chartCanvas = document.getElementById('ratingDistributionChart');
+    if (chartCanvas) {
+        try {
+            const ratingsData = JSON.parse(chartCanvas.dataset.ratings);
+            const labels = Object.keys(ratingsData).sort((a, b) => parseFloat(a) - parseFloat(b));
+            const data = labels.map(label => ratingsData[label]);
+            const isDarkMode = document.documentElement.dataset.theme === 'dark';
+
+            // Set chart colors based on theme
+            const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+            const ticksColor = isDarkMode ? '#e0e0e0' : '#333';
+
+            new Chart(chartCanvas, {
+                type: 'bar',
+                data: {
+                    labels: labels.map(l => `${l} ★`),
+                    datasets: [{
+                        label: '# of Ratings',
+                        data: data,
+                        backgroundColor: isDarkMode ? 'rgba(144, 186, 255, 0.6)' : 'rgba(0, 123, 255, 0.6)',
+                        borderColor: isDarkMode ? 'rgba(144, 186, 255, 1)' : 'rgba(0, 123, 255, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                color: ticksColor
+                            },
+                            grid: {
+                                color: gridColor
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: ticksColor
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        } catch (e) {
+            console.error("Could not parse or render chart data:", e);
+        }
+    }
+
+    const debouncedUpdateTracks = debounce(updateTracks, 300);
+    const filterForm = document.getElementById('filter-form');
+    if (filterForm) {
+        filterForm.addEventListener('input', (e) => {
+            if (e.target.matches('input[type="text"], input[type="search"]')) {
+                toggleClearButton(e.target);
+                debouncedUpdateTracks();
+            } else {
+                updateTracks();
+            }
+        });
+        filterForm.querySelectorAll('input[type="text"], input[type="search"]').forEach(input => {
+            toggleClearButton(input);
+        });
+    }
 
     document.getElementById('theme-switcher')?.addEventListener('click', () => {
         const doc = document.documentElement;
@@ -148,23 +214,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateThemeUI();
     });
 
-    const debouncedUpdateTracks = debounce(updateTracks, 200);
-
-    const filterForm = document.getElementById('filter-form');
-    if (filterForm) {
-        filterForm.addEventListener('input', (e) => {
-            if (e.target.matches('input[type="text"], input[type="search"]')) {
-                toggleClearButton(e.target);
-            }
-            if (e.target.matches('input[type="text"], input[type="search"]')) {
-                debouncedUpdateTracks();
-            } else {
-                // For dropdowns/radios, update instantly
-                updateTracks();
-            }
-        });
-    }
-
     const scrapeButton = document.getElementById('scrape-button');
     if (scrapeButton) {
         scrapeButton.addEventListener('click', (e) => {
@@ -172,35 +221,32 @@ document.addEventListener('DOMContentLoaded', () => {
             const scrapeStatus = document.getElementById('scrape-status');
             scrapeButton.disabled = true;
             scrapeButton.textContent = 'Checking...';
-            fetch('/scrape', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    scrapeStatus.textContent = data.message;
-                    const interval = setInterval(() => {
-                        fetch('/api/scrape-status').then(res => res.json()).then(statusData => {
-                            if (statusData.status === 'no_changes') {
-                                clearInterval(interval);
-                                scrapeStatus.textContent = 'Ranking is already up-to-date.';
-                                scrapeButton.disabled = false;
-                                scrapeButton.textContent = 'Update Tracks';
-                                setTimeout(() => { scrapeStatus.textContent = ''; }, 4000);
-                            }
-                            else if (statusData.status === 'completed') {
-                                clearInterval(interval);
-                                scrapeStatus.textContent = 'Completed! Reloading...';
-                                window.location.reload();
-                            } else if (statusData.status === 'error') {
-                                clearInterval(interval);
-                                scrapeStatus.textContent = 'An error occurred. Check server logs.';
-                                scrapeButton.disabled = false;
-                                scrapeButton.textContent = 'Update Tracks';
-                            } else if (statusData.status === 'in_progress') {
-                                scrapeButton.textContent = 'Scraping...';
-                                scrapeStatus.textContent = 'Changes found, updating...';
-                            }
-                        });
-                    }, 2000);
-                });
+            fetch('/scrape', { method: 'POST' }).then(res => res.json()).then(data => {
+                scrapeStatus.textContent = data.message;
+                const interval = setInterval(() => {
+                    fetch('/api/scrape-status').then(res => res.json()).then(statusData => {
+                        if (statusData.status === 'no_changes') {
+                            clearInterval(interval);
+                            scrapeStatus.textContent = 'Ranking is already up-to-date.';
+                            scrapeButton.disabled = false;
+                            scrapeButton.textContent = 'Update Tracks';
+                            setTimeout(() => { scrapeStatus.textContent = ''; }, 4000);
+                        } else if (statusData.status === 'completed') {
+                            clearInterval(interval);
+                            scrapeStatus.textContent = 'Completed! Reloading...';
+                            window.location.reload();
+                        } else if (statusData.status === 'error') {
+                            clearInterval(interval);
+                            scrapeStatus.textContent = 'An error occurred. Check server logs.';
+                            scrapeButton.disabled = false;
+                            scrapeButton.textContent = 'Update Tracks';
+                        } else if (statusData.status === 'in_progress') {
+                            scrapeButton.textContent = 'Scraping...';
+                            scrapeStatus.textContent = 'Changes found, updating...';
+                        }
+                    });
+                }, 2000);
+            });
         });
     }
 
@@ -228,7 +274,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, true);
 
-    // --- MASTER CLICK HANDLER ---
     document.body.addEventListener('click', (e) => {
         const clearBtn = e.target.closest('.clear-input-btn');
         if (clearBtn) {
@@ -248,8 +293,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const form = ratingContainer.closest('form');
             const radioToSelect = form.querySelector(`input[value="${rating}"]`);
             if (radioToSelect) {
-                radioToSelect.checked = true;
                 const formData = new FormData(form);
+                formData.set('rating', rating); // Ensure the latest rating is set
                 fetch(form.action, { method: 'POST', body: formData }).then(() => {
                     ratingContainer.dataset.rating = rating;
                     updateStarPreview(ratingContainer, e);
@@ -261,6 +306,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return;
         }
+
+        const notesBtn = e.target.closest('.notes-toggle-btn');
+        if (notesBtn) { e.preventDefault(); const textarea = notesBtn.nextElementSibling; const isVisible = textarea.style.display !== 'none'; textarea.style.display = isVisible ? 'none' : 'block'; notesBtn.textContent = isVisible ? 'Add Note' : 'Hide Note'; return; }
 
         const sortLink = e.target.closest('th a[data-sort]');
         if (sortLink) {
