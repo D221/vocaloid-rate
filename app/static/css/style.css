@@ -610,3 +610,70 @@ input[type="search"]::-webkit-search-results-decoration {
     /* Matches the aspect ratio of the thumbnail */
     margin: 5px;
 }
+
+.stat-card .value {
+    font-size: 2em;
+    font-weight: bold;
+    color: var(--link-color);
+}
+
+/* --- ADD THIS NEW BLOCK --- */
+.stat-card .value-group {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    text-align: center;
+    margin: 0.5em 0;
+}
+
+.value-group .sub-value {
+    font-size: 2em;
+    font-weight: bold;
+    color: var(--link-color);
+}
+
+.value-group .sub-label {
+    font-size: 0.8em;
+    text-transform: uppercase;
+    color: #888;
+}
+
+.top-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.top-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5em 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.top-list li:last-child {
+    border-bottom: none;
+}
+
+.top-list .name {
+    font-weight: bold;
+}
+
+.top-list .avg {
+    color: #888;
+    font-size: 0.9em;
+}
+
+/* --- END OF NEW BLOCK --- */
+
+.stat-card .detail {
+    font-size: 0.9em;
+    color: #888;
+    text-align: center;
+    /* Center the detail text for the combo card */
+}
+
+.chart-container {
+    /* YOUR CHANGE, APPLIED! */
+    grid-column: span 2;
+}

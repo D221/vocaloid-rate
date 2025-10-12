@@ -53,7 +53,7 @@ def get_tracks(
         rating_join_applied = True
     elif rated_filter == "unrated":
         # For unrated, we must use an outer join
-        query = query.outerjoin(models.Rating).filter(models.Rating.id == None)
+        query = query.outerjoin(models.Rating).filter(models.Rating.id.is_(None))
         rating_join_applied = True
 
     if title_filter:
@@ -130,65 +130,62 @@ def get_rating_statistics(db: Session):
             "total_ratings": 0,
             "average_rating": 0,
             "median_rating": 0,
-            "favorite_producer": {"name": "N/A", "avg_rating": 0},
-            "favorite_voicebank": {"name": "N/A", "avg_rating": 0},
+            "top_producers": [],
+            "top_voicebanks": [],
             "rating_distribution": {},
         }
 
     all_ratings = [r for (r,) in all_ratings_query]
     total_ratings = len(all_ratings)
 
-    # C: The average rating across ALL tracks. This is our baseline.
     global_avg_rating = round(sum(all_ratings) / total_ratings, 2)
-
-    # m: The minimum number of ratings needed to be considered a "favorite".
-    # This prevents a producer with one 10/10 track from being #1.
     MINIMUM_RATINGS_FOR_FAVORITE = 3
 
-    # --- Find Favorite Producer with Weighted Score ---
-
-    # v: Number of ratings for the producer
+    # --- Find Top Producers with Weighted Score ---
     producer_v = func.count(models.Track.id)
-    # R: Average rating for the producer
     producer_R = func.avg(models.Rating.rating)
-
-    # The Bayesian average formula
     producer_weighted_score = (
         (producer_v * producer_R) + (MINIMUM_RATINGS_FOR_FAVORITE * global_avg_rating)
     ) / (producer_v + MINIMUM_RATINGS_FOR_FAVORITE)
 
-    fav_producer_query = (
+    top_producers_query = (
         db.query(
-            models.Track.producer,
-            func.avg(models.Rating.rating).label("avg_rating"),
-            producer_weighted_score.label("weighted_score"),
+            models.Track.producer, func.avg(models.Rating.rating).label("avg_rating")
         )
         .join(models.Rating)
         .group_by(models.Track.producer)
         .having(func.count(models.Track.id) >= MINIMUM_RATINGS_FOR_FAVORITE)
-        .order_by(desc("weighted_score"))
-        .first()
+        .order_by(desc(producer_weighted_score))
+        .limit(10)
+        .all()
     )
 
-    # --- Find Favorite Voicebank with Weighted Score (same logic) ---
+    # --- Find Top Voicebanks with Weighted Score ---
     voicebank_v = func.count(models.Track.id)
     voicebank_R = func.avg(models.Rating.rating)
     voicebank_weighted_score = (
         (voicebank_v * voicebank_R) + (MINIMUM_RATINGS_FOR_FAVORITE * global_avg_rating)
     ) / (voicebank_v + MINIMUM_RATINGS_FOR_FAVORITE)
 
-    fav_voicebank_query = (
+    top_voicebanks_query = (
         db.query(
-            models.Track.voicebank,
-            func.avg(models.Rating.rating).label("avg_rating"),
-            voicebank_weighted_score.label("weighted_score"),
+            models.Track.voicebank, func.avg(models.Rating.rating).label("avg_rating")
         )
         .join(models.Rating)
         .group_by(models.Track.voicebank)
         .having(func.count(models.Track.id) >= MINIMUM_RATINGS_FOR_FAVORITE)
-        .order_by(desc("weighted_score"))
-        .first()
+        .order_by(desc(voicebank_weighted_score))
+        .limit(10)
+        .all()
     )
+
+    # --- Format the results into a list of dictionaries ---
+    top_producers = [
+        {"name": p[0], "avg_rating": round(p[1], 2)} for p in top_producers_query
+    ]
+    top_voicebanks = [
+        {"name": v[0], "avg_rating": round(v[1], 2)} for v in top_voicebanks_query
+    ]
 
     median_rating = median(all_ratings)
 
@@ -198,22 +195,13 @@ def get_rating_statistics(db: Session):
         .order_by(desc(models.Rating.rating))
         .all()
     )
-
     rating_distribution = {rating: count for rating, count in distribution_query}
 
     return {
         "total_ratings": total_ratings,
-        "average_rating": global_avg_rating,  # Use the already calculated global average
+        "average_rating": global_avg_rating,
         "median_rating": median_rating,
-        "favorite_producer": {
-            "name": fav_producer_query[0] if fav_producer_query else "N/A",
-            "avg_rating": round(fav_producer_query[1], 2) if fav_producer_query else 0,
-        },
-        "favorite_voicebank": {
-            "name": fav_voicebank_query[0] if fav_voicebank_query else 0,
-            "avg_rating": round(fav_voicebank_query[1], 2)
-            if fav_voicebank_query
-            else 0,
-        },
+        "top_producers": top_producers,  # Return the list
+        "top_voicebanks": top_voicebanks,  # Return the list
         "rating_distribution": rating_distribution,
     }

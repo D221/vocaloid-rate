@@ -33,28 +33,57 @@
     </div>
 
     <div class="stats-container">
+        <!-- Card 1: Combined Average and Median -->
         <div class="stat-card">
-            <h3>Average Rating</h3>
-            <div class="value">{{ stats.average_rating }} ★</div>
+            <h3>Overall Stats</h3>
+            <div class="value-group">
+                <div>
+                    <div class="sub-value">{{ stats.average_rating }} ★</div>
+                    <div class="sub-label">Average</div>
+                </div>
+                <div>
+                    <div class="sub-value">{{ stats.median_rating }} ★</div>
+                    <div class="sub-label">Median</div>
+                </div>
+            </div>
             <div class="detail">Across {{ stats.total_ratings }} ratings</div>
         </div>
+
+        <!-- Card 2: Top Producers -->
         <div class="stat-card">
-            <h3>Median Rating</h3>
-            <div class="value">{{ stats.median_rating }} ★</div>
-            <div class="detail">The middle-point of your ratings</div>
+            <h3>Top Producers</h3>
+            {% if stats.top_producers %}
+            <ul class="top-list">
+                {% for producer in stats.top_producers %}
+                <li>
+                    <span class="name">{{ producer.name }}</span>
+                    <span class="avg">{{ producer.avg_rating }} ★ avg</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="detail">Not enough data. Rate at least 3 tracks from the same producer.</p>
+            {% endif %}
         </div>
+
+        <!-- Card 3: Top Voicebanks -->
         <div class="stat-card">
-            <h3>Favorite Producer</h3>
-            <div class="value">{{ stats.favorite_producer.name }}</div>
-            <!-- CORRECTED DETAIL TEXT -->
-            <div class="detail">Avg: {{ stats.favorite_producer.avg_rating }} ★ (min. 3 rated)</div>
+            <h3>Top Voicebanks</h3>
+            {% if stats.top_voicebanks %}
+            <ul class="top-list">
+                {% for voicebank in stats.top_voicebanks %}
+                <li>
+                    <span class="name">{{ voicebank.name }}</span>
+                    <span class="avg">{{ voicebank.avg_rating }} ★ avg</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="detail">Not enough data. Rate at least 3 tracks from the same voicebank.</p>
+            {% endif %}
         </div>
-        <div class="stat-card">
-            <h3>Favorite Voicebank</h3>
-            <div class="value">{{ stats.favorite_voicebank.name }}</div>
-            <!-- CORRECTED DETAIL TEXT -->
-            <div class="detail">Avg: {{ stats.favorite_voicebank.avg_rating }} ★ (min. 3 rated)</div>
-        </div>
+
+        <!-- Card 4: Chart -->
         {% if stats.total_ratings > 0 %}
         <div class="stat-card chart-container">
             <h3>Rating Distribution</h3>
@@ -62,6 +91,7 @@
         </div>
         {% endif %}
     </div>
+
 
     <div class="filter-container">
         <form id="filter-form">
