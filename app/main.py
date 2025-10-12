@@ -1,8 +1,18 @@
 import logging
 import os
 from typing import Optional
+from urllib.parse import quote
 
-from fastapi import BackgroundTasks, Depends, FastAPI, Form, Request, Response
+import requests
+from fastapi import (
+    BackgroundTasks,
+    Depends,
+    FastAPI,
+    Form,
+    HTTPException,
+    Request,
+    Response,
+)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -316,3 +326,113 @@ def rate_track(track_id: int, rating: int = Form(...), db: Session = Depends(get
     crud.create_rating(db, track_id=track_id, rating=rating)
     # You can also return 204 here, or the new rating object if you want
     return Response(status_code=204)
+
+
+@app.get("/api/vocadb_search")
+def search_vocadb(producer: str, title_en: str, title_jp: str | None = None):
+    headers = {"Accept": "application/json"}
+    try:
+        # Step 1: Find the Artist ID (this is the same)
+        artist_search_url = f"https://vocadb.net/api/artists?query={quote(producer)}&maxResults=1&sort=FollowerCount"
+        artist_response = requests.get(artist_search_url, headers=headers, timeout=10)
+        artist_response.raise_for_status()
+        artist_data = artist_response.json()
+
+        if not artist_data.get("items"):
+            return {"url": None, "song_id": None}
+        artist_id = artist_data["items"][0]["id"]
+
+        # Step 2: Search with English title first
+        song_search_url = f"https://vocadb.net/api/songs?query={quote(title_en)}&songTypes=Original&artistId[]={artist_id}&maxResults=1&sort=RatingScore"
+        song_response = requests.get(song_search_url, headers=headers, timeout=10)
+        song_response.raise_for_status()
+        song_data = song_response.json()
+
+        # If English search fails AND we have a Japanese title, try it as a fallback
+        if not song_data.get("items") and title_jp:
+            logging.info(
+                f"VocaDB: English search failed for '{title_en}'. Trying Japanese title '{title_jp}'."
+            )
+            song_search_url = f"https://vocadb.net/api/songs?query={quote(title_jp)}&songTypes=Original&artistId[]={artist_id}&maxResults=1&sort=RatingScore"
+            song_response = requests.get(song_search_url, headers=headers, timeout=10)
+            song_response.raise_for_status()
+            song_data = song_response.json()
+
+        if song_data.get("items"):
+            song = song_data["items"][0]
+            song_id = song["id"]
+            song_url = f"https://vocadb.net/S/{song_id}"
+            return {"url": song_url, "song_id": song_id}
+        else:
+            return {"url": None, "song_id": None}
+
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error calling VocaDB API: {e}", exc_info=True)
+        raise HTTPException(status_code=503, detail="Could not connect to VocaDB API.")
+    except Exception as e:
+        logging.error(
+            f"An unexpected error occurred during VocaDB search: {e}", exc_info=True
+        )
+        raise HTTPException(status_code=500, detail="An internal error occurred.")
+
+
+@app.get("/api/vocadb_lyrics/{song_id}")
+def get_vocadb_lyrics(song_id: int):
+    headers = {"Accept": "application/json"}
+    try:
+        api_url = f"https://vocadb.net/api/songs/{song_id}?fields=Lyrics"
+        response = requests.get(api_url, headers=headers, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+
+        lyrics_list = data.get("lyrics", [])
+        if not lyrics_list:
+            return {"lyrics": []}
+
+        available_lyrics = []
+        for lyric_data in lyrics_list:
+            text = lyric_data.get("value", "").replace("\n", "<br>")
+            lang = lyric_data.get("cultureCodes", [""])[0]
+            trans_type = lyric_data.get("translationType", "Unknown")
+            label = f"{lang.upper()} - {trans_type}"
+
+            if trans_type == "Romanized":
+                label = "Romaji"
+            elif trans_type == "Translation" and "en" in lang:
+                label = "English (Translation)"
+            elif trans_type == "Original" and "ja" in lang:
+                label = "Japanese (Original)"
+
+            available_lyrics.append(
+                {
+                    "label": label,
+                    "text": text,
+                    "source": lyric_data.get("source", ""),
+                    "url": lyric_data.get("url", ""),
+                    "translation_type": trans_type,
+                }
+            )
+
+        def sort_key(lyric):
+            if "English" in lyric["label"]:
+                return 0
+            if "Romaji" in lyric["label"]:
+                return 1
+            if "Japanese" in lyric["label"]:
+                return 2
+            return 3
+
+        available_lyrics.sort(key=sort_key)
+
+        return {"lyrics": available_lyrics}
+
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error fetching lyrics from VocaDB API: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=503, detail="Could not fetch lyrics from VocaDB."
+        )
+    except Exception as e:
+        logging.error(
+            f"An unexpected error occurred during lyrics fetch: {e}", exc_info=True
+        )
+        raise HTTPException(status_code=500, detail="An internal error occurred.")

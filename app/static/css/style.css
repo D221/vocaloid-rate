@@ -469,3 +469,113 @@ input[type="search"]::-webkit-search-results-decoration {
     display: none;
     -webkit-appearance: none;
 }
+
+.vocadb-button {
+    margin-top: 8px;
+    padding: 4px 8px;
+    font-size: 0.8em;
+    cursor: pointer;
+    background-color: #6f42c1;
+    /* A nice purple */
+    color: white;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.vocadb-button:disabled {
+    background-color: #6c757d;
+    cursor: wait;
+}
+
+.lyrics-button {
+    margin-top: 8px;
+    padding: 4px 8px;
+    font-size: 0.8em;
+    cursor: pointer;
+    background-color: #17a2b8;
+    /* A nice teal */
+    color: white;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.lyrics-button:disabled {
+    background-color: #6c757d;
+    cursor: wait;
+}
+
+/* New container styles */
+.action-buttons {
+    margin-top: 8px;
+}
+
+.youtube-embed-container,
+.lyrics-container {
+    margin-top: 10px;
+    padding: 1em;
+    background-color: var(--header-bg-color);
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.lyrics-container {
+    max-height: 400px;
+    overflow-y: auto;
+    line-height: 1.6;
+    padding: 0.8em 1.2em;
+}
+
+.lyrics-controls {
+    margin-bottom: 1em;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.lyrics-select {
+    padding: 0.5em;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background-color: var(--card-bg-color);
+    color: var(--text-color);
+}
+
+.lyrics-content {
+    white-space: pre-wrap;
+    line-height: 1.6;
+}
+
+.lyrics-metadata {
+    font-size: 0.8em;
+    color: #888;
+    margin-bottom: 1em;
+    padding-bottom: 0.8em;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.lyrics-metadata a {
+    color: var(--link-color);
+}
+
+/* Custom Scrollbar for Dark Mode */
+[data-theme="dark"] .lyrics-container {
+    scrollbar-width: thin;
+    /* Firefox */
+    scrollbar-color: #555 #2e2e2e;
+    /* Firefox */
+}
+
+/* Chrome, Edge, Safari */
+[data-theme="dark"] .lyrics-container::-webkit-scrollbar {
+    width: 12px;
+}
+
+[data-theme="dark"] .lyrics-container::-webkit-scrollbar-track {
+    background: #2e2e2e;
+}
+
+[data-theme="dark"] .lyrics-container::-webkit-scrollbar-thumb {
+    background-color: #555;
+    border-radius: 6px;
+    border: 3px solid #2e2e2e;
+}

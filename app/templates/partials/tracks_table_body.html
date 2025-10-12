@@ -6,11 +6,31 @@
         </a>
     </td>
     <td>{{ track.rank if track.rank is not none else '—' }}</td>
-    <td class="truncate-cell">
+    <td data-label="Title" class="truncate-cell">
         <a href="{{ track.link }}" target="_blank">{{ track.title }}</a>
         {% if track.title_jp %}<br>({{ track.title_jp }}){% endif %}
-        <button class="embed-button" data-youtube-url="{{ track.link }}">Embed</button>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button class="embed-button" data-youtube-url="{{ track.link }}">Embed</button>
+            <button class="vocadb-button" data-title-en="{{ track.title }}"
+                data-producer="{{ track.producer.split(',')[0].strip() }}" {% if track.title_jp
+                %}data-title-jp="{{ track.title_jp }}" {% endif %}>VocaDB</button>
+            <button class="lyrics-button" data-title-en="{{ track.title }}"
+                data-producer="{{ track.producer.split(',')[0].strip() }}" {% if track.title_jp
+                %}data-title-jp="{{ track.title_jp }}" {% endif %}>Lyrics</button>
+        </div>
+
+
+        <!-- Media Containers -->
         <div class="youtube-embed-container" style="display: none;"></div>
+        <div class="lyrics-container" style="display: none;">
+            <div class="lyrics-controls">
+                <select class="lyrics-select" data-track-id="{{ track.id }}"></select>
+            </div>
+            <div class="lyrics-metadata"></div>
+            <div class="lyrics-content"></div>
+        </div>
     </td>
     <td class="truncate-cell">
         {% for producer in track.producer.split(',') %}

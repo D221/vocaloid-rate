@@ -28,8 +28,9 @@ const formatAllDates = () => {
 
 const updateSortIndicators = () => {
     const params = new URLSearchParams(window.location.search);
-    const sortBy = params.get('sort_by');
-    const sortDir = params.get('sort_dir');
+    let sortBy = params.get('sort_by');
+    let sortDir = params.get('sort_dir');
+    if (!sortBy) { sortBy = 'rank'; sortDir = 'asc'; }
     document.querySelectorAll('th a[data-sort]').forEach(a => {
         a.classList.remove('active');
         a.textContent = a.textContent.replace(/ [▲▼]/, '');
@@ -44,75 +45,23 @@ const updateTracks = async () => {
     const tableBody = document.getElementById('tracks-table-body');
     const filterForm = document.getElementById('filter-form');
     const baseUrl = tableBody.dataset.updateUrl;
-    
     if (!baseUrl) return;
-
     const params = new URLSearchParams(window.location.search);
     if (filterForm) {
         const formData = new FormData(filterForm);
         formData.forEach((value, key) => {
-            if (value) {
-                params.set(key, value);
-            } else {
-                params.delete(key);
-            }
+            if (value) params.set(key, value);
+            else params.delete(key);
         });
     }
-
     const fetchUrl = `${baseUrl}?${params.toString()}`;
     const browserUrl = `${window.location.pathname}?${params.toString()}`;
-
     const response = await fetch(fetchUrl);
     const html = await response.text();
-    
     tableBody.innerHTML = html;
     window.history.pushState({}, '', browserUrl);
-    
     formatAllDates();
     updateSortIndicators();
-};
-
-const handleEmbed = (embedButton) => {
-    const videoId = getYouTubeVideoId(embedButton.dataset.youtubeUrl);
-    const videoContainer = embedButton.nextElementSibling;
-    if (!videoId) {
-        window.open(embedButton.dataset.youtubeUrl, '_blank');
-        return;
-    }
-    const iframe = document.createElement('iframe');
-    iframe.width = "560";
-    iframe.height = "315";
-    iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-    iframe.frameBorder = "0";
-    iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
-    iframe.allowFullscreen = true;
-    
-    videoContainer.innerHTML = '';
-    videoContainer.appendChild(iframe);
-    videoContainer.style.display = 'block';
-
-    const closeButton = document.createElement('button');
-    closeButton.className = 'close-embed-button';
-    closeButton.textContent = 'Close';
-    embedButton.insertAdjacentElement('afterend', closeButton);
-
-    embedButton.style.display = 'none';
-};
-
-const handleCloseEmbed = (closeButton) => {
-    const parentCell = closeButton.closest('td');
-    if (!parentCell) return;
-    const embedButton = parentCell.querySelector('.embed-button');
-    const videoContainer = parentCell.querySelector('.youtube-embed-container');
-
-    if (videoContainer) {
-        videoContainer.innerHTML = '';
-        videoContainer.style.display = 'none';
-    }
-    if (embedButton) {
-        embedButton.style.display = 'inline-block';
-    }
-    closeButton.remove();
 };
 
 const updateThemeUI = () => {
@@ -120,12 +69,11 @@ const updateThemeUI = () => {
     const themeText = document.getElementById('theme-text');
     if (!themeIcon || !themeText) return;
     const currentTheme = document.documentElement.dataset.theme;
-
     if (currentTheme === 'dark') {
-        themeIcon.innerHTML = '&#9728;'; // Sun icon
+        themeIcon.innerHTML = '&#9728;';
         themeText.textContent = 'Light Mode';
     } else {
-        themeIcon.innerHTML = '&#127769;'; // Moon icon
+        themeIcon.innerHTML = '&#127769;';
         themeText.textContent = 'Dark Mode';
     }
 };
@@ -144,12 +92,9 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSortIndicators();
     updateThemeUI();
 
-    // Initialize the statistics chart bars on the rated tracks page
     document.querySelectorAll('.chart-bar').forEach(bar => {
         const width = bar.dataset.width;
-        if(width) {
-            bar.style.width = width + '%';
-        }
+        if (width) bar.style.width = width + '%';
     });
 
     document.getElementById('theme-switcher')?.addEventListener('click', () => {
@@ -168,7 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             updateTracks();
         });
-
         filterForm.querySelectorAll('input[type="text"], input[type="search"]').forEach(input => {
             toggleClearButton(input);
         });
@@ -193,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 scrapeButton.disabled = false;
                                 scrapeButton.textContent = 'Update Tracks';
                                 setTimeout(() => { scrapeStatus.textContent = ''; }, 4000);
-                            } 
+                            }
                             else if (statusData.status === 'completed') {
                                 clearInterval(interval);
                                 scrapeStatus.textContent = 'Completed! Reloading...';
@@ -213,7 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- 10-STAR RATING LOGIC ---
     const updateStarPreview = (container, event) => {
         const rect = container.getBoundingClientRect();
         const mouseX = event.clientX - rect.left;
@@ -226,9 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.body.addEventListener('mousemove', (e) => {
         const ratingContainer = e.target.closest('.star-rating-container');
-        if (ratingContainer) {
-            updateStarPreview(ratingContainer, e);
-        }
+        if (ratingContainer) updateStarPreview(ratingContainer, e);
     });
 
     document.body.addEventListener('mouseleave', (e) => {
@@ -242,7 +183,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- MASTER CLICK HANDLER ---
     document.body.addEventListener('click', (e) => {
-        // Clear Input Button Click
         const clearBtn = e.target.closest('.clear-input-btn');
         if (clearBtn) {
             const wrapper = clearBtn.parentElement;
@@ -254,8 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return;
         }
-        
-        // Star Rating Click
+
         const ratingContainer = e.target.closest('.star-rating-container');
         if (ratingContainer) {
             const rating = updateStarPreview(ratingContainer, e);
@@ -276,7 +215,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Sort links
         const sortLink = e.target.closest('th a[data-sort]');
         if (sortLink) {
             e.preventDefault();
@@ -284,18 +222,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const newSort = sortLink.dataset.sort;
             const currentSort = params.get('sort_by');
             const currentDir = params.get('sort_dir');
-            let newDir = ['rank', 'published_date', 'rating'].includes(newSort) ? 'desc' : 'asc';
-            if (newSort === currentSort) {
-                newDir = currentDir === 'asc' ? 'desc' : 'asc';
-            }
+            let newDir = ['published_date', 'rating'].includes(newSort) ? 'desc' : 'asc';
+            if (newSort === currentSort) newDir = currentDir === 'asc' ? 'desc' : 'asc';
             params.set('sort_by', newSort);
             params.set('sort_dir', newDir);
             window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
             updateTracks();
             return;
         }
-        
-        // Table Filter links
+
         const filterLink = e.target.closest('a.filter-link');
         if (filterLink) {
             e.preventDefault();
@@ -309,12 +244,133 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Embed and Close buttons
+        const vocadbBtn = e.target.closest('.vocadb-button');
+        if (vocadbBtn) {
+            e.preventDefault();
+            const titleEn = encodeURIComponent(vocadbBtn.dataset.titleEn);
+            const titleJp = vocadbBtn.dataset.titleJp ? encodeURIComponent(vocadbBtn.dataset.titleJp) : '';
+            const producer = encodeURIComponent(vocadbBtn.dataset.producer);
+            vocadbBtn.disabled = true;
+            vocadbBtn.textContent = '...';
+            fetch(`/api/vocadb_search?title_en=${titleEn}&producer=${producer}&title_jp=${titleJp}`)
+                .then(response => response.ok ? response.json() : Promise.reject('Search failed'))
+                .then(data => {
+                    if (data.url) window.open(data.url, '_blank');
+                    else alert('Track not found on VocaDB.');
+                })
+                .catch(() => alert('Could not search VocaDB.'))
+                .finally(() => {
+                    vocadbBtn.disabled = false;
+                    vocadbBtn.textContent = 'VocaDB';
+                });
+            return;
+        }
+
         const embedButton = e.target.closest('.embed-button');
-        if (embedButton) { e.preventDefault(); handleEmbed(embedButton); return; }
-        
-        const closeEmbedButton = e.target.closest('.close-embed-button');
-        if (closeEmbedButton) { e.preventDefault(); handleCloseEmbed(closeEmbedButton); return; }
+        if (embedButton) {
+            e.preventDefault();
+            const parentCell = embedButton.closest('td');
+            const videoContainer = parentCell.querySelector('.youtube-embed-container');
+            if (embedButton.classList.toggle('is-open')) {
+                const videoId = getYouTubeVideoId(embedButton.dataset.youtubeUrl);
+                if (!videoId) { window.open(embedButton.dataset.youtubeUrl, '_blank'); return; }
+                const iframe = document.createElement('iframe');
+                iframe.width = "560"; iframe.height = "315";
+                iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+                iframe.frameBorder = "0";
+                iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+                iframe.allowFullscreen = true;
+                videoContainer.innerHTML = '';
+                videoContainer.appendChild(iframe);
+                videoContainer.style.display = 'block';
+                embedButton.textContent = 'Close';
+            } else {
+                videoContainer.innerHTML = '';
+                videoContainer.style.display = 'none';
+                embedButton.textContent = 'Embed';
+            }
+            return;
+        }
+
+        const lyricsButton = e.target.closest('.lyrics-button');
+        if (lyricsButton) {
+            e.preventDefault();
+            const parentCell = lyricsButton.closest('td');
+            const lyricsContainer = parentCell.querySelector('.lyrics-container');
+            const lyricsSelect = lyricsContainer.querySelector('.lyrics-select');
+            const lyricsMetadata = lyricsContainer.querySelector('.lyrics-metadata');
+            const lyricsContent = lyricsContainer.querySelector('.lyrics-content');
+
+            if (lyricsButton.classList.toggle('is-open')) {
+                lyricsButton.textContent = 'Close';
+                if (lyricsContainer.dataset.loaded === 'true') {
+                    lyricsContainer.style.display = 'block';
+                } else {
+                    lyricsButton.disabled = true;
+                    lyricsButton.textContent = '...';
+                    const titleEn = encodeURIComponent(lyricsButton.dataset.titleEn);
+                    const titleJp = lyricsButton.dataset.titleJp ? encodeURIComponent(lyricsButton.dataset.titleJp) : '';
+                    const producer = encodeURIComponent(lyricsButton.dataset.producer);
+                    let allLyricsData = [];
+                    const renderLyric = (index) => {
+                        const selectedLyric = allLyricsData[index];
+                        if (!selectedLyric) return;
+                        let metadataHTML = `Type: <strong>${selectedLyric.translation_type}</strong>`;
+                        if (selectedLyric.source) {
+                            metadataHTML += ` | Source: `;
+                            if (selectedLyric.url) {
+                                metadataHTML += `<a href="${selectedLyric.url}" target="_blank">${selectedLyric.source}</a>`;
+                            } else {
+                                metadataHTML += selectedLyric.source;
+                            }
+                        }
+                        lyricsMetadata.innerHTML = metadataHTML;
+                        lyricsContent.innerHTML = selectedLyric.text;
+                    };
+                    fetch(`/api/vocadb_search?title_en=${titleEn}&producer=${producer}&title_jp=${titleJp}`)
+                        .then(res => res.ok ? res.json() : Promise.reject('Song not found'))
+                        .then(searchData => searchData.song_id ? fetch(`/api/vocadb_lyrics/${searchData.song_id}`) : Promise.reject('Song not found'))
+                        .then(res => res.ok ? res.json() : Promise.reject('Lyrics not available'))
+                        .then(data => {
+                            allLyricsData = data.lyrics;
+                            if (allLyricsData.length === 0) return Promise.reject('No lyrics found');
+                            lyricsSelect.innerHTML = '';
+                            allLyricsData.forEach((lyric, index) => {
+                                const option = document.createElement('option');
+                                option.value = index;
+                                option.textContent = lyric.label;
+                                lyricsSelect.appendChild(option);
+                            });
+                            renderLyric(0);
+                            lyricsContainer.style.display = 'block';
+                            lyricsContainer.dataset.loaded = 'true';
+                            if (!lyricsSelect.dataset.listener) {
+                                lyricsSelect.addEventListener('change', (e) => renderLyric(e.target.value));
+                                lyricsSelect.dataset.listener = 'true';
+                            }
+                        })
+                        .catch(errorMsg => {
+                            lyricsMetadata.innerHTML = '';
+                            lyricsContent.innerHTML = `<em>${errorMsg}</em>`;
+                            lyricsContainer.style.display = 'block';
+                            lyricsContainer.dataset.loaded = 'false';
+                            setTimeout(() => { if (!lyricsButton.classList.contains('is-open')) { lyricsContainer.style.display = 'none'; } }, 4000);
+                        })
+                        .finally(() => {
+                            lyricsButton.disabled = false;
+                            if (lyricsButton.classList.contains('is-open')) {
+                                lyricsButton.textContent = 'Close';
+                            } else {
+                                lyricsButton.textContent = 'Lyrics';
+                            }
+                        });
+                }
+            } else {
+                lyricsContainer.style.display = 'none';
+                lyricsButton.textContent = 'Lyrics';
+            }
+            return;
+        }
     });
 
     // --- MASTER SUBMIT HANDLER ---
