@@ -100,12 +100,15 @@ def get_tracks(
     return query.offset(skip).limit(limit).all()
 
 
-def create_rating(db: Session, track_id: int, rating: float):
+def create_rating(
+    db: Session, track_id: int, rating: float, notes: Optional[str] = None
+):
     db_rating = (
         db.query(models.Rating).filter(models.Rating.track_id == track_id).first()
     )
     if db_rating:
         db_rating.rating = rating
+        db_rating.notes = notes
     else:
         db_rating = models.Rating(track_id=track_id, rating=rating)
         db.add(db_rating)

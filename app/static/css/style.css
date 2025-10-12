@@ -677,3 +677,30 @@ input[type="search"]::-webkit-search-results-decoration {
     /* YOUR CHANGE, APPLIED! */
     grid-column: span 2;
 }
+
+.notes-container {
+    margin-top: 8px;
+}
+
+.notes-toggle-btn {
+    font-size: 0.8em;
+    cursor: pointer;
+}
+
+.notes-input {
+    display: block;
+    width: 100%;
+    margin-top: 5px;
+    padding: 0.5em;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background-color: var(--card-bg-color);
+    color: var(--text-color);
+    min-height: 60px;
+}
+
+.notes-toggle-btn.has-note {
+    background-color: #28a745;
+    color: white;
+    border-color: #28a745;
+}

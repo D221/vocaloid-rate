@@ -293,8 +293,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const form = ratingContainer.closest('form');
             const radioToSelect = form.querySelector(`input[value="${rating}"]`);
             if (radioToSelect) {
+                radioToSelect.checked = true;
                 const formData = new FormData(form);
-                formData.set('rating', rating); // Ensure the latest rating is set
+                formData.set('rating', rating);
                 fetch(form.action, { method: 'POST', body: formData }).then(() => {
                     ratingContainer.dataset.rating = rating;
                     updateStarPreview(ratingContainer, e);
@@ -305,10 +306,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
             return;
+
         }
 
         const notesBtn = e.target.closest('.notes-toggle-btn');
-        if (notesBtn) { e.preventDefault(); const textarea = notesBtn.nextElementSibling; const isVisible = textarea.style.display !== 'none'; textarea.style.display = isVisible ? 'none' : 'block'; notesBtn.textContent = isVisible ? 'Add Note' : 'Hide Note'; return; }
+        if (notesBtn) {
+            e.preventDefault();
+            const textarea = notesBtn.nextElementSibling;
+            const isVisible = textarea.style.display !== 'none';
+            textarea.style.display = isVisible ? 'none' : 'block';
+            notesBtn.textContent = textarea.value.trim().length > 0 ? 'Edit Note' : 'Add Note';
+
+            if (!isVisible) {
+                textarea.focus();
+            }
+            return;
+        }
 
         const sortLink = e.target.closest('th a[data-sort]');
         if (sortLink) {
@@ -467,6 +480,36 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
     });
+
+    document.body.addEventListener('blur', (e) => {
+        const notesInput = e.target.closest('.notes-input');
+        if (notesInput) {
+            const form = notesInput.closest('form');
+            const ratingContainer = form.querySelector('.star-rating-container');
+            const currentRating = parseFloat(ratingContainer.dataset.rating) || 0;
+
+            // Only save if there is already a rating for this track.
+            if (currentRating > 0) {
+                const formData = new FormData(form);
+
+                // Ensure the rating value is included, as it's required by the backend.
+                formData.set('rating', currentRating);
+
+                fetch(form.action, { method: 'POST', body: formData }).then(() => {
+                    // Optional: add a "Saved!" confirmation message
+                    const notesBtn = form.querySelector('.notes-toggle-btn');
+
+                    // Toggle the green class based on whether there's text
+                    notesBtn.classList.toggle('has-note', notesInput.value.trim().length > 0);
+
+                    const originalText = notesBtn.textContent;
+                    notesBtn.textContent = 'Saved!';
+                    setTimeout(() => { notesBtn.textContent = originalText; }, 2000);
+                });
+            }
+        }
+    }, true);
+
 
     // --- MASTER SUBMIT HANDLER ---
     document.body.addEventListener('submit', (e) => {

@@ -322,9 +322,13 @@ def delete_rating_endpoint(track_id: int, db: Session = Depends(get_db)):
 
 
 @app.post("/rate/{track_id}")
-def rate_track(track_id: int, rating: int = Form(...), db: Session = Depends(get_db)):
-    crud.create_rating(db, track_id=track_id, rating=rating)
-    # You can also return 204 here, or the new rating object if you want
+def rate_track(
+    track_id: int,
+    rating: int = Form(...),
+    notes: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+):
+    crud.create_rating(db, track_id=track_id, rating=rating, notes=notes)
     return Response(status_code=204)
 
 

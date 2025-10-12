@@ -35,5 +35,5 @@ class Rating(Base):
         default=datetime.datetime.now(datetime.timezone.utc),
         onupdate=datetime.datetime.now(datetime.timezone.utc),
     )
-
+    notes: Mapped[str | None] = mapped_column(String, nullable=True)
     track: Mapped["Track"] = relationship("Track", back_populates="ratings")
