@@ -1,7 +1,7 @@
 from statistics import median
 from typing import Optional
 
-from sqlalchemy import desc, func, nullslast
+from sqlalchemy import desc, func, nullslast, or_
 from sqlalchemy.orm import Session
 
 from . import models
@@ -32,6 +32,7 @@ def get_tracks(
     skip: int = 0,
     limit: int = 300,
     rated_filter: Optional[str] = None,
+    title_filter: Optional[str] = None,
     producer_filter: Optional[str] = None,
     voicebank_filter: Optional[str] = None,
     sort_by: Optional[str] = None,
@@ -54,6 +55,15 @@ def get_tracks(
         # For unrated, we must use an outer join
         query = query.outerjoin(models.Rating).filter(models.Rating.id == None)
         rating_join_applied = True
+
+    if title_filter:
+        search_term = f"%{title_filter}%"
+        query = query.filter(
+            or_(
+                models.Track.title.ilike(search_term),
+                models.Track.title_jp.ilike(search_term),
+            )
+        )
 
     if producer_filter:
         query = query.filter(models.Track.producer.ilike(f"%{producer_filter}%"))

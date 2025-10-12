@@ -52,6 +52,12 @@
                 <option value="rated">Rated</option>
                 <option value="unrated">Unrated</option>
             </select>
+            <label for="title_filter">Title:</label>
+            <div class="input-wrapper">
+                <input type="search" name="title_filter" id="title_filter""
+                    autocomplete=" off">
+                <button type="button" class="clear-input-btn" aria-label="Clear title search">&times;</button>
+            </div>
             <label for="producer_filter">Producer:</label>
             <div class="input-wrapper">
                 <input type="text" name="producer_filter" id="producer_filter" list="producers-list" autocomplete="off">
@@ -72,7 +78,6 @@
             </datalist>
             <a href="/" class="clear button">Clear</a>
 
-            <!-- Update button is now inside the filter form for alignment -->
             <button type="button" id="scrape-button">Update Tracks</button>
             <span id="scrape-status"></span>
         </form>

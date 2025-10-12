@@ -76,8 +76,13 @@
 
     <div class="filter-container">
         <form id="filter-form">
+            <label for="title_filter">Title:</label>
+            <div class="input-wrapper">
+                <input type="search" name="title_filter" id="title_filter" placeholder="Search title..."
+                    autocomplete="off">
+                <button type="button" class="clear-input-btn" aria-label="Clear title search">&times;</button>
+            </div>
             <label for="producer_filter">Producer:</label>
-            <!-- CORRECTED INPUT WITH WRAPPER AND CLEAR BUTTON -->
             <div class="input-wrapper">
                 <input type="text" name="producer_filter" id="producer_filter" list="producers-list" autocomplete="off">
                 <button type="button" class="clear-input-btn" aria-label="Clear producer filter">&times;</button>
@@ -87,7 +92,6 @@
             </datalist>
 
             <label for="voicebank_filter">Voicebank:</label>
-            <!-- CORRECTED INPUT WITH WRAPPER AND CLEAR BUTTON -->
             <div class="input-wrapper">
                 <input type="text" name="voicebank_filter" id="voicebank_filter" list="voicebanks-list"
                     autocomplete="off">

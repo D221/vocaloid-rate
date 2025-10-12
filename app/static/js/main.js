@@ -144,6 +144,14 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSortIndicators();
     updateThemeUI();
 
+    // Initialize the statistics chart bars on the rated tracks page
+    document.querySelectorAll('.chart-bar').forEach(bar => {
+        const width = bar.dataset.width;
+        if(width) {
+            bar.style.width = width + '%';
+        }
+    });
+
     document.getElementById('theme-switcher')?.addEventListener('click', () => {
         const doc = document.documentElement;
         const newTheme = doc.dataset.theme === 'dark' ? 'light' : 'dark';
@@ -155,16 +163,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterForm = document.getElementById('filter-form');
     if (filterForm) {
         filterForm.addEventListener('input', (e) => {
-            // Toggle the 'x' button visibility when typing in text fields
-            if (e.target.matches('input[type="text"]')) {
+            if (e.target.matches('input[type="text"], input[type="search"]')) {
                 toggleClearButton(e.target);
             }
-            // Update the tracks list on any filter change
             updateTracks();
         });
 
-        // Check initial state of text inputs on page load
-        filterForm.querySelectorAll('input[type="text"]').forEach(input => {
+        filterForm.querySelectorAll('input[type="text"], input[type="search"]').forEach(input => {
             toggleClearButton(input);
         });
     }
@@ -175,15 +180,13 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const scrapeStatus = document.getElementById('scrape-status');
             scrapeButton.disabled = true;
-            scrapeButton.textContent = 'Checking...'; // New initial text
-            
+            scrapeButton.textContent = 'Checking...';
             fetch('/scrape', { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {
                     scrapeStatus.textContent = data.message;
                     const interval = setInterval(() => {
                         fetch('/api/scrape-status').then(res => res.json()).then(statusData => {
-                            
                             if (statusData.status === 'no_changes') {
                                 clearInterval(interval);
                                 scrapeStatus.textContent = 'Ranking is already up-to-date.';
@@ -312,11 +315,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const closeEmbedButton = e.target.closest('.close-embed-button');
         if (closeEmbedButton) { e.preventDefault(); handleCloseEmbed(closeEmbedButton); return; }
-    });
-
-    document.querySelectorAll('.chart-bar').forEach(bar => {
-        const width = bar.dataset.width;
-        bar.style.width = width + '%';
     });
 
     // --- MASTER SUBMIT HANDLER ---

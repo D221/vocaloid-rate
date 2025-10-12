@@ -237,6 +237,7 @@ def get_tracks_table_body(
     request: Request,
     db: Session = Depends(get_db),
     rated_filter: Optional[str] = None,
+    title_filter: Optional[str] = None,
     producer_filter: Optional[str] = None,
     voicebank_filter: Optional[str] = None,
     sort_by: Optional[str] = None,
@@ -246,6 +247,7 @@ def get_tracks_table_body(
     tracks = crud.get_tracks(
         db,
         rated_filter=rated_filter,
+        title_filter=title_filter,
         producer_filter=producer_filter,
         voicebank_filter=voicebank_filter,
         sort_by=sort_by,
@@ -262,6 +264,7 @@ def read_root(
     request: Request,
     db: Session = Depends(get_db),
     rated_filter: Optional[str] = None,
+    title_filter: Optional[str] = None,
     producer_filter: Optional[str] = None,
     voicebank_filter: Optional[str] = None,
     sort_by: Optional[str] = None,
@@ -271,6 +274,7 @@ def read_root(
     tracks = crud.get_tracks(
         db,
         rated_filter=rated_filter,
+        title_filter=title_filter,
         producer_filter=producer_filter,
         voicebank_filter=voicebank_filter,
         sort_by=sort_by,
