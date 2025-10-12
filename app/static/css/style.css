@@ -394,7 +394,7 @@ footer {
 }
 
 .chart-container {
-    grid-column: 1 / -1;
+    grid-column: span 2;
 }
 
 .chart-container h3 {
