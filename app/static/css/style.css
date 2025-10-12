@@ -99,6 +99,32 @@ th {
     background-color: var(--header-bg-color);
 }
 
+/* Image */
+th:nth-child(1),
+td:nth-child(1),
+/* Rank */
+th:nth-child(2),
+td:nth-child(2),
+/* My Rating */
+th:nth-child(7),
+td:nth-child(7) {
+    width: 1%;
+}
+
+/* Image */
+td:nth-child(1),
+/* Rank */
+td:nth-child(2),
+/* My Rating */
+td:nth-child(7) {
+    white-space: nowrap;
+}
+
+td:nth-child(1) {
+    padding: 5px;
+}
+
+
 th a {
     text-decoration: none;
     color: var(--text-color);
