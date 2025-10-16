@@ -354,7 +354,7 @@ footer {
 
 .youtube-embed-container {
 	display: flex;
-    justify-content: center;
+	justify-content: center;
 }
 
 iframe {
@@ -728,7 +728,10 @@ input[type="search"]::-webkit-search-results-decoration {
 	color: var(--link-color);
 	font-weight: bold;
 	cursor: pointer;
-	transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+	transition:
+		background-color 0.2s,
+		border-color 0.2s,
+		color 0.2s;
 	font-size: 0.9em;
 }
 
@@ -740,12 +743,14 @@ input[type="search"]::-webkit-search-results-decoration {
 .page-btn.active {
 	background-color: var(--link-color);
 	border-color: var(--link-color);
-	color: var(--card-bg-color); /* White/black depending on theme for high contrast */
+	color: var(
+		--card-bg-color
+	); /* White/black depending on theme for high contrast */
 	cursor: default;
 }
 
 [data-theme="dark"] .page-btn.active {
-    color: var(--bg-color);
+	color: var(--bg-color);
 }
 
 .page-ellipsis {
@@ -753,7 +758,8 @@ input[type="search"]::-webkit-search-results-decoration {
 	color: #888;
 }
 
-#prev-page-btn, #next-page-btn {
+#prev-page-btn,
+#next-page-btn {
 	padding: 0.8em 1.2em;
 	border-radius: 4px;
 	border: 1px solid var(--border-color);
@@ -763,13 +769,13 @@ input[type="search"]::-webkit-search-results-decoration {
 	cursor: pointer;
 }
 
-#prev-page-btn:disabled, #next-page-btn:disabled {
+#prev-page-btn:disabled,
+#next-page-btn:disabled {
 	opacity: 0.5;
 	cursor: not-allowed;
 }
 
 @media screen and (max-width: 768px) {
-
 	/* --- 1. Reset any desktop column widths --- */
 	table th,
 	table td {
@@ -842,9 +848,9 @@ input[type="search"]::-webkit-search-results-decoration {
 		border-top-right-radius: 4px;
 	}
 	table td:nth-child(3) a[href*="youtube.com"] {
-        font-size: 1.2em;
-        font-weight: bold;
-    }
+		font-size: 1.2em;
+		font-weight: bold;
+	}
 	table td:nth-child(3) .action-buttons {
 		display: flex;
 		justify-content: center;
@@ -867,9 +873,9 @@ input[type="search"]::-webkit-search-results-decoration {
 
 	/* --- 7. NEW: Responsive Filter Form Styles --- */
 	#filter-form {
-		flex-direction: column;   /* Stack all filter items vertically */
-		align-items: stretch;      /* Make all items stretch to full width */
-		gap: 1.2em;                /* Add vertical space between filter items */
+		flex-direction: column; /* Stack all filter items vertically */
+		align-items: stretch; /* Make all items stretch to full width */
+		gap: 1.2em; /* Add vertical space between filter items */
 	}
 	.filter-container .input-wrapper,
 	.filter-container input[type="search"],
@@ -878,41 +884,42 @@ input[type="search"]::-webkit-search-results-decoration {
 		width: 100%;
 		box-sizing: border-box;
 	}
-	.filter-container > label { /* Use > to only target direct children labels */
+	.filter-container > label {
+		/* Use > to only target direct children labels */
 		text-align: left;
 		margin-bottom: -0.8em; /* Pull the input box closer to its label */
 	}
 	.filter-group {
-		flex-wrap: wrap;      /* Allow radio buttons to drop to a new line */
-		gap: 0.5em 1em;       /* Adjust vertical and horizontal gap */
-		border: none;         /* Optional: remove border on mobile for a cleaner look */
+		flex-wrap: wrap; /* Allow radio buttons to drop to a new line */
+		gap: 0.5em 1em; /* Adjust vertical and horizontal gap */
+		border: none; /* Optional: remove border on mobile for a cleaner look */
 		padding: 0;
 	}
 	.filter-group > label:first-child {
-		width: 100%;          /* Make the main "Chart Status:" label take a full line */
+		width: 100%; /* Make the main "Chart Status:" label take a full line */
 		margin-bottom: 0.5em;
 		text-align: left;
 	}
 }
 
 .spinner {
-    display: none;
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(0, 0, 0, 0.1);
-    border-radius: 50%;
-    border-top-color: #333;
-    animation: spin 1s ease-in-out infinite;
-    margin-left: 10px;
-    vertical-align: middle;
+	display: none;
+	width: 20px;
+	height: 20px;
+	border: 3px solid rgba(0, 0, 0, 0.1);
+	border-radius: 50%;
+	border-top-color: #333;
+	animation: spin 1s ease-in-out infinite;
+	margin-left: 10px;
+	vertical-align: middle;
 }
 
 @keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+	to {
+		transform: rotate(360deg);
+	}
 }
 
 [data-theme="dark"] .spinner {
-    border-top-color: #eee;
+	border-top-color: #eee;
 }
