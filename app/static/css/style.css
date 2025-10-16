@@ -345,7 +345,13 @@ footer {
 }
 
 .youtube-embed-container {
-	margin-top: 10px;
+	display: flex;
+    justify-content: center;
+}
+
+iframe {
+	width: 100%;
+	aspect-ratio: 16 / 9;
 }
 
 .star-rating-container {
@@ -497,15 +503,6 @@ input[type="search"]::-webkit-search-results-decoration {
 /* New container styles */
 .action-buttons {
 	margin-top: 8px;
-}
-
-.youtube-embed-container,
-.lyrics-container {
-	margin-top: 10px;
-	padding: 1em;
-	background-color: var(--header-bg-color);
-	border-radius: 4px;
-	border: 1px solid var(--border-color);
 }
 
 .lyrics-container {
