@@ -67,13 +67,9 @@ table {
 table th,
 table td {
 	border: 1px solid var(--border-color);
-	padding: 12px;
+	padding: 8px 12px;
 	text-align: left;
-	vertical-align: middle;
 	white-space: nowrap;
-	/* Prevent text from wrapping */
-	min-width: 150px;
-	/* Default min-width for all columns */
 }
 
 /* Header-specific styles */
@@ -86,25 +82,34 @@ table th {
 /* Column 1: Image */
 table th:nth-child(1),
 table td:nth-child(1) {
-	min-width: 120px;
+	min-width: 200px;
 	width: 1%;
-}
-
-table td:nth-child(1) {
-	padding: 5px;
 }
 
 /* Column 2: Rank */
 table th:nth-child(2),
 table td:nth-child(2) {
-	min-width: 60px;
+	min-width: 0px;
+	width: 1%;
+}
+
+/* Column 3: Title */
+table th:nth-child(3),
+table td:nth-child(3) {
+	width: 35%;
+}
+
+/* Column 6: Published */
+table th:nth-child(6),
+table td:nth-child(6) {
+	min-width: 0px;
 	width: 1%;
 }
 
 /* Column 7: My Rating */
 table th:nth-child(7),
 table td:nth-child(7) {
-	min-width: 200px;
+	min-width: 0px;
 	width: 1%;
 }
 
@@ -121,8 +126,6 @@ th a.active {
 }
 
 img {
-	border-radius: 4px;
-	display: block;
 	max-width: 100%;
 	height: auto;
 }
@@ -308,9 +311,14 @@ footer {
 }
 
 .rating-cell {
+	vertical-align: middle;
+}
+
+.rating-form {
 	display: flex;
 	align-items: center;
 	gap: 10px;
+	justify-content: space-between;
 }
 
 .rating-cell .clear-rating-btn {

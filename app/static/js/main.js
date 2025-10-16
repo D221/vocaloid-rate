@@ -431,7 +431,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
 				iframe.frameBorder = "0";
 				iframe.allow =
-					"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+					"accelerometer; autoplay; clipboard-write; encrypted-media";
 				iframe.allowFullscreen = true;
 				videoContainer.innerHTML = "";
 				videoContainer.appendChild(iframe);
