@@ -1,6 +1,6 @@
+import json
 import logging
 import os
-import json
 from datetime import datetime
 from typing import Optional
 from urllib.parse import quote
@@ -17,6 +17,7 @@ from fastapi import (
     Response,
     UploadFile,
 )
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -227,28 +228,69 @@ def read_rated_tracks(
     )
 
 
-@app.get("/_/rated_tracks_table_body")
+@app.get("/_/rated_tracks_table_body", response_class=JSONResponse)
 def get_rated_tracks_table_body(
     request: Request,
     db: Session = Depends(get_db),
+    page: int = 1,
+    limit: str = "all",
     producer_filter: Optional[str] = None,
     voicebank_filter: Optional[str] = None,
     sort_by: Optional[str] = None,
     sort_dir: str = "asc",
     exact_rating_filter: Optional[int] = None,
 ):
-    # Same logic, just for the partial
+    if not sort_by:
+        sort_by = "rating"
+        sort_dir = "desc"
+    # 1. Get the total count of tracks matching THIS view's filters
+    total_tracks = crud.get_tracks_count(
+        db,
+        rated_filter="rated",
+        producer_filter=producer_filter,
+        voicebank_filter=voicebank_filter,
+        exact_rating_filter=exact_rating_filter,
+        rank_filter="all",  # Rated tracks can be on or off the chart
+    )
+
+    # 2. Calculate pagination variables
+    limit_val = total_tracks
+    if limit.isdigit() and int(limit) > 0:
+        limit_val = int(limit)
+
+    total_pages = (total_tracks + limit_val - 1) // limit_val if limit_val > 0 else 1
+    skip = (page - 1) * limit_val
+
+    # 3. Get the paginated tracks
     tracks = crud.get_tracks(
         db,
+        skip=skip,
+        limit=limit_val,
         rated_filter="rated",
         producer_filter=producer_filter,
         voicebank_filter=voicebank_filter,
         sort_by=sort_by,
         sort_dir=sort_dir,
         exact_rating_filter=exact_rating_filter,
+        rank_filter="all",
     )
-    return templates.TemplateResponse(
-        "partials/tracks_table_body.html", {"request": request, "tracks": tracks}
+
+    # 4. Render the HTML partial
+    table_body_html = templates.get_template("partials/tracks_table_body.html").render(
+        {"request": request, "tracks": tracks}
+    )
+
+    # 5. Return the JSON structure the JavaScript expects
+    return JSONResponse(
+        content={
+            "table_body_html": table_body_html,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total_pages": total_pages,
+                "total_tracks": total_tracks,
+            },
+        }
     )
 
 
@@ -256,6 +298,8 @@ def get_rated_tracks_table_body(
 def get_tracks_table_body(
     request: Request,
     db: Session = Depends(get_db),
+    page: int = 1,
+    limit: str = "all",
     rated_filter: Optional[str] = None,
     title_filter: Optional[str] = None,
     producer_filter: Optional[str] = None,
@@ -264,8 +308,29 @@ def get_tracks_table_body(
     sort_dir: str = "asc",
     rank_filter: str = "ranked",
 ):
+    total_tracks = crud.get_tracks_count(
+        db,
+        rated_filter=rated_filter,
+        title_filter=title_filter,
+        producer_filter=producer_filter,
+        voicebank_filter=voicebank_filter,
+        rank_filter=rank_filter,
+    )
+
+    limit_val = 10000  # A large number for "all"
+    if limit.isdigit():
+        limit_val = int(limit)
+
+    total_pages = 1
+    if limit_val != 10000:
+        total_pages = (total_tracks + limit_val - 1) // limit_val
+
+    skip = (page - 1) * limit_val if limit_val != 10000 else 0
+
     tracks = crud.get_tracks(
         db,
+        skip=skip,
+        limit=limit_val,
         rated_filter=rated_filter,
         title_filter=title_filter,
         producer_filter=producer_filter,
@@ -274,8 +339,21 @@ def get_tracks_table_body(
         sort_dir=sort_dir,
         rank_filter=rank_filter,
     )
-    return templates.TemplateResponse(
-        "partials/tracks_table_body.html", {"request": request, "tracks": tracks}
+
+    table_body_html = templates.get_template("partials/tracks_table_body.html").render(
+        {"request": request, "tracks": tracks}
+    )
+
+    return JSONResponse(
+        content={
+            "table_body_html": table_body_html,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total_pages": total_pages,
+                "total_tracks": total_tracks,
+            },
+        }
     )
 
 
@@ -307,8 +385,11 @@ def backup_ratings(db: Session = Depends(get_db)):
 
 @app.post("/api/restore/ratings")
 async def restore_ratings(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    if not file.filename.endswith(".json"):
-        raise HTTPException(status_code=400, detail="Invalid file type. Please upload a .json file.")
+    filename = getattr(file, "filename", "") or ""
+    if not filename.lower().endswith(".json"):
+        raise HTTPException(
+            status_code=400, detail="Invalid file type. Please upload a .json file."
+        )
 
     contents = await file.read()
     try:
@@ -330,13 +411,13 @@ async def restore_ratings(file: UploadFile = File(...), db: Session = Depends(ge
                 "published_date": datetime.fromisoformat(item["published_date"]),
                 "title_jp": item.get("title_jp"),
                 "image_url": item.get("image_url"),
-                "rank": None, # New tracks from backup are unranked
+                "rank": None,  # New tracks from backup are unranked
             }
             track = crud.create_track(db, track_data)
             created_count += 1
         else:
             updated_count += 1
-        
+
         if item.get("rating") is not None:
             crud.create_rating(db, track.id, item["rating"], item.get("notes"))
 
@@ -347,6 +428,8 @@ async def restore_ratings(file: UploadFile = File(...), db: Session = Depends(ge
 def read_root(
     request: Request,
     db: Session = Depends(get_db),
+    page: int = 1,
+    limit: str = "all",
     rated_filter: Optional[str] = None,
     title_filter: Optional[str] = None,
     producer_filter: Optional[str] = None,
@@ -355,8 +438,36 @@ def read_root(
     sort_dir: str = "asc",
     rank_filter: str = "ranked",
 ):
+    filters = {
+        "rated_filter": rated_filter,
+        "title_filter": title_filter,
+        "producer_filter": producer_filter,
+        "voicebank_filter": voicebank_filter,
+        "rank_filter": rank_filter,
+    }
+    total_tracks = crud.get_tracks_count(
+        db,
+        rated_filter=rated_filter,
+        title_filter=title_filter,
+        producer_filter=producer_filter,
+        voicebank_filter=voicebank_filter,
+        rank_filter=rank_filter,
+    )
+
+    limit_val = 10000  # A large number for "all"
+    if limit.isdigit():
+        limit_val = int(limit)
+
+    total_pages = 1
+    if limit_val != 10000:
+        total_pages = (total_tracks + limit_val - 1) // limit_val
+
+    skip = (page - 1) * limit_val if limit_val != 10000 else 0
+
     tracks = crud.get_tracks(
         db,
+        skip=skip,
+        limit=limit_val,
         rated_filter=rated_filter,
         title_filter=title_filter,
         producer_filter=producer_filter,
@@ -387,6 +498,13 @@ def read_root(
             "all_producers": all_producers,
             "all_voicebanks": all_voicebanks,
             "last_update": last_update,
+            "filters": filters,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total_pages": total_pages,
+                "total_tracks": total_tracks,
+            },
         },
     )
 

@@ -2,7 +2,7 @@ from collections import defaultdict
 from statistics import median
 from typing import Optional
 
-from sqlalchemy import desc, func, nullslast, or_
+from sqlalchemy import desc, func, nullslast, or_, distinct
 from sqlalchemy.orm import Session
 
 from . import models
@@ -108,6 +108,48 @@ def get_tracks(
         query = query.distinct()
 
     return query.offset(skip).limit(limit).all()
+
+
+def get_tracks_count(
+    db: Session,
+    rated_filter: Optional[str] = None,
+    title_filter: Optional[str] = None,
+    producer_filter: Optional[str] = None,
+    voicebank_filter: Optional[str] = None,
+    rank_filter: str = "ranked",
+    exact_rating_filter: Optional[int] = None,
+):
+    query = db.query(func.count(distinct(models.Track.id)))
+
+    if rank_filter == "ranked":
+        query = query.filter(models.Track.rank.isnot(None))
+    elif rank_filter == "unranked":
+        query = query.filter(models.Track.rank.is_(None))
+
+    if title_filter:
+        search_term = f"%{title_filter}%"
+        query = query.filter(
+            or_(
+                models.Track.title.ilike(search_term),
+                models.Track.title_jp.ilike(search_term),
+            )
+        )
+
+    if exact_rating_filter is not None:
+        query = query.join(models.Rating).filter(
+            models.Rating.rating == exact_rating_filter
+        )
+    elif rated_filter == "rated":
+        query = query.join(models.Rating)
+    elif rated_filter == "unrated":
+        query = query.outerjoin(models.Rating).filter(models.Rating.id.is_(None))
+
+    if producer_filter:
+        query = query.filter(models.Track.producer.ilike(f"%{producer_filter}%"))
+    if voicebank_filter:
+        query = query.filter(models.Track.voicebank.ilike(f"%{voicebank_filter}%"))
+
+    return query.scalar()
 
 
 def create_rating(

@@ -4,6 +4,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const restoreFileInput = document.getElementById('restore-file-input');
     const restoreStatus = document.getElementById('restore-status');
     const restoreSpinner = document.getElementById('restore-spinner');
+    const defaultPageSizeSelect = document.getElementById('default-page-size-select');
+
+    // Load saved page size setting
+    if (defaultPageSizeSelect) {
+        const savedPageSize = localStorage.getItem('defaultPageSize') || 'all';
+        defaultPageSizeSelect.value = savedPageSize;
+
+        defaultPageSizeSelect.addEventListener('change', () => {
+            localStorage.setItem('defaultPageSize', defaultPageSizeSelect.value);
+            alert('Default page size saved!');
+        });
+    }
 
     // Enable restore button only when a file is selected
     restoreFileInput.addEventListener('change', () => {

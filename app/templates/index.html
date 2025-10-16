@@ -38,31 +38,35 @@
         <form id="filter-form">
             <div class="filter-group">
                 <label>Chart Status:</label>
-                <input type="radio" id="rank_ranked" name="rank_filter" value="ranked" checked>
+                <input type="radio" id="rank_ranked" name="rank_filter" value="ranked" {% if
+                    filters.rank_filter=='ranked' or not filters.rank_filter %}checked{% endif %}>
                 <label for="rank_ranked">On Chart</label>
 
-                <input type="radio" id="rank_unranked" name="rank_filter" value="unranked">
+                <input type="radio" id="rank_unranked" name="rank_filter" value="unranked" {% if
+                    filters.rank_filter=='unranked' %}checked{% endif %}>
                 <label for="rank_unranked">Expired (Archive)</label>
 
-                <input type="radio" id="rank_all" name="rank_filter" value="all">
+                <input type="radio" id="rank_all" name="rank_filter" value="all" {% if filters.rank_filter=='all'
+                    %}checked{% endif %}>
                 <label for="rank_all">Show All</label>
             </div>
 
             <label for="rated_filter">Rating:</label>
             <select name="rated_filter" id="rated_filter">
-                <option value="all">All</option>
-                <option value="rated">Rated</option>
-                <option value="unrated">Unrated</option>
+                <option value="all" {% if filters.rated_filter=='all' %}selected{% endif %}>All</option>
+                <option value="rated" {% if filters.rated_filter=='rated' %}selected{% endif %}>Rated</option>
+                <option value="unrated" {% if filters.rated_filter=='unrated' %}selected{% endif %}>Unrated</option>
             </select>
             <label for="title_filter">Title:</label>
             <div class="input-wrapper">
-                <input type="search" name="title_filter" id="title_filter""
-                    autocomplete=" off">
+                <input type="search" name="title_filter" id="title_filter" autocomplete="off"
+                    value="{{ filters.title_filter or '' }}">
                 <button type="button" class="clear-input-btn" aria-label="Clear title search">&times;</button>
             </div>
             <label for="producer_filter">Producer:</label>
             <div class="input-wrapper">
-                <input type="text" name="producer_filter" id="producer_filter" list="producers-list" autocomplete="off">
+                <input type="text" name="producer_filter" id="producer_filter" list="producers-list" autocomplete="off"
+                    value="{{ filters.producer_filter or '' }}">
                 <button type="button" class="clear-input-btn" aria-label="Clear producer filter">&times;</button>
             </div>
             <datalist id="producers-list">
@@ -72,7 +76,7 @@
             <label for="voicebank_filter">Voicebank:</label>
             <div class="input-wrapper">
                 <input type="text" name="voicebank_filter" id="voicebank_filter" list="voicebanks-list"
-                    autocomplete="off">
+                    autocomplete="off" value="{{ filters.voicebank_filter or '' }}">
                 <button type="button" class="clear-input-btn" aria-label="Clear voicebank filter">&times;</button>
             </div>
             <datalist id="voicebanks-list">
@@ -80,10 +84,18 @@
             </datalist>
             <a href="/" class="clear button">Clear</a>
 
+            <label for="limit_filter">Per Page:</label>
+            <select id="limit_filter">
+                <option value="all" {% if pagination.limit=='all' %}selected{% endif %}>All</option>
+                <option value="25" {% if pagination.limit=='25' %}selected{% endif %}>25</option>
+                <option value="50" {% if pagination.limit=='50' %}selected{% endif %}>50</option>
+                <option value="100" {% if pagination.limit=='100' %}selected{% endif %}>100</option>
+            </select>
+
             <button type="button" id="scrape-button">Update Tracks</button>
             <span id="last-updated">
                 {% if last_update %}
-                    Last updated: {{ last_update.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                Last updated: {{ last_update.updated_at.strftime('%Y-%m-%d %H:%M') }}
                 {% endif %}
             </span>
             <span id="scrape-status"></span>
@@ -106,6 +118,12 @@
                 {% include "partials/tracks_table_body.html" %}
             </tbody>
         </table>
+    </div>
+
+    <div class="pagination-container" id="pagination-container">
+        <button id="prev-page-btn" disabled>Previous</button>
+        <div id="page-links"></div>
+        <button id="next-page-btn" disabled>Next</button>
     </div>
 
     <footer>
