@@ -492,6 +492,34 @@ document.addEventListener("DOMContentLoaded", () => {
 	);
 
 	document.body.addEventListener("click", (e) => {
+		const clearRatingBtn = e.target.closest(".clear-rating-btn");
+		if (clearRatingBtn) {
+			e.preventDefault();
+			const deleteForm = clearRatingBtn.closest('form');
+			if (!deleteForm) return; // Safety check
+
+			fetch(deleteForm.action, { method: "POST" }).then(() => {
+				// Find the main rating form, which is the sibling before the delete form
+				const ratingForm = deleteForm.previousElementSibling;
+				if (ratingForm) {
+					const ratingContainer = ratingForm.querySelector(".star-rating-container");
+					ratingContainer.dataset.rating = "0";
+					ratingContainer.style.setProperty("--rating-width", "0%");
+					ratingForm.querySelectorAll('input[type="radio"]').forEach((r) => {
+						r.checked = false;
+					});
+				}
+
+				// If we are on the rated_tracks page, remove the entire table row
+				if (window.location.pathname.includes("rated_tracks")) {
+					deleteForm.closest("tr").remove();
+				} else {
+					// Otherwise, just remove the delete form/button itself
+					deleteForm.remove();
+				}
+			});
+			return; // Stop processing other click handlers
+		}
 		const clearBtn = e.target.closest(".clear-input-btn");
 		if (clearBtn) {
 			const wrapper = clearBtn.parentElement;
@@ -800,27 +828,4 @@ document.addEventListener("DOMContentLoaded", () => {
 		},
 		true,
 	);
-
-	document.body.addEventListener("submit", (e) => {
-		const deleteForm = e.target.closest(".delete-rating-form");
-		if (deleteForm) {
-			e.preventDefault();
-			fetch(deleteForm.action, { method: "POST" }).then(() => {
-				const ratingForm = deleteForm.previousElementSibling;
-				const ratingContainer = ratingForm.querySelector(
-					".star-rating-container",
-				);
-				ratingContainer.dataset.rating = "0";
-				ratingContainer.style.setProperty("--rating-width", "0%");
-				ratingForm.querySelectorAll('input[type="radio"]').forEach((r) => {
-					r.checked = false;
-				});
-				if (window.location.pathname.includes("rated_tracks")) {
-					deleteForm.closest("tr").remove();
-				} else {
-					deleteForm.remove();
-				}
-			});
-		}
-	});
 });
