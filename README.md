@@ -56,20 +56,20 @@ The application is built with a Python backend using FastAPI and a dynamic vanil
 -   **Charting:** Chart.js
 
 ## Installation & Setup
-Download and extract
-https://github.com/D221/vocaloid-rate/archive/refs/heads/main.zip
+## Method 1: Using Scripts
+This method is for users who have Python installed and prefer not to use Docker. The scripts will automatically create a virtual environment and install the required packages.
+
+- **Ensure you have Python 3.8+ installed on your system.**
+
+### 1. Download and extract
+- https://github.com/D221/vocaloid-rate/archive/refs/heads/main.zip
 
 or
 ```bash
 git clone https://github.com/D221/vocaloid-rate
 cd vocaloid-rate
 ```
-## Method 1: Using Scripts
-This method is for users who have Python installed and prefer not to use Docker. The scripts will automatically create a virtual environment and install the required packages.
-
-- Ensure you have Python 3.8+ installed on your system.
-
-1. Run the Application:
+### 2. Run the Application:
 - On Windows: Simply double-click the run.bat file. A command prompt will open and start the server.
 - On macOS / Linux: Open a terminal in the project directory and run the script:
 
@@ -78,22 +78,35 @@ bash run.sh
 ```
 (You may need to make the script executable first by running chmod +x run.sh)
 
-1. Stop the Application:
-= To stop the server, go back to the command prompt or terminal window and press Ctrl+C.
+### 3. Stop the Application:
+- To stop the server, go back to the command prompt or terminal window and press Ctrl+C.
 
 ## Method 2: Docker
 
-**1. Run the Application:**
-   - Open a terminal or command prompt in the project's root directory.
+### 1. Create a file named `docker-compose.yml` and paste the following content.
+
+     ```yaml
+     services:
+       web:
+         image: ghcr.io/D221/vocaloid-rate:latest
+         ports:
+           - "8000:8000"
+         volumes:
+           - ./data:/app/data
+         restart: unless-stopped
+     ```
+
+### 2. Run the Application:
+   - Open a terminal or command prompt in the same folder as your `docker-compose.yml` file.
    - Run the following command:
      ```bash
      docker compose up -d
      ```
 
-**2. Access the Application:**
+### 3. Access the Application:
    - Open your web browser and navigate to `http://127.0.0.1:8000`.
 
-**3. How to Stop:**
+### 4. How to Stop:
      ```bash
      docker compose down
      ```

@@ -1,0 +1,76 @@
+name: CI & CD for Vocaloid Rate
+
+on:
+  push:
+    branches: ["main"]
+    tags:
+      - "v*"
+
+jobs:
+  # --- Job 1: Run Quality Checks (CI) ---
+  ci-checks:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Check out the repository code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Step 3: Install Ruff (a super-fast linter and formatter)
+      - name: Install and run Ruff linter
+        run: |
+          pip install ruff
+          ruff check .
+
+      # Step 4: Check formatting with Ruff
+      - name: Check formatting with Ruff
+        run: |
+          ruff format --check .
+
+      # Step 5: A simple check to see if the Docker image can be built
+      - name: Docker build check
+        run: docker build . --file Dockerfile
+
+  # --- Job 2: Build and Push Docker Image (CD) ---
+  # This job will only run if the event is a 'push' to a tag AND the 'ci-checks' job succeeds.
+  build-and-push-image:
+    # Only run this job for version tags
+    if: startsWith(github.ref, 'refs/tags/v')
+    # It needs the CI job to pass first
+    needs: ci-checks
+    runs-on: ubuntu-latest
+    # We need permissions to push to the GitHub Container Registry
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          # GITHUB_TOKEN is automatically provided by GitHub Actions
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
