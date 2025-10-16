@@ -1,10 +1,11 @@
 # Vocaloid Rate
 
+![Vocaloid Rater Screenshot](assets/main.png)
+
 Vocaloid Rate is a personal, self-hosted web application for tracking, rating, and exploring Vocaloid music rankings. It periodically scrapes data from [Vocaloard](https://vocaloard.injpok.tokyo/en/), providing a clean and feature-rich interface to manage a personal collection of rated tracks.
 
 The application is built with a Python backend using FastAPI and a dynamic vanilla JavaScript frontend.
 
-![Vocaloid Rater Screenshot](path/to/your/screenshot.png)
 
 ## Features
 
@@ -28,6 +29,23 @@ The application is built with a Python backend using FastAPI and a dynamic vanil
     -   Light and Dark mode, with automatic detection of system preference.
     -   (Not Ready) Fully responsive design with a horizontally scrolling table for mobile devices.
     -   Sleek skeleton loaders and debounced inputs for a smooth user experience.
+
+<details>
+<summary><strong>Click to see more screenshots</strong></summary>
+
+### Embed Playback (main feature)
+![Embed View](assets/embeds.png)
+
+### Filtering and Sorting 
+![Filter View](assets/filter.png)
+
+### Ratings Page
+![Ratings View](assets/ratings.png)
+
+### Options Mode
+![Options Mode](assets/options.png)
+
+</details>
 
 ## Tech Stack
 
@@ -53,19 +71,20 @@ pip install -r requirements.txt
 ```
 
 **4. Run the application:**
-```bash
+
 The application is served using Uvicorn. From the project root directory, run:
-
+```bash
 uvicorn app.main:app --reload
-
-The application will be available at http://127.0.0.1:8000.
 ```
+
+The application will be available at http://localhost:8000.
+
 
 ## How to Use
 
 **Initial Scrape**: Upon first launch, the database will be empty. Click the "Update Tracks" button to perform the initial scrape of the Top 300 tracks.
-**
-Rate Songs**: Click the stars in the "My Rating" column to rate a track.
+
+**Rate Songs**: Click the stars in the "My Rating" column to rate a track.
 
 **Explore**: Use the filter and sort options to explore the music. Click on producer or voicebank names to quickly filter the list.
 
