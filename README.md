@@ -86,12 +86,12 @@ bash run.sh
 ### 1. Create a file named `docker-compose.yml` and paste the following content.
 ```yaml
 services:
-web:
-    image: ghcr.io/D221/vocaloid-rate:latest
+  web:
+    image: ghcr.io/d221/vocaloid-rate:latest
     ports:
-    - "8000:8000"
+      - "8000:8000"
     volumes:
-    - ./data:/app/data
+      - ./data:/app/data
     restart: unless-stopped
 ```
 

@@ -2,6 +2,7 @@ import json
 import logging
 import os
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 from urllib.parse import quote
 
@@ -22,8 +23,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from . import crud, models, scraper
-from .database import SessionLocal, engine
+from app import crud, models, scraper
+from app.database import SessionLocal, engine
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
 
@@ -32,9 +33,11 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+BASE_DIR = Path(__file__).resolve().parent
 
-templates = Jinja2Templates(directory="app/templates")
+app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
+
+templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 DATA_DIR = "data"
 SCRAPE_STATUS_FILE = os.path.join(DATA_DIR, "scrape_status.txt")

@@ -5,7 +5,7 @@ from typing import Optional
 from sqlalchemy import desc, distinct, func, nullslast, or_
 from sqlalchemy.orm import Session
 
-from . import models
+from app import models
 
 
 def get_track_by_link(db: Session, link: str):

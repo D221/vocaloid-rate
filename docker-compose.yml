@@ -1,8 +1,9 @@
 services:
   web:
-    image: ghcr.io/D221/vocaloid-rate:latest
+    build: .
+    image: ghcr.io/d221/vocaloid-rate:latest
     ports:
       - "8000:8000"
     volumes:
-      - ./app/data:/app/app/data
+      - ./data:/app/data
     restart: unless-stopped
