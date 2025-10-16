@@ -1,5 +1,7 @@
 import logging
 import os
+import json
+from datetime import datetime
 from typing import Optional
 from urllib.parse import quote
 
@@ -8,10 +10,12 @@ from fastapi import (
     BackgroundTasks,
     Depends,
     FastAPI,
+    File,
     Form,
     HTTPException,
     Request,
     Response,
+    UploadFile,
 )
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -273,6 +277,70 @@ def get_tracks_table_body(
     return templates.TemplateResponse(
         "partials/tracks_table_body.html", {"request": request, "tracks": tracks}
     )
+
+
+@app.get("/options")
+def read_options(request: Request):
+    return templates.TemplateResponse("options.html", {"request": request})
+
+
+@app.get("/api/backup/ratings")
+def backup_ratings(db: Session = Depends(get_db)):
+    rated_tracks = db.query(models.Track).join(models.Rating).all()
+    backup_data = []
+    for track in rated_tracks:
+        backup_data.append(
+            {
+                "link": track.link,
+                "title": track.title,
+                "producer": track.producer,
+                "voicebank": track.voicebank,
+                "published_date": track.published_date.isoformat(),
+                "title_jp": track.title_jp,
+                "image_url": track.image_url,
+                "rating": track.ratings[0].rating if track.ratings else None,
+                "notes": track.ratings[0].notes if track.ratings else None,
+            }
+        )
+    return backup_data
+
+
+@app.post("/api/restore/ratings")
+async def restore_ratings(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    if not file.filename.endswith(".json"):
+        raise HTTPException(status_code=400, detail="Invalid file type. Please upload a .json file.")
+
+    contents = await file.read()
+    try:
+        backup_data = json.loads(contents)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON file.")
+
+    created_count = 0
+    updated_count = 0
+
+    for item in backup_data:
+        track = crud.get_track_by_link(db, item["link"])
+        if not track:
+            track_data = {
+                "link": item["link"],
+                "title": item["title"],
+                "producer": item["producer"],
+                "voicebank": item["voicebank"],
+                "published_date": datetime.fromisoformat(item["published_date"]),
+                "title_jp": item.get("title_jp"),
+                "image_url": item.get("image_url"),
+                "rank": None, # New tracks from backup are unranked
+            }
+            track = crud.create_track(db, track_data)
+            created_count += 1
+        else:
+            updated_count += 1
+        
+        if item.get("rating") is not None:
+            crud.create_rating(db, track.id, item["rating"], item.get("notes"))
+
+    return {"created": created_count, "updated": updated_count}
 
 
 @app.get("/")

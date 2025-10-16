@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Options - Vocaloid Rater</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script>
+        // Apply theme immediately to prevent flashing
+        (function () {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                // If the user has made a choice, respect it
+                document.documentElement.dataset.theme = savedTheme;
+            } else {
+                // Otherwise, check the device's preference
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.dataset.theme = prefersDark ? 'dark' : 'light';
+            }
+        })();
+    </script>
+</head>
+<body>
+    <div class="header-container">
+        <h1>Options</h1>
+        <div class="header-controls">
+            <a href="/" class="header-button">Home</a>
+            <a href="/rated_tracks" class="header-button">View Rated Tracks</a>
+        </div>
+    </div>
+
+    <div class="content-container" style="max-width: 800px; margin: 2rem auto; padding: 1rem;">
+        <h2>Backup & Restore</h2>
+        
+        <div class="backup-section" style="margin-bottom: 2rem; padding: 1rem; border: 1px solid #ccc; border-radius: 5px;">
+            <h3>Backup Rated Tracks</h3>
+            <p>Download a JSON file containing all your rated tracks, including their rating and any notes.</p>
+            <button id="backup-button" class="button">Download Backup</button>
+        </div>
+
+        <div class="restore-section" style="padding: 1rem; border: 1px solid #ccc; border-radius: 5px;">
+            <h3>Restore Ratings</h3>
+            <p>Upload a JSON backup file to restore your ratings. If a track from the backup does not exist in the database, it will be added.</p>
+            <input type="file" id="restore-file-input" accept=".json" style="margin-bottom: 1rem;">
+            <button id="restore-button" class="button" disabled>Upload and Restore</button>
+            <div class="spinner" id="restore-spinner"></div>
+            <p id="restore-status" style="margin-top: 1rem; font-weight: bold;"></p>
+        </div>
+    </div>
+
+    <script src="/static/js/options.js"></script>
+</body>
+</html>
