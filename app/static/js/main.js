@@ -165,16 +165,15 @@ const updateTracks = async () => {
 	skeletonTimer = setTimeout(showSkeleton, 250);
 	if (filterForm) {
 		// 1. Start with all parameters currently in the URL's query string.
-        //    This correctly preserves state from programmatic changes (like chart clicks).
+		//    This correctly preserves state from programmatic changes (like chart clicks).
 		const newParams = new URLSearchParams(window.location.search);
 
-        // 2. Let the current state of the form fields OVERRIDE the parameters.
-        //    This ensures user input is always prioritized.
-        const formData = new FormData(filterForm);
-        formData.forEach((value, key) => {
-            newParams.set(key, value);
-        });
-
+		// 2. Let the current state of the form fields OVERRIDE the parameters.
+		//    This ensures user input is always prioritized.
+		const formData = new FormData(filterForm);
+		formData.forEach((value, key) => {
+			newParams.set(key, value);
+		});
 
 		// 3. Finally, set the pagination state from our JS variables.
 		newParams.set("page", currentPage);
@@ -204,24 +203,26 @@ const updateTracks = async () => {
 };
 
 const updateActiveFilterDisplay = () => {
-    const container = document.getElementById('rating-filter-indicator-container');
-    if (!container) return; // Only run on pages that have the container
+	const container = document.getElementById(
+		"rating-filter-indicator-container",
+	);
+	if (!container) return; // Only run on pages that have the container
 
-    const params = new URLSearchParams(window.location.search);
-    const ratingFilter = params.get('exact_rating_filter');
+	const params = new URLSearchParams(window.location.search);
+	const ratingFilter = params.get("exact_rating_filter");
 
-    if (ratingFilter) {
-        container.innerHTML = `
+	if (ratingFilter) {
+		container.innerHTML = `
             <div class="active-filter-indicator">
                 <span>Filtering by rating: <strong>${ratingFilter} ★</strong></span>
                 <button class="clear-rating-filter-btn" title="Clear rating filter">&times;</button>
             </div>
         `;
-        container.style.display = 'block';
-    } else {
-        container.innerHTML = '';
-        container.style.display = 'none';
-    }
+		container.style.display = "block";
+	} else {
+		container.innerHTML = "";
+		container.style.display = "none";
+	}
 };
 
 const updateThemeUI = () => {
@@ -495,14 +496,16 @@ document.addEventListener("DOMContentLoaded", () => {
 		const clearRatingBtn = e.target.closest(".clear-rating-btn");
 		if (clearRatingBtn) {
 			e.preventDefault();
-			const deleteForm = clearRatingBtn.closest('form');
+			const deleteForm = clearRatingBtn.closest("form");
 			if (!deleteForm) return; // Safety check
 
 			fetch(deleteForm.action, { method: "POST" }).then(() => {
 				// Find the main rating form, which is the sibling before the delete form
 				const ratingForm = deleteForm.previousElementSibling;
 				if (ratingForm) {
-					const ratingContainer = ratingForm.querySelector(".star-rating-container");
+					const ratingContainer = ratingForm.querySelector(
+						".star-rating-container",
+					);
 					ratingContainer.dataset.rating = "0";
 					ratingContainer.style.setProperty("--rating-width", "0%");
 					ratingForm.querySelectorAll('input[type="radio"]').forEach((r) => {
@@ -609,12 +612,16 @@ document.addEventListener("DOMContentLoaded", () => {
 		if (clearRatingFilterBtn) {
 			e.preventDefault();
 			const params = new URLSearchParams(window.location.search);
-			params.delete('exact_rating_filter');
+			params.delete("exact_rating_filter");
 			// When clearing, also remove sort to go back to default view
-			params.delete('sort_by');
-			params.delete('sort_dir');
+			params.delete("sort_by");
+			params.delete("sort_dir");
 
-			window.history.pushState({},"", `${window.location.pathname}?${params.toString()}`);
+			window.history.pushState(
+				{},
+				"",
+				`${window.location.pathname}?${params.toString()}`,
+			);
 			updateTracks();
 			return;
 		}

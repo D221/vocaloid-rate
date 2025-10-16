@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Vocaloid Rater{% endblock %}</title>
+
+    <!-- Favicon Links -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', path='apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='favicon-16x16.png') }}">
+    <link rel="manifest" href="{{ url_for('static', path='site.webmanifest') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', path='favicon.ico') }}">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
+
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
+    <script>
+        // Apply theme immediately to prevent flashing
+        (function () {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.documentElement.dataset.theme = savedTheme;
+            } else {
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.dataset.theme = prefersDark ? 'dark' : 'light';
+            }
+        })();
+    </script>
+    {% block head_extra %}{% endblock %}
+</head>
+
+<body>
+
+    {% block content %}{% endblock %}
+
+    <footer>
+        <p>Data sourced from <a href="https://vocaloard.injpok.tokyo/en/" target="_blank">Vocaloard</a>. This is an
+            independent project.</p>
+    </footer>
+
+</body>
+
+</html>
