@@ -1,6 +1,5 @@
 app/__pycache__/
-*.db
-scrape_status.txt
+data/
 package.json
 package-lock.json
 node_modules/

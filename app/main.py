@@ -36,7 +36,8 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 templates = Jinja2Templates(directory="app/templates")
 
-SCRAPE_STATUS_FILE = "scrape_status.txt"
+DATA_DIR = "data"
+SCRAPE_STATUS_FILE = os.path.join(DATA_DIR, "scrape_status.txt")
 
 
 # Dependency
