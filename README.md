@@ -84,33 +84,31 @@ bash run.sh
 ## Method 2: Docker
 
 ### 1. Create a file named `docker-compose.yml` and paste the following content.
-
-     ```yaml
-     services:
-       web:
-         image: ghcr.io/D221/vocaloid-rate:latest
-         ports:
-           - "8000:8000"
-         volumes:
-           - ./data:/app/data
-         restart: unless-stopped
-     ```
+```yaml
+services:
+web:
+    image: ghcr.io/D221/vocaloid-rate:latest
+    ports:
+    - "8000:8000"
+    volumes:
+    - ./data:/app/data
+    restart: unless-stopped
+```
 
 ### 2. Run the Application:
    - Open a terminal or command prompt in the same folder as your `docker-compose.yml` file.
    - Run the following command:
-     ```bash
-     docker compose up -d
-     ```
+```bash
+docker compose up -d
+```
 
 ### 3. Access the Application:
    - Open your web browser and navigate to `http://127.0.0.1:8000`.
 
 ### 4. How to Stop:
-     ```bash
-     docker compose down
-     ```
-
+```bash
+docker compose down
+```
 
 
 ## How to Use
