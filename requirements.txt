@@ -1,6 +1,5 @@
-fastapi
-uvicorn[standard]
-sqlalchemy
-requests
-beautifulsoup4
-jinja2
+beautifulsoup4>=4
+fastapi>=0.100.0
+pydantic>=2
+Requests>=2
+SQLAlchemy>=2
