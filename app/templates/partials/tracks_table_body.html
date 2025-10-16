@@ -39,7 +39,11 @@
     <td data-label="Producer" class="truncate-cell">
         {% for producer in track.producer.split(',') %}
         <a href="#" class="filter-link" data-filter-type="producer_filter" data-filter-value="{{ producer.strip() }}">{{
-            producer.strip() }}</a>{% if not loop.last %},{% endif %}
+            producer.strip() }}</a>
+        <button class="vocadb-producer-button" data-producer="{{ track.producer.split(',')[0].strip() }}"
+            title="Search producer on VocaDB">
+            VocaDB
+        </button>{% if not loop.last %},{% endif %}
         {% endfor %}
     </td>
     <!-- Added data-label="Voicebank" -->

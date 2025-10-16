@@ -520,6 +520,35 @@ def rate_track(
     return Response(status_code=204)
 
 
+@app.get("/api/vocadb_artist_search")
+def search_vocadb_artist(producer: str):
+    headers = {"Accept": "application/json"}
+    try:
+        artist_search_url = f"https://vocadb.net/api/artists?query={quote(producer)}&maxResults=1&sort=FollowerCount"
+        artist_response = requests.get(artist_search_url, headers=headers, timeout=10)
+        artist_response.raise_for_status()
+        artist_data = artist_response.json()
+
+        if artist_data.get("items"):
+            artist = artist_data["items"][0]
+            artist_id = artist["id"]
+            # Artist URLs on VocaDB use the /Ar/ prefix
+            artist_url = f"https://vocadb.net/Ar/{artist_id}"
+            return {"url": artist_url}
+        else:
+            return {"url": None}
+
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error calling VocaDB Artist API: {e}", exc_info=True)
+        raise HTTPException(status_code=503, detail="Could not connect to VocaDB API.")
+    except Exception as e:
+        logging.error(
+            f"An unexpected error occurred during VocaDB artist search: {e}",
+            exc_info=True,
+        )
+        raise HTTPException(status_code=500, detail="An internal error occurred.")
+
+
 @app.get("/api/vocadb_search")
 def search_vocadb(producer: str, title_en: str, title_jp: str | None = None):
     headers = {"Accept": "application/json"}

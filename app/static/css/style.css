@@ -474,7 +474,8 @@ input[type="search"]::-webkit-search-results-decoration {
 	-webkit-appearance: none;
 }
 
-.vocadb-button {
+.vocadb-button,
+.vocadb-producer-button {
 	margin-top: 8px;
 	padding: 4px 8px;
 	font-size: 0.8em;
@@ -486,7 +487,7 @@ input[type="search"]::-webkit-search-results-decoration {
 	border-radius: 4px;
 }
 
-.vocadb-button:disabled {
+.vocadb-button:disabled .vocadb-producer-button:disabled {
 	background-color: #6c757d;
 	cursor: wait;
 }

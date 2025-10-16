@@ -579,6 +579,31 @@ document.addEventListener("DOMContentLoaded", () => {
 			return;
 		}
 
+		const vocadbProducerBtn = e.target.closest(".vocadb-producer-button");
+		if (vocadbProducerBtn) {
+			e.preventDefault();
+			const producer = vocadbProducerBtn.dataset.producer;
+			vocadbProducerBtn.disabled = true;
+			vocadbProducerBtn.textContent = "...";
+			fetch(
+				`/api/vocadb_artist_search?producer=${encodeURIComponent(producer)}`,
+			)
+				.then((res) => (res.ok ? res.json() : Promise.reject("Search failed")))
+				.then((data) => {
+					if (data.url) {
+						window.open(data.url, "_blank");
+					} else {
+						alert("Producer not found on VocaDB.");
+					}
+				})
+				.catch(() => alert("Could not search VocaDB for this producer."))
+				.finally(() => {
+					vocadbProducerBtn.disabled = false;
+					vocadbProducerBtn.textContent = "VDB";
+				});
+			return;
+		}
+
 		const embedButton = e.target.closest(".embed-button");
 		if (embedButton) {
 			e.preventDefault();
