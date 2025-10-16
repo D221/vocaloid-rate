@@ -2,7 +2,7 @@ from collections import defaultdict
 from statistics import median
 from typing import Optional
 
-from sqlalchemy import desc, func, nullslast, or_, distinct
+from sqlalchemy import desc, distinct, func, nullslast, or_
 from sqlalchemy.orm import Session
 
 from . import models
@@ -268,6 +268,7 @@ def get_rating_statistics(db: Session):
         "rating_distribution": rating_distribution,
     }
 
+
 def create_update_log(db: Session):
     db_update_log = models.UpdateLog()
     db.add(db_update_log)
@@ -277,4 +278,6 @@ def create_update_log(db: Session):
 
 
 def get_last_update_time(db: Session):
-    return db.query(models.UpdateLog).order_by(models.UpdateLog.updated_at.desc()).first()
+    return (
+        db.query(models.UpdateLog).order_by(models.UpdateLog.updated_at.desc()).first()
+    )

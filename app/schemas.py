@@ -1,9 +1,12 @@
-from pydantic import BaseModel
 import datetime
-from typing import Optional, List
+from typing import List, Optional
+
+from pydantic import BaseModel
+
 
 class RatingBase(BaseModel):
     rating: float
+
 
 class Rating(RatingBase):
     id: int
@@ -13,6 +16,7 @@ class Rating(RatingBase):
 
     class Config:
         from_attributes = True
+
 
 class Track(BaseModel):
     id: int
