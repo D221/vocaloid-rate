@@ -1,11 +1,14 @@
 {% for track in tracks %}
-<tr>
-    <td>
+<tr data-track-id="{{ track.id }}">
+    <!-- Added data-label="Image" -->
+    <td data-label="Image">
         <a href="{{ track.link }}" target="_blank">
             <img src="{{ track.image_url }}" alt="{{ track.title }}" class="track-thumbnail">
         </a>
     </td>
-    <td>{{ track.rank if track.rank is not none else '—' }}</td>
+    <!-- Added data-label="Rank" -->
+    <td data-label="Rank">{{ track.rank if track.rank is not none else '—' }}</td>
+    <!-- This one was already correct -->
     <td data-label="Title" class="truncate-cell">
         <a href="{{ track.link }}" target="_blank">{{ track.title }}</a>
         {% if track.title_jp %}<br>({{ track.title_jp }}){% endif %}
@@ -32,22 +35,26 @@
             <div class="lyrics-content"></div>
         </div>
     </td>
-    <td class="truncate-cell">
+    <!-- Added data-label="Producer" -->
+    <td data-label="Producer" class="truncate-cell">
         {% for producer in track.producer.split(',') %}
         <a href="#" class="filter-link" data-filter-type="producer_filter" data-filter-value="{{ producer.strip() }}">{{
             producer.strip() }}</a>{% if not loop.last %},{% endif %}
         {% endfor %}
     </td>
-    <td class="truncate-cell">
+    <!-- Added data-label="Voicebank" -->
+    <td data-label="Voicebank" class="truncate-cell">
         {% for voicebank in track.voicebank.split(',') %}
         <a href="#" class="filter-link" data-filter-type="voicebank_filter"
             data-filter-value="{{ voicebank.strip() }}">{{ voicebank.strip() }}</a>{% if not loop.last %},{% endif %}
         {% endfor %}
     </td>
-    <td class="published-date" data-date="{{ track.published_date.isoformat() }}"
+    <!-- Added data-label="Published" -->
+    <td data-label="Published" class="published-date" data-date="{{ track.published_date.isoformat() }}"
         title="{{ track.published_date.strftime('%Y-%m-%d') }}">
     </td>
-    <td class="rating-cell">
+    <!-- Added data-label="My Rating" -->
+    <td data-label="My Rating" class="rating-cell">
         {% set current_rating = track.ratings[0].rating if track.ratings else 0 %}
         <form action="/rate/{{ track.id }}" method="post" class="rating-form">
             <div class="star-rating-container" data-rating="{{ current_rating }}"

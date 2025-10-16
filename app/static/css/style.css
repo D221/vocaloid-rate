@@ -703,3 +703,108 @@ input[type="search"]::-webkit-search-results-decoration {
 .top-list .name {
 	font-weight: bold;
 }
+
+@media screen and (max-width: 768px) {
+
+	/* --- 1. Reset any desktop column widths --- */
+	table th,
+	table td {
+		min-width: initial !important;
+		width: auto !important;
+	}
+
+	/* --- 2. Basic Card Setup --- */
+	.table-wrapper {
+		border: none;
+		box-shadow: none;
+		overflow-x: visible;
+	}
+
+	table thead {
+		display: none;
+	}
+
+	table tr {
+		display: block;
+		margin-bottom: 1.5em;
+		border: 1px solid var(--border-color);
+		border-radius: 4px;
+		box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+		background-color: var(--card-bg-color);
+	}
+
+	/* --- 3. THE CORE FIX: Make each TD a simple full-width block --- */
+	table td {
+		display: block; /* This is the key. No flexbox here. */
+		width: 100%;
+		box-sizing: border-box;
+		padding: 12px 15px;
+		border-bottom: 1px solid var(--border-color);
+		text-align: center; /* Center the content within the block */
+		white-space: normal;
+	}
+
+	table tr td:last-child {
+		border-bottom: none;
+	}
+
+	/* --- 4. Style the labels (e.g., "TITLE", "PRODUCER") --- */
+	table td::before {
+		content: attr(data-label);
+		display: block; /* Make the label its own line */
+		font-weight: bold;
+		font-size: 0.8em;
+		text-transform: uppercase;
+		color: #888;
+		margin-bottom: 0.4em;
+		text-align: left; /* Labels look best left-aligned */
+	}
+	[data-theme="dark"] table td::before {
+		color: #aaa;
+	}
+
+	/* --- 5. Specific adjustments for complex cells --- */
+
+	/* Image Cell: No padding, no label */
+	table td:nth-child(1) {
+		padding: 0;
+	}
+	table td:nth-child(1)::before {
+		display: none;
+	}
+	table td:nth-child(1) img {
+		width: 100%;
+		height: auto;
+		display: block;
+		border-top-left-radius: 4px;
+		border-top-right-radius: 4px;
+	}
+
+	/* Title Cell: Center the buttons inside */
+	table td:nth-child(3) a[href*="youtube.com"] {
+        font-size: 1.2em;
+        font-weight: bold;
+    }
+	table td:nth-child(3) .action-buttons {
+		display: flex;
+		justify-content: center;
+		gap: 8px;
+		margin-top: 10px;
+	}
+
+	/* Rating Cell: Center the form elements inside */
+	table td:nth-child(7) .rating-form {
+		display: flex;
+		align-items: center;
+	}
+
+	.truncate-cell {
+	/* Set a sensible max width */
+	max-width: 360px;
+
+	/* The magic for single-line truncation */
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+}
