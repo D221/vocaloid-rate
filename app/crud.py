@@ -225,3 +225,14 @@ def get_rating_statistics(db: Session):
         "top_voicebanks": top_voicebanks,
         "rating_distribution": rating_distribution,
     }
+
+def create_update_log(db: Session):
+    db_update_log = models.UpdateLog()
+    db.add(db_update_log)
+    db.commit()
+    db.refresh(db_update_log)
+    return db_update_log
+
+
+def get_last_update_time(db: Session):
+    return db.query(models.UpdateLog).order_by(models.UpdateLog.updated_at.desc()).first()

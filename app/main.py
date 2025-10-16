@@ -133,7 +133,8 @@ def scrape_and_populate_task():
 
             logging.info("Committing all changes to the database...")
             db.commit()
-            logging.info("Database commit successful.")
+            crud.create_update_log(db)
+            logging.info("Database commit successful and update time logged.")
 
         except Exception as e:
             final_status = "error"
@@ -308,6 +309,8 @@ def read_root(
     all_producers = sorted(list(set(producers_flat)))
     all_voicebanks = sorted(list(set(voicebanks_flat)))
 
+    last_update = crud.get_last_update_time(db)
+
     return templates.TemplateResponse(
         "index.html",
         {
@@ -315,6 +318,7 @@ def read_root(
             "tracks": tracks,
             "all_producers": all_producers,
             "all_voicebanks": all_voicebanks,
+            "last_update": last_update,
         },
     )
 

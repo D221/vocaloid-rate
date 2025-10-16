@@ -80,6 +80,11 @@
             <a href="/" class="clear button">Clear</a>
 
             <button type="button" id="scrape-button">Update Tracks</button>
+            <span id="last-updated">
+                {% if last_update %}
+                    Last updated: {{ last_update.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                {% endif %}
+            </span>
             <span id="scrape-status"></span>
         </form>
     </div>

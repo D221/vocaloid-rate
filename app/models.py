@@ -37,3 +37,12 @@ class Rating(Base):
     )
     notes: Mapped[str | None] = mapped_column(String, nullable=True)
     track: Mapped["Track"] = relationship("Track", back_populates="ratings")
+
+
+class UpdateLog(Base):
+    __tablename__ = "update_logs"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.now(datetime.timezone.utc)
+    )
