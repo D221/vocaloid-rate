@@ -733,14 +733,14 @@ input[type="search"]::-webkit-search-results-decoration {
 		background-color: var(--card-bg-color);
 	}
 
-	/* --- 3. THE CORE FIX: Make each TD a simple full-width block --- */
+	/* --- 3. Make each TD a simple full-width block --- */
 	table td {
-		display: block; /* This is the key. No flexbox here. */
+		display: block;
 		width: 100%;
 		box-sizing: border-box;
 		padding: 12px 15px;
 		border-bottom: 1px solid var(--border-color);
-		text-align: center; /* Center the content within the block */
+		text-align: center;
 		white-space: normal;
 	}
 
@@ -748,24 +748,22 @@ input[type="search"]::-webkit-search-results-decoration {
 		border-bottom: none;
 	}
 
-	/* --- 4. Style the labels (e.g., "TITLE", "PRODUCER") --- */
+	/* --- 4. Style the table cell labels --- */
 	table td::before {
 		content: attr(data-label);
-		display: block; /* Make the label its own line */
+		display: block;
 		font-weight: bold;
 		font-size: 0.8em;
 		text-transform: uppercase;
 		color: #888;
 		margin-bottom: 0.4em;
-		text-align: left; /* Labels look best left-aligned */
+		text-align: left;
 	}
 	[data-theme="dark"] table td::before {
 		color: #aaa;
 	}
 
-	/* --- 5. Specific adjustments for complex cells --- */
-
-	/* Image Cell: No padding, no label */
+	/* --- 5. Specific adjustments for table cells --- */
 	table td:nth-child(1) {
 		padding: 0;
 	}
@@ -779,8 +777,6 @@ input[type="search"]::-webkit-search-results-decoration {
 		border-top-left-radius: 4px;
 		border-top-right-radius: 4px;
 	}
-
-	/* Title Cell: Center the buttons inside */
 	table td:nth-child(3) a[href*="youtube.com"] {
         font-size: 1.2em;
         font-weight: bold;
@@ -791,20 +787,46 @@ input[type="search"]::-webkit-search-results-decoration {
 		gap: 8px;
 		margin-top: 10px;
 	}
-
-	/* Rating Cell: Center the form elements inside */
 	table td:nth-child(7) .rating-form {
 		display: flex;
 		align-items: center;
+		justify-content: center; /* Center the form items */
 	}
 
+	/* --- 6. Universal Truncation Rule for Mobile --- */
 	.truncate-cell {
-	/* Set a sensible max width */
-	max-width: 360px;
+		max-width: 360px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
 
-	/* The magic for single-line truncation */
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
+	/* --- 7. NEW: Responsive Filter Form Styles --- */
+	#filter-form {
+		flex-direction: column;   /* Stack all filter items vertically */
+		align-items: stretch;      /* Make all items stretch to full width */
+		gap: 1.2em;                /* Add vertical space between filter items */
+	}
+	.filter-container .input-wrapper,
+	.filter-container input[type="search"],
+	.filter-container input[type="text"],
+	.filter-container select {
+		width: 100%;
+		box-sizing: border-box;
+	}
+	.filter-container > label { /* Use > to only target direct children labels */
+		text-align: left;
+		margin-bottom: -0.8em; /* Pull the input box closer to its label */
+	}
+	.filter-group {
+		flex-wrap: wrap;      /* Allow radio buttons to drop to a new line */
+		gap: 0.5em 1em;       /* Adjust vertical and horizontal gap */
+		border: none;         /* Optional: remove border on mobile for a cleaner look */
+		padding: 0;
+	}
+	.filter-group > label:first-child {
+		width: 100%;          /* Make the main "Chart Status:" label take a full line */
+		margin-bottom: 0.5em;
+		text-align: left;
+	}
 }
