@@ -207,13 +207,6 @@ def read_rated_tracks(
     all_producers = sorted(list(set(producers_flat)))
     all_voicebanks = sorted(list(set(voicebanks_flat)))
 
-    all_producers = sorted(
-        list(set(t.producer for t in crud.get_tracks(db, limit=1000)))
-    )
-    all_voicebanks = sorted(
-        list(set(t.voicebank for t in crud.get_tracks(db, limit=1000)))
-    )
-
     stats = crud.get_rating_statistics(db)
 
     return templates.TemplateResponse(
