@@ -37,7 +37,7 @@ const formatAllDates = () => {
 const formatTime = (seconds) => {
 	const minutes = Math.floor(seconds / 60);
 	const secs = Math.floor(seconds % 60);
-	return `${minutes}:${secs.toString().padStart(2, '0')}`;
+	return `${minutes}:${secs.toString().padStart(2, "0")}`;
 };
 
 const updateSortIndicators = () => {
@@ -73,6 +73,8 @@ const playerState = {
 	playlist: [],
 	volume: 100,
 	isMuted: false,
+	isEmbedded: false,
+	embeddedPlayers: {}, // Track embedded players by track ID
 };
 
 const musicPlayerEl = document.getElementById("music-player");
@@ -82,38 +84,17 @@ const prevBtn = document.getElementById("player-prev-btn");
 const stopBtn = document.getElementById("player-stop-btn");
 const volumeSlider = document.getElementById("player-volume-slider");
 const muteBtn = document.getElementById("player-mute-btn");
-const progressBar = document.getElementById('player-progress-bar');
-const currentTimeEl = document.getElementById('player-current-time');
-const durationEl = document.getElementById('player-duration');
-
-function onYouTubeIframeAPIReady() {
-	ytPlayer = new YT.Player('youtube-player-container', {
-		height: '390',
-		width: '640',
-		playerVars: {
-			'playsinline': 1
-		},
-		events: {
-			'onReady': onPlayerReady,
-			'onStateChange': onPlayerStateChange,
-			'onError': onPlayerError
-		}
-	});
-}
-
-function onPlayerReady(event) {
-	ytPlayer.setVolume(playerState.volume);
-	if (playerState.isMuted) {
-		ytPlayer.mute();
-	}
-}
+const progressBar = document.getElementById("player-progress-bar");
+const currentTimeEl = document.getElementById("player-current-time");
+const durationEl = document.getElementById("player-duration");
 
 function onPlayerError(event) {
-    console.error("YouTube Player Error:", event.data);
-	alert(`Could not play this video.\n\nThis might be because the uploader has disabled embedding, or the video is private/deleted.\n(Error code: ${event.data})`);
+	console.error("YouTube Player Error:", event.data);
+	alert(
+		`Could not play this video.\n\nThis might be because the uploader has disabled embedding, or the video is private/deleted.\n(Error code: ${event.data})`,
+	);
 	playNextTrack(); // Attempt to play the next track
 }
-
 
 function onPlayerStateChange(event) {
 	if (event.data === YT.PlayerState.PLAYING) {
@@ -122,7 +103,7 @@ function onPlayerStateChange(event) {
 		updatePlayerUI();
 	} else if (event.data === YT.PlayerState.PAUSED) {
 		playerState.isPlaying = false;
-		startProgressUpdater();
+		stopProgressUpdater();
 		updatePlayerUI();
 	} else if (event.data === YT.PlayerState.ENDED) {
 		// When the song ends, automatically play the next one
@@ -131,18 +112,30 @@ function onPlayerStateChange(event) {
 }
 
 function startProgressUpdater() {
-	stopProgressUpdater(); // Clear any existing timer
+	stopProgressUpdater();
 	progressUpdateInterval = setInterval(() => {
-		if (ytPlayer && playerState.isPlaying) {
-			const currentTime = ytPlayer.getCurrentTime();
-			const duration = ytPlayer.getDuration();
+		let activePlayer;
+
+		// Use embedded player if in embed mode
+		if (
+			playerState.isEmbedded &&
+			playerState.embeddedPlayers[playerState.currentTrackId]
+		) {
+			activePlayer = playerState.embeddedPlayers[playerState.currentTrackId];
+		} else {
+			activePlayer = ytPlayer;
+		}
+
+		if (activePlayer && playerState.isPlaying) {
+			const currentTime = activePlayer.getCurrentTime();
+			const duration = activePlayer.getDuration();
 			if (duration > 0) {
 				progressBar.value = (currentTime / duration) * 100;
 				currentTimeEl.textContent = formatTime(currentTime);
 				durationEl.textContent = formatTime(duration);
 			}
 		}
-	}, 250); // Update 4 times a second
+	}, 250);
 }
 
 function stopProgressUpdater() {
@@ -150,51 +143,265 @@ function stopProgressUpdater() {
 }
 
 function seekVideo() {
-	const duration = ytPlayer.getDuration();
-	if (duration > 0) {
-		const seekToTime = (progressBar.value / 100) * duration;
-		ytPlayer.seekTo(seekToTime, true);
+	let activePlayer;
+
+	if (
+		playerState.isEmbedded &&
+		playerState.embeddedPlayers[playerState.currentTrackId]
+	) {
+		activePlayer = playerState.embeddedPlayers[playerState.currentTrackId];
+	} else {
+		activePlayer = ytPlayer;
+	}
+
+	if (activePlayer) {
+		const duration = activePlayer.getDuration();
+		if (duration > 0) {
+			const seekToTime = (progressBar.value / 100) * duration;
+			activePlayer.seekTo(seekToTime, true);
+		}
 	}
 }
 
-
 function loadAndPlayTrack(trackId) {
-	const trackIndex = playerState.playlist.findIndex(t => t.id === trackId);
+	const trackIndex = playerState.playlist.findIndex((t) => t.id === trackId);
 	if (trackIndex === -1) return;
 
+	// Always ensure we are in audio mode when this is called directly
+	playerState.isEmbedded = false;
 	playerState.currentTrackId = trackId;
+
 	const track = playerState.playlist[trackIndex];
 	const videoId = getYouTubeVideoId(track.link);
 
-	if (videoId && ytPlayer) {
+	if (!videoId) {
+		alert("Could not find a valid YouTube video ID.");
+		return;
+	}
+
+	// Show the player UI immediately
+	musicPlayerEl.classList.remove("music-player-hidden");
+	updatePlayerUI();
+
+	// If player exists, just load the video.
+	if (ytPlayer) {
 		ytPlayer.loadVideoById(videoId);
-		playerState.isPlaying = true;
-		updatePlayerUI();
-		musicPlayerEl.classList.remove('music-player-hidden');
+	} else {
+		// --- THIS IS THE FIX ---
+		// If the main player doesn't exist yet, create it now.
+		ytPlayer = new YT.Player("youtube-player-container", {
+			height: "180",
+			width: "320",
+			videoId: videoId,
+			playerVars: {
+				playsinline: 1,
+				autoplay: 1,
+			},
+			events: {
+				onReady: (event) => {
+					event.target.setVolume(playerState.volume);
+					if (playerState.isMuted) event.target.mute();
+				},
+				onStateChange: onPlayerStateChange,
+				onError: onPlayerError,
+			},
+		});
 	}
 }
 
 function playNextTrack() {
-	const currentIndex = playerState.playlist.findIndex(t => t.id === playerState.currentTrackId);
+	const wasInEmbedMode = playerState.isEmbedded;
+	const previousTrackId = playerState.currentTrackId;
+
+	const currentIndex = playerState.playlist.findIndex(
+		(t) => t.id === playerState.currentTrackId,
+	);
 	if (currentIndex === -1) return;
+
 	const nextIndex = (currentIndex + 1) % playerState.playlist.length;
 	const nextTrack = playerState.playlist[nextIndex];
-	loadAndPlayTrack(nextTrack.id);
+
+	// Close previous embed if in embed mode
+	if (wasInEmbedMode && previousTrackId) {
+		const prevRow = document.querySelector(
+			`tr[data-track-id="${previousTrackId}"]`,
+		);
+		if (prevRow) {
+			const prevEmbedBtn = prevRow.querySelector(".embed-button.is-open");
+			if (prevEmbedBtn) {
+				// Manually close without triggering audio fallback
+				if (playerState.embeddedPlayers[previousTrackId]) {
+					playerState.embeddedPlayers[previousTrackId].destroy();
+					delete playerState.embeddedPlayers[previousTrackId];
+				}
+				const container = prevRow.querySelector(".youtube-embed-container");
+				if (container) {
+					container.innerHTML = "";
+					container.style.display = "none";
+				}
+				prevEmbedBtn.classList.remove("is-open");
+				prevEmbedBtn.textContent = "Embed";
+			}
+		}
+	}
+
+	// Update current track
+	playerState.currentTrackId = nextTrack.id;
+	playerState.isEmbedded = false;
+
+	// Update UI
+	document.getElementById("player-thumbnail").src = nextTrack.imageUrl;
+	document.getElementById("player-title").textContent = nextTrack.title;
+	document.getElementById("player-producer").textContent = nextTrack.producer;
+	updatePlayerUI();
+
+	// If was in embed mode, open embed for new track
+	if (wasInEmbedMode) {
+		setTimeout(() => {
+			const nextRow = document.querySelector(
+				`tr[data-track-id="${nextTrack.id}"]`,
+			);
+			if (nextRow) {
+				const nextEmbedBtn = nextRow.querySelector(".embed-button");
+				if (nextEmbedBtn && !nextEmbedBtn.classList.contains("is-open")) {
+					nextEmbedBtn.click();
+				}
+			}
+		}, 300);
+	} else {
+		// Audio mode - load the track in hidden player
+		const videoId = getYouTubeVideoId(nextTrack.link);
+		if (ytPlayer && videoId) {
+			ytPlayer.loadVideoById(videoId);
+		} else if (videoId) {
+			// Create player if it doesn't exist
+			ytPlayer = new YT.Player("youtube-player-container", {
+				height: "180",
+				width: "320",
+				videoId: videoId,
+				playerVars: {
+					playsinline: 1,
+					autoplay: 1,
+				},
+				events: {
+					onReady: (event) => {
+						event.target.setVolume(playerState.volume);
+						if (playerState.isMuted) event.target.mute();
+					},
+					onStateChange: onPlayerStateChange,
+					onError: onPlayerError,
+				},
+			});
+		}
+	}
 }
 
 function playPrevTrack() {
-	const currentIndex = playerState.playlist.findIndex(t => t.id === playerState.currentTrackId);
+	const wasInEmbedMode = playerState.isEmbedded;
+	const previousTrackId = playerState.currentTrackId;
+
+	const currentIndex = playerState.playlist.findIndex(
+		(t) => t.id === playerState.currentTrackId,
+	);
 	if (currentIndex === -1) return;
-	const prevIndex = (currentIndex - 1 + playerState.playlist.length) % playerState.playlist.length;
+
+	const prevIndex =
+		(currentIndex - 1 + playerState.playlist.length) %
+		playerState.playlist.length;
 	const prevTrack = playerState.playlist[prevIndex];
-	loadAndPlayTrack(prevTrack.id);
+
+	// Close previous embed if in embed mode
+	if (wasInEmbedMode && previousTrackId) {
+		const prevRow = document.querySelector(
+			`tr[data-track-id="${previousTrackId}"]`,
+		);
+		if (prevRow) {
+			const prevEmbedBtn = prevRow.querySelector(".embed-button.is-open");
+			if (prevEmbedBtn) {
+				// Manually close without triggering audio fallback
+				if (playerState.embeddedPlayers[previousTrackId]) {
+					playerState.embeddedPlayers[previousTrackId].destroy();
+					delete playerState.embeddedPlayers[previousTrackId];
+				}
+				const container = prevRow.querySelector(".youtube-embed-container");
+				if (container) {
+					container.innerHTML = "";
+					container.style.display = "none";
+				}
+				prevEmbedBtn.classList.remove("is-open");
+				prevEmbedBtn.textContent = "Embed";
+			}
+		}
+	}
+
+	// Update current track
+	playerState.currentTrackId = prevTrack.id;
+	playerState.isEmbedded = false;
+
+	// Update UI
+	document.getElementById("player-thumbnail").src = prevTrack.imageUrl;
+	document.getElementById("player-title").textContent = prevTrack.title;
+	document.getElementById("player-producer").textContent = prevTrack.producer;
+	updatePlayerUI();
+
+	// If was in embed mode, open embed for new track
+	if (wasInEmbedMode) {
+		setTimeout(() => {
+			const prevRow = document.querySelector(
+				`tr[data-track-id="${prevTrack.id}"]`,
+			);
+			if (prevRow) {
+				const prevEmbedBtn = prevRow.querySelector(".embed-button");
+				if (prevEmbedBtn && !prevEmbedBtn.classList.contains("is-open")) {
+					prevEmbedBtn.click();
+				}
+			}
+		}, 300);
+	} else {
+		// Audio mode - load the track in hidden player
+		const videoId = getYouTubeVideoId(prevTrack.link);
+		if (ytPlayer && videoId) {
+			ytPlayer.loadVideoById(videoId);
+		} else if (videoId) {
+			// Create player if it doesn't exist
+			ytPlayer = new YT.Player("youtube-player-container", {
+				height: "180",
+				width: "320",
+				videoId: videoId,
+				playerVars: {
+					playsinline: 1,
+					autoplay: 1,
+				},
+				events: {
+					onReady: (event) => {
+						event.target.setVolume(playerState.volume);
+						if (playerState.isMuted) event.target.mute();
+					},
+					onStateChange: onPlayerStateChange,
+					onError: onPlayerError,
+				},
+			});
+		}
+	}
 }
 
 function togglePlayPause() {
-	if (playerState.isPlaying) {
-		ytPlayer.pauseVideo();
-	} else {
-		ytPlayer.playVideo();
+	const currentTrackId = playerState.currentTrackId;
+
+	// If there's an embedded player for the current track, control that
+	if (playerState.isEmbedded && playerState.embeddedPlayers[currentTrackId]) {
+		if (playerState.isPlaying) {
+			playerState.embeddedPlayers[currentTrackId].pauseVideo();
+		} else {
+			playerState.embeddedPlayers[currentTrackId].playVideo();
+		}
+	} else if (ytPlayer) {
+		// Control the hidden audio player
+		if (playerState.isPlaying) {
+			ytPlayer.pauseVideo();
+		} else {
+			ytPlayer.playVideo();
+		}
 	}
 }
 
@@ -202,54 +409,85 @@ function stopPlayer() {
 	if (ytPlayer) {
 		ytPlayer.stopVideo();
 	}
+
+	// Close all embeds
+	for (const trackId in playerState.embeddedPlayers) {
+		if (playerState.embeddedPlayers[trackId]) {
+			playerState.embeddedPlayers[trackId].destroy();
+			delete playerState.embeddedPlayers[trackId];
+		}
+	}
+
+	document.querySelectorAll(".embed-button.is-open").forEach((btn) => {
+		btn.classList.remove("is-open");
+		btn.textContent = "Embed";
+		const container = btn
+			.closest("td")
+			.querySelector(".youtube-embed-container");
+		if (container) {
+			container.innerHTML = "";
+			container.style.display = "none";
+		}
+	});
+
 	playerState.isPlaying = false;
 	playerState.currentTrackId = null;
+	playerState.isEmbedded = false;
 	stopProgressUpdater();
-	musicPlayerEl.classList.add('music-player-hidden');
+	musicPlayerEl.classList.add("music-player-hidden");
 	progressBar.value = 0;
-	currentTimeEl.textContent = '0:00';
-	durationEl.textContent = '0:00';
+	currentTimeEl.textContent = "0:00";
+	durationEl.textContent = "0:00";
 	updatePlayerUI();
 }
 
 function updatePlayerUI() {
-	playPauseBtn.innerHTML = playerState.isPlaying ? '&#10074;&#10074;' : '&#9654;';
+	playPauseBtn.innerHTML = playerState.isPlaying
+		? "&#10074;&#10074;"
+		: "&#9654;";
 
 	// Clear previous highlights and icons
-	document.querySelectorAll('tr.is-playing').forEach(row => row.classList.remove('is-playing'));
-	document.querySelectorAll('.track-play-button.is-playing').forEach(btn => {
-		btn.innerHTML = '&#9654;'; // Reset to play icon
-		btn.classList.remove('is-playing');
+	document.querySelectorAll("tr.is-playing").forEach((row) => {
+		row.classList.remove("is-playing");
+	});
+	document.querySelectorAll(".track-play-button.is-playing").forEach((btn) => {
+		btn.innerHTML = "&#9654;"; // Reset to play icon
+		btn.classList.remove("is-playing");
 	});
 
 	if (playerState.currentTrackId !== null) {
-		const track = playerState.playlist.find(t => t.id === playerState.currentTrackId);
+		const track = playerState.playlist.find(
+			(t) => t.id === playerState.currentTrackId,
+		);
 		if (track) {
 			// Update player info
-			document.getElementById('player-thumbnail').src = track.imageUrl;
-			document.getElementById('player-title').textContent = track.title;
-			document.getElementById('player-producer').textContent = track.producer;
+			document.getElementById("player-thumbnail").src = track.imageUrl;
+			document.getElementById("player-title").textContent = track.title;
+			document.getElementById("player-producer").textContent = track.producer;
 
 			// Find the corresponding row and play button in the table
-			const trackRow = document.querySelector(`tr[data-track-id="${track.id}"]`);
+			const trackRow = document.querySelector(
+				`tr[data-track-id="${track.id}"]`,
+			);
 			if (trackRow) {
 				// Highlight the row
-				trackRow.classList.add('is-playing');
+				trackRow.classList.add("is-playing");
 
 				// Update the play/pause icon in the table
-				const playButtonInRow = trackRow.querySelector('.track-play-button');
+				const playButtonInRow = trackRow.querySelector(".track-play-button");
 				if (playButtonInRow) {
-					playButtonInRow.innerHTML = playerState.isPlaying ? '&#10074;&#10074;' : '&#9654;';
-					playButtonInRow.classList.add('is-playing');
+					playButtonInRow.innerHTML = playerState.isPlaying
+						? "&#10074;&#10074;"
+						: "&#9654;";
+					playButtonInRow.classList.add("is-playing");
 				}
 			}
 		}
 	}
 
 	volumeSlider.value = playerState.isMuted ? 0 : playerState.volume;
-	muteBtn.innerHTML = playerState.isMuted ? '&#128263;' : '&#128266;';
+	muteBtn.innerHTML = playerState.isMuted ? "&#128263;" : "&#128266;";
 }
-
 
 const updatePaginationUI = (pagination) => {
 	const pageLinks = document.getElementById("page-links");
@@ -610,11 +848,11 @@ document.addEventListener("DOMContentLoaded", () => {
 		renderRatingChart();
 	});
 
-	playPauseBtn.addEventListener('click', togglePlayPause);
-	nextBtn.addEventListener('click', playNextTrack);
-	prevBtn.addEventListener('click', playPrevTrack);
-	stopBtn.addEventListener('click', stopPlayer);
-	volumeSlider.addEventListener('input', (e) => {
+	playPauseBtn.addEventListener("click", togglePlayPause);
+	nextBtn.addEventListener("click", playNextTrack);
+	prevBtn.addEventListener("click", playPrevTrack);
+	stopBtn.addEventListener("click", stopPlayer);
+	volumeSlider.addEventListener("input", (e) => {
 		playerState.volume = e.target.value;
 		playerState.isMuted = false;
 		if (ytPlayer) {
@@ -623,7 +861,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 		updatePlayerUI();
 	});
-	muteBtn.addEventListener('click', () => {
+	muteBtn.addEventListener("click", () => {
 		playerState.isMuted = !playerState.isMuted;
 		if (ytPlayer) {
 			if (playerState.isMuted) {
@@ -634,7 +872,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 		updatePlayerUI();
 	});
-
 
 	const scrapeButton = document.getElementById("scrape-button");
 	if (scrapeButton) {
@@ -740,7 +977,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			return; // Stop processing other click handlers
 		}
 
-		const trackPlayBtn = e.target.closest('.track-play-button');
+		const trackPlayBtn = e.target.closest(".track-play-button");
 		if (trackPlayBtn) {
 			e.preventDefault();
 			const trackId = trackPlayBtn.dataset.trackId;
@@ -752,31 +989,34 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
 
 			// Otherwise, play the new track
-			const tableBody = trackPlayBtn.closest('tbody');
+			const tableBody = trackPlayBtn.closest("tbody");
 			if (!tableBody) return;
 
 			// Build the playlist only if it hasn't been built for this view yet.
 			if (!tableBody.dataset.playlistBuilt) {
-				const allRows = Array.from(tableBody.querySelectorAll('tr'));
-				playerState.playlist = allRows.map(row => {
-					const titleLink = row.querySelector('td:nth-child(3) a');
-					const producerLink = row.querySelector('td:nth-child(4) a');
-					const playButton = row.querySelector('.track-play-button');
-					return {
-						id: playButton ? playButton.dataset.trackId : null,
-						title: titleLink ? titleLink.textContent.trim() : 'Unknown',
-						producer: producerLink ? producerLink.textContent.trim() : 'Unknown',
-						link: titleLink ? titleLink.href : '',
-						imageUrl: row.querySelector('td:nth-child(1) img').src,
-					};
-				}).filter(t => t.id);
-				tableBody.dataset.playlistBuilt = 'true';
+				const allRows = Array.from(tableBody.querySelectorAll("tr"));
+				playerState.playlist = allRows
+					.map((row) => {
+						const titleLink = row.querySelector("td:nth-child(3) a");
+						const producerLink = row.querySelector("td:nth-child(4) a");
+						const playButton = row.querySelector(".track-play-button");
+						return {
+							id: playButton ? playButton.dataset.trackId : null,
+							title: titleLink ? titleLink.textContent.trim() : "Unknown",
+							producer: producerLink
+								? producerLink.textContent.trim()
+								: "Unknown",
+							link: titleLink ? titleLink.href : "",
+							imageUrl: row.querySelector("td:nth-child(1) img").src,
+						};
+					})
+					.filter((t) => t.id);
+				tableBody.dataset.playlistBuilt = "true";
 			}
 
 			loadAndPlayTrack(trackId);
 			return;
 		}
-
 
 		const clearBtn = e.target.closest(".clear-input-btn");
 		if (clearBtn) {
@@ -935,30 +1175,210 @@ document.addEventListener("DOMContentLoaded", () => {
 		const embedButton = e.target.closest(".embed-button");
 		if (embedButton) {
 			e.preventDefault();
+			const trackRow = embedButton.closest("tr");
+			const trackId = trackRow.dataset.trackId;
 			const parentCell = embedButton.closest("td");
 			const videoContainer = parentCell.querySelector(
 				".youtube-embed-container",
 			);
+
+			// Close any other open embeds (except the currently playing one)
+			document.querySelectorAll(".embed-button.is-open").forEach((openBtn) => {
+				const otherRow = openBtn.closest("tr");
+				const otherTrackId = otherRow.dataset.trackId;
+				if (
+					openBtn !== embedButton &&
+					otherTrackId !== playerState.currentTrackId
+				) {
+					openBtn.click();
+				}
+			});
+
+			// Build playlist if needed
+			const tableBody = trackRow.closest("tbody");
+			if (!tableBody.dataset.playlistBuilt) {
+				const allRows = Array.from(tableBody.querySelectorAll("tr"));
+				playerState.playlist = allRows
+					.map((row) => {
+						const titleLink = row.querySelector("td:nth-child(3) a");
+						const producerLink = row.querySelector("td:nth-child(4) a");
+						const playButton = row.querySelector(".track-play-button");
+						return {
+							id: playButton ? playButton.dataset.trackId : null,
+							title: titleLink ? titleLink.textContent.trim() : "Unknown",
+							producer: producerLink
+								? producerLink.textContent.trim()
+								: "Unknown",
+							link: titleLink ? titleLink.href : "",
+							imageUrl: row.querySelector("td:nth-child(1) img").src,
+						};
+					})
+					.filter((t) => t.id);
+				tableBody.dataset.playlistBuilt = "true";
+			}
+
+			// Show the player menu
+			musicPlayerEl.classList.remove("music-player-hidden");
+
+			// If this track isn't loaded yet, set it as current
+			if (playerState.currentTrackId !== trackId) {
+				playerState.currentTrackId = trackId;
+				const track = playerState.playlist.find((t) => t.id === trackId);
+				if (track) {
+					document.getElementById("player-thumbnail").src = track.imageUrl;
+					document.getElementById("player-title").textContent = track.title;
+					document.getElementById("player-producer").textContent =
+						track.producer;
+				}
+			}
+
 			if (embedButton.classList.toggle("is-open")) {
 				const videoId = getYouTubeVideoId(embedButton.dataset.youtubeUrl);
 				if (!videoId) {
 					window.open(embedButton.dataset.youtubeUrl, "_blank");
 					return;
 				}
-				const iframe = document.createElement("iframe");
-				iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-				iframe.frameBorder = "0";
-				iframe.allow =
-					"accelerometer; autoplay; clipboard-write; encrypted-media";
-				iframe.allowFullscreen = true;
-				videoContainer.innerHTML = "";
-				videoContainer.appendChild(iframe);
+
+				// Create embedded player div
+				const embedId = `embedded-player-${trackId}`;
+				videoContainer.innerHTML = `<div id="${embedId}" style="width: 100%; aspect-ratio: 16/9;"></div>`;
 				videoContainer.style.display = "block";
 				embedButton.textContent = "Close";
+
+				// Create YouTube player for this embed
+				playerState.embeddedPlayers[trackId] = new YT.Player(embedId, {
+					height: "100%",
+					width: "100%",
+					videoId: videoId,
+					playerVars: {
+						playsinline: 1,
+						autoplay: 1,
+					},
+					events: {
+						onReady: (event) => {
+							// If this is the currently playing track, sync it
+							if (trackId === playerState.currentTrackId && ytPlayer) {
+								const currentTime = ytPlayer.getCurrentTime();
+								const wasPlaying = playerState.isPlaying;
+
+								ytPlayer.pauseVideo();
+								event.target.seekTo(currentTime, true);
+								if (wasPlaying) {
+									event.target.playVideo();
+								}
+								playerState.isEmbedded = true;
+							}
+						},
+						onStateChange: (event) => {
+							if (event.data === YT.PlayerState.PLAYING) {
+								// This embed started playing
+								if (trackId !== playerState.currentTrackId) {
+									// Switch to this track
+									playerState.currentTrackId = trackId;
+									const track = playerState.playlist.find(
+										(t) => t.id === trackId,
+									);
+									if (track) {
+										document.getElementById("player-thumbnail").src =
+											track.imageUrl;
+										document.getElementById("player-title").textContent =
+											track.title;
+										document.getElementById("player-producer").textContent =
+											track.producer;
+									}
+								}
+
+								// Pause the hidden player
+								if (ytPlayer) ytPlayer.pauseVideo();
+
+								// Pause other embeds
+								for (const id in playerState.embeddedPlayers) {
+									if (id !== trackId && playerState.embeddedPlayers[id]) {
+										playerState.embeddedPlayers[id].pauseVideo();
+									}
+								}
+
+								playerState.isPlaying = true;
+								playerState.isEmbedded = true;
+								startProgressUpdater();
+								updatePlayerUI();
+							} else if (event.data === YT.PlayerState.PAUSED) {
+								if (trackId === playerState.currentTrackId) {
+									playerState.isPlaying = false;
+									stopProgressUpdater();
+									updatePlayerUI();
+								}
+							} else if (event.data === YT.PlayerState.ENDED) {
+								if (trackId === playerState.currentTrackId) {
+									playNextTrack();
+								}
+							}
+						},
+						onError: onPlayerError,
+					},
+				});
 			} else {
+				// Closing embed
+				const wasPlaying =
+					playerState.isPlaying && trackId === playerState.currentTrackId;
+				let currentTime = 0;
+
+				if (playerState.embeddedPlayers[trackId]) {
+					try {
+						currentTime =
+							playerState.embeddedPlayers[trackId].getCurrentTime() || 0;
+					} catch {
+						currentTime = 0;
+					}
+					playerState.embeddedPlayers[trackId].destroy();
+					delete playerState.embeddedPlayers[trackId];
+				}
+
 				videoContainer.innerHTML = "";
 				videoContainer.style.display = "none";
 				embedButton.textContent = "Embed";
+
+				// If this was the playing track, switch back to hidden audio player
+				if (trackId === playerState.currentTrackId) {
+					playerState.isEmbedded = false;
+
+					// Always ensure the hidden player exists and continues playback
+					if (!ytPlayer) {
+						// Create the hidden player if it doesn't exist
+						const track = playerState.playlist.find((t) => t.id === trackId);
+						if (track) {
+							const videoId = getYouTubeVideoId(track.link);
+							ytPlayer = new YT.Player("youtube-player-container", {
+								height: "180",
+								width: "320",
+								videoId: videoId,
+								playerVars: {
+									playsinline: 1,
+									autoplay: wasPlaying ? 1 : 0,
+								},
+								events: {
+									onReady: (event) => {
+										event.target.setVolume(playerState.volume);
+										if (playerState.isMuted) event.target.mute();
+										if (currentTime > 0) {
+											event.target.seekTo(currentTime, true);
+										}
+									},
+									onStateChange: onPlayerStateChange,
+									onError: onPlayerError,
+								},
+							});
+						}
+					} else {
+						// Player exists, just seek and play/pause
+						ytPlayer.seekTo(currentTime, true);
+						if (wasPlaying) {
+							ytPlayer.playVideo();
+						} else {
+							ytPlayer.pauseVideo();
+						}
+					}
+				}
 			}
 			return;
 		}
@@ -1091,61 +1511,49 @@ document.addEventListener("DOMContentLoaded", () => {
 		true,
 	);
 
-	document.getElementById('player-jump-to-btn').addEventListener('click', () => {
-		if (playerState.currentTrackId) {
-			const trackRow = document.querySelector(`tr.is-playing`);
-			if (trackRow) {
-				trackRow.scrollIntoView({
-					behavior: 'smooth',
-					block: 'center'
-				});
+	document
+		.getElementById("player-jump-to-btn")
+		.addEventListener("click", () => {
+			if (playerState.currentTrackId) {
+				const trackRow = document.querySelector(`tr.is-playing`);
+				if (trackRow) {
+					trackRow.scrollIntoView({
+						behavior: "smooth",
+						block: "center",
+					});
+				}
 			}
-		}
-	});
+		});
 
-	progressBar.addEventListener('input', () => {
+	progressBar.addEventListener("input", () => {
 		stopProgressUpdater(); // Pause updates while user is scrubbing
 	});
-	progressBar.addEventListener('change', () => {
+	progressBar.addEventListener("change", () => {
 		seekVideo(); // Seek when user releases the slider
 		startProgressUpdater(); // Resume updates
 	});
 
-	document.getElementById('player-embed-btn').addEventListener('click', () => {
-		if (!playerState.currentTrackId || !ytPlayer) return;
+	document.getElementById("player-embed-btn").addEventListener("click", () => {
+		if (!playerState.currentTrackId) return;
 
-		// 1. Find the corresponding row and its original embed button
-		const trackRow = document.querySelector(`tr[data-track-id="${playerState.currentTrackId}"]`);
+		const trackRow = document.querySelector(
+			`tr[data-track-id="${playerState.currentTrackId}"]`,
+		);
 		if (!trackRow) return;
-		const embedButton = trackRow.querySelector('.embed-button');
-		if (!embedButton) return;
 
-		// 2. Scroll to the row so the user sees the action
-		trackRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		const embedBtn = trackRow.querySelector(".embed-button");
+		if (!embedBtn) return;
 
-		// 3. Get the current time from the floating player
-		const currentTime = ytPlayer.getCurrentTime();
+		const isCurrentlyEmbedded = embedBtn.classList.contains("is-open");
 
-		// 4. "Click" the embed button to create the iframe, but only if it's not already open
-		if (!embedButton.classList.contains('is-open')) {
-			embedButton.click();
+		if (isCurrentlyEmbedded) {
+			// Close the embed (switch to audio mode)
+			embedBtn.click();
+		} else {
+			// Open the embed (switch to video mode)
+			embedBtn.click();
+			// Scroll to the track
+			trackRow.scrollIntoView({ behavior: "smooth", block: "center" });
 		}
-
-		// 5. Find the newly created iframe and modify its src to include the start time
-		// We need to wait a brief moment for the iframe to be added to the DOM.
-		setTimeout(() => {
-			const videoContainer = trackRow.querySelector('.youtube-embed-container');
-			const iframe = videoContainer.querySelector('iframe');
-			if (iframe) {
-				const currentSrc = new URL(iframe.src);
-				// Add the 'start' parameter to the URL
-				currentSrc.searchParams.set('start', Math.floor(currentTime));
-				iframe.src = currentSrc.toString();
-			}
-		}, 100); // 100ms is a safe delay
-
-		// 6. Pause the floating player since playback is now happening in the embed
-		ytPlayer.pauseVideo();
 	});
-
 });

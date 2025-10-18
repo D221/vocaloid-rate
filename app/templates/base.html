@@ -39,9 +39,9 @@
                 <p id="player-title" class="truncate-cell"></p>
                 <p id="player-producer" class="truncate-cell"></p>
             </div>
+            <button id="player-jump-to-btn" title="Jump to playing track">Jump to track</button>
+            <button id="player-embed-btn" title="Toggle Video/Audio Mode">Video</button>
         </div>
-        <button id="player-jump-to-btn" title="Jump to playing track">&#8681;</button>
-        <button id="player-embed-btn" title="Embed video at current time">&#10531;</button>
         <div class="player-controls">
             <button id="player-prev-btn" title="Previous Track">&#9664;&#9664;</button>
             <button id="player-play-pause-btn" title="Play/Pause">&#9654;</button>
@@ -58,7 +58,6 @@
             <input type="range" id="player-volume-slider" min="0" max="100" value="100" title="Volume">
         </div>
     </div>
-    <div id="youtube-player-container"></div>
 
 
     {% block content %}{% endblock %}
@@ -67,6 +66,8 @@
         <p>Data sourced from <a href="https://vocaloard.injpok.tokyo/en/" target="_blank">Vocaloard</a>. This is an
             independent project.</p>
     </footer>
+
+    <div id="youtube-player-container" style="position: fixed; top: -9999px; left: -9999px;"></div>
 
     <script src="https://www.youtube.com/iframe_api"></script>
 
