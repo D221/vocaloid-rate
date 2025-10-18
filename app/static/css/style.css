@@ -1168,3 +1168,25 @@ tr.is-playing {
 	display: block !important;
 	padding: 10px 0;
 }
+
+#player-shuffle-btn,
+#player-repeat-btn {
+	font-size: 1.2em;
+	padding: 0;
+	width: 35px;
+	height: 35px;
+	border: none; /* Make them look less prominent than play/pause */
+	opacity: 0.7;
+}
+
+#player-shuffle-btn:hover,
+#player-repeat-btn:hover {
+	opacity: 1;
+}
+
+/* Style for when the buttons are active */
+#player-shuffle-btn.active,
+#player-repeat-btn.active {
+	opacity: 1;
+	color: var(--link-color);
+}

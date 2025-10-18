@@ -71,9 +71,12 @@ const playerState = {
 	isPlaying: false,
 	currentTrackId: null,
 	playlist: [],
+	shuffledPlaylist: [],
 	volume: 100,
 	isMuted: false,
 	isEmbedded: false,
+	isShuffle: false,
+	isRepeat: false,
 	embeddedPlayers: {}, // Track embedded players by track ID
 };
 
@@ -106,8 +109,18 @@ function onPlayerStateChange(event) {
 		stopProgressUpdater();
 		updatePlayerUI();
 	} else if (event.data === YT.PlayerState.ENDED) {
-		// When the song ends, automatically play the next one
-		playNextTrack();
+		if (playerState.isRepeat) {
+			// If repeat is on, just seek to the beginning and play again
+			const activePlayer =
+				playerState.embeddedPlayers[playerState.currentTrackId] || ytPlayer;
+			if (activePlayer) {
+				activePlayer.seekTo(0, true);
+				activePlayer.playVideo();
+			}
+		} else {
+			// Otherwise, play the next track
+			playNextTrack();
+		}
 	}
 }
 
@@ -210,16 +223,20 @@ function loadAndPlayTrack(trackId) {
 }
 
 function playNextTrack() {
+	const activePlaylist = playerState.isShuffle
+		? playerState.shuffledPlaylist
+		: playerState.playlist;
+
 	const wasInEmbedMode = playerState.isEmbedded;
 	const previousTrackId = playerState.currentTrackId;
 
-	const currentIndex = playerState.playlist.findIndex(
+	const currentIndex = activePlaylist.findIndex(
 		(t) => t.id === playerState.currentTrackId,
 	);
 	if (currentIndex === -1) return;
 
-	const nextIndex = (currentIndex + 1) % playerState.playlist.length;
-	const nextTrack = playerState.playlist[nextIndex];
+	const nextIndex = (currentIndex + 1) % activePlaylist.length;
+	const nextTrack = activePlaylist[nextIndex];
 
 	// Close previous embed if in embed mode
 	if (wasInEmbedMode && previousTrackId) {
@@ -297,18 +314,21 @@ function playNextTrack() {
 }
 
 function playPrevTrack() {
+	const activePlaylist = playerState.isShuffle
+		? playerState.shuffledPlaylist
+		: playerState.playlist;
+
 	const wasInEmbedMode = playerState.isEmbedded;
 	const previousTrackId = playerState.currentTrackId;
 
-	const currentIndex = playerState.playlist.findIndex(
+	const currentIndex = activePlaylist.findIndex(
 		(t) => t.id === playerState.currentTrackId,
 	);
 	if (currentIndex === -1) return;
 
 	const prevIndex =
-		(currentIndex - 1 + playerState.playlist.length) %
-		playerState.playlist.length;
-	const prevTrack = playerState.playlist[prevIndex];
+		(currentIndex - 1 + activePlaylist.length) % activePlaylist.length;
+	const prevTrack = activePlaylist[prevIndex];
 
 	// Close previous embed if in embed mode
 	if (wasInEmbedMode && previousTrackId) {
@@ -439,6 +459,19 @@ function stopPlayer() {
 	currentTimeEl.textContent = "0:00";
 	durationEl.textContent = "0:00";
 	updatePlayerUI();
+}
+
+function generateShuffledPlaylist() {
+	// Create a shuffled copy of the main playlist
+	playerState.shuffledPlaylist = [...playerState.playlist];
+	// Fisher-Yates shuffle algorithm
+	for (let i = playerState.shuffledPlaylist.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[playerState.shuffledPlaylist[i], playerState.shuffledPlaylist[j]] = [
+			playerState.shuffledPlaylist[j],
+			playerState.shuffledPlaylist[i],
+		];
+	}
 }
 
 function updatePlayerUI() {
@@ -982,6 +1015,30 @@ document.addEventListener("DOMContentLoaded", () => {
 			e.preventDefault();
 			const trackId = trackPlayBtn.dataset.trackId;
 
+			const currentTrackInPlaylist = playerState.playlist.find(
+				(t) => t.id === playerState.currentTrackId,
+			);
+			if (playerState.playlist.length === 0 || !currentTrackInPlaylist) {
+				const allRows = Array.from(
+					document.getElementById("tracks-table-body").querySelectorAll("tr"),
+				);
+				playerState.playlist = allRows
+					.map((row) => ({
+						id: row.dataset.trackId,
+						title:
+							row.querySelector("td:nth-child(3) a")?.textContent.trim() ||
+							"Unknown",
+						producer:
+							row.querySelector("td:nth-child(4) a")?.textContent.trim() ||
+							"Unknown",
+						link: row.querySelector("td:nth-child(3) a")?.href || "",
+						imageUrl: row.querySelector("td:nth-child(1) img")?.src,
+					}))
+					.filter((t) => t.id);
+				// If shuffle is on, immediately create a shuffled version
+				if (playerState.isShuffle) generateShuffledPlaylist();
+			}
+
 			// If the clicked track is the one already playing, just toggle play/pause
 			if (trackId === playerState.currentTrackId) {
 				togglePlayPause();
@@ -1510,6 +1567,25 @@ document.addEventListener("DOMContentLoaded", () => {
 		},
 		true,
 	);
+
+	document
+		.getElementById("player-repeat-btn")
+		.addEventListener("click", (e) => {
+			playerState.isRepeat = !playerState.isRepeat;
+			e.currentTarget.classList.toggle("active", playerState.isRepeat);
+		});
+
+	document
+		.getElementById("player-shuffle-btn")
+		.addEventListener("click", (e) => {
+			playerState.isShuffle = !playerState.isShuffle;
+			e.currentTarget.classList.toggle("active", playerState.isShuffle);
+
+			if (playerState.isShuffle) {
+				generateShuffledPlaylist();
+			}
+			// When shuffle is turned off, the next/prev buttons will just revert to the original playlist.
+		});
 
 	document
 		.getElementById("player-jump-to-btn")
