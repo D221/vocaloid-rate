@@ -28,12 +28,18 @@ const getYouTubeVideoId = (url) => {
 	return url.match(regex)?.[1] || null;
 };
 
-// --- CORE LOGIC FUNCTIONS ---
 const formatAllDates = () => {
 	document.querySelectorAll(".published-date").forEach((td) => {
 		if (td.dataset.date) td.textContent = timeAgo(td.dataset.date);
 	});
 };
+
+const formatTime = (seconds) => {
+	const minutes = Math.floor(seconds / 60);
+	const secs = Math.floor(seconds % 60);
+	return `${minutes}:${secs.toString().padStart(2, '0')}`;
+};
+
 const updateSortIndicators = () => {
 	const params = new URLSearchParams(window.location.search);
 	let sortBy = params.get("sort_by");
@@ -59,7 +65,192 @@ const updateSortIndicators = () => {
 let currentPage = 1;
 let currentLimit = localStorage.getItem("defaultPageSize") || "all";
 
-// --- NEW AND IMPROVED PAGINATION UI FUNCTION ---
+let ytPlayer;
+let progressUpdateInterval;
+const playerState = {
+	isPlaying: false,
+	currentTrackId: null,
+	playlist: [],
+	volume: 100,
+	isMuted: false,
+};
+
+const musicPlayerEl = document.getElementById("music-player");
+const playPauseBtn = document.getElementById("player-play-pause-btn");
+const nextBtn = document.getElementById("player-next-btn");
+const prevBtn = document.getElementById("player-prev-btn");
+const stopBtn = document.getElementById("player-stop-btn");
+const volumeSlider = document.getElementById("player-volume-slider");
+const muteBtn = document.getElementById("player-mute-btn");
+const progressBar = document.getElementById('player-progress-bar');
+const currentTimeEl = document.getElementById('player-current-time');
+const durationEl = document.getElementById('player-duration');
+
+function onYouTubeIframeAPIReady() {
+	ytPlayer = new YT.Player('youtube-player-container', {
+		height: '390',
+		width: '640',
+		playerVars: {
+			'playsinline': 1
+		},
+		events: {
+			'onReady': onPlayerReady,
+			'onStateChange': onPlayerStateChange,
+			'onError': onPlayerError
+		}
+	});
+}
+
+function onPlayerReady(event) {
+	ytPlayer.setVolume(playerState.volume);
+	if (playerState.isMuted) {
+		ytPlayer.mute();
+	}
+}
+
+function onPlayerError(event) {
+    console.error("YouTube Player Error:", event.data);
+	alert(`Could not play this video.\n\nThis might be because the uploader has disabled embedding, or the video is private/deleted.\n(Error code: ${event.data})`);
+	playNextTrack(); // Attempt to play the next track
+}
+
+
+function onPlayerStateChange(event) {
+	if (event.data === YT.PlayerState.PLAYING) {
+		playerState.isPlaying = true;
+		startProgressUpdater();
+		updatePlayerUI();
+	} else if (event.data === YT.PlayerState.PAUSED) {
+		playerState.isPlaying = false;
+		startProgressUpdater();
+		updatePlayerUI();
+	} else if (event.data === YT.PlayerState.ENDED) {
+		// When the song ends, automatically play the next one
+		playNextTrack();
+	}
+}
+
+function startProgressUpdater() {
+	stopProgressUpdater(); // Clear any existing timer
+	progressUpdateInterval = setInterval(() => {
+		if (ytPlayer && playerState.isPlaying) {
+			const currentTime = ytPlayer.getCurrentTime();
+			const duration = ytPlayer.getDuration();
+			if (duration > 0) {
+				progressBar.value = (currentTime / duration) * 100;
+				currentTimeEl.textContent = formatTime(currentTime);
+				durationEl.textContent = formatTime(duration);
+			}
+		}
+	}, 250); // Update 4 times a second
+}
+
+function stopProgressUpdater() {
+	clearInterval(progressUpdateInterval);
+}
+
+function seekVideo() {
+	const duration = ytPlayer.getDuration();
+	if (duration > 0) {
+		const seekToTime = (progressBar.value / 100) * duration;
+		ytPlayer.seekTo(seekToTime, true);
+	}
+}
+
+
+function loadAndPlayTrack(trackId) {
+	const trackIndex = playerState.playlist.findIndex(t => t.id === trackId);
+	if (trackIndex === -1) return;
+
+	playerState.currentTrackId = trackId;
+	const track = playerState.playlist[trackIndex];
+	const videoId = getYouTubeVideoId(track.link);
+
+	if (videoId && ytPlayer) {
+		ytPlayer.loadVideoById(videoId);
+		playerState.isPlaying = true;
+		updatePlayerUI();
+		musicPlayerEl.classList.remove('music-player-hidden');
+	}
+}
+
+function playNextTrack() {
+	const currentIndex = playerState.playlist.findIndex(t => t.id === playerState.currentTrackId);
+	if (currentIndex === -1) return;
+	const nextIndex = (currentIndex + 1) % playerState.playlist.length;
+	const nextTrack = playerState.playlist[nextIndex];
+	loadAndPlayTrack(nextTrack.id);
+}
+
+function playPrevTrack() {
+	const currentIndex = playerState.playlist.findIndex(t => t.id === playerState.currentTrackId);
+	if (currentIndex === -1) return;
+	const prevIndex = (currentIndex - 1 + playerState.playlist.length) % playerState.playlist.length;
+	const prevTrack = playerState.playlist[prevIndex];
+	loadAndPlayTrack(prevTrack.id);
+}
+
+function togglePlayPause() {
+	if (playerState.isPlaying) {
+		ytPlayer.pauseVideo();
+	} else {
+		ytPlayer.playVideo();
+	}
+}
+
+function stopPlayer() {
+	if (ytPlayer) {
+		ytPlayer.stopVideo();
+	}
+	playerState.isPlaying = false;
+	playerState.currentTrackId = null;
+	stopProgressUpdater();
+	musicPlayerEl.classList.add('music-player-hidden');
+	progressBar.value = 0;
+	currentTimeEl.textContent = '0:00';
+	durationEl.textContent = '0:00';
+	updatePlayerUI();
+}
+
+function updatePlayerUI() {
+	playPauseBtn.innerHTML = playerState.isPlaying ? '&#10074;&#10074;' : '&#9654;';
+
+	// Clear previous highlights and icons
+	document.querySelectorAll('tr.is-playing').forEach(row => row.classList.remove('is-playing'));
+	document.querySelectorAll('.track-play-button.is-playing').forEach(btn => {
+		btn.innerHTML = '&#9654;'; // Reset to play icon
+		btn.classList.remove('is-playing');
+	});
+
+	if (playerState.currentTrackId !== null) {
+		const track = playerState.playlist.find(t => t.id === playerState.currentTrackId);
+		if (track) {
+			// Update player info
+			document.getElementById('player-thumbnail').src = track.imageUrl;
+			document.getElementById('player-title').textContent = track.title;
+			document.getElementById('player-producer').textContent = track.producer;
+
+			// Find the corresponding row and play button in the table
+			const trackRow = document.querySelector(`tr[data-track-id="${track.id}"]`);
+			if (trackRow) {
+				// Highlight the row
+				trackRow.classList.add('is-playing');
+
+				// Update the play/pause icon in the table
+				const playButtonInRow = trackRow.querySelector('.track-play-button');
+				if (playButtonInRow) {
+					playButtonInRow.innerHTML = playerState.isPlaying ? '&#10074;&#10074;' : '&#9654;';
+					playButtonInRow.classList.add('is-playing');
+				}
+			}
+		}
+	}
+
+	volumeSlider.value = playerState.isMuted ? 0 : playerState.volume;
+	muteBtn.innerHTML = playerState.isMuted ? '&#128263;' : '&#128266;';
+}
+
+
 const updatePaginationUI = (pagination) => {
 	const pageLinks = document.getElementById("page-links");
 	const prevButton = document.getElementById("prev-page-btn");
@@ -347,7 +538,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	}
 
-	// --- BUG FIX: CONSOLIDATED PAGINATION EVENT LISTENER ---
 	const paginationContainer = document.getElementById("pagination-container");
 	if (paginationContainer) {
 		paginationContainer.addEventListener("click", (e) => {
@@ -417,8 +607,34 @@ document.addEventListener("DOMContentLoaded", () => {
 		doc.dataset.theme = newTheme;
 		localStorage.setItem("theme", newTheme);
 		updateThemeUI();
-		renderRatingChart(); // Re-render the chart with new theme colors
+		renderRatingChart();
 	});
+
+	playPauseBtn.addEventListener('click', togglePlayPause);
+	nextBtn.addEventListener('click', playNextTrack);
+	prevBtn.addEventListener('click', playPrevTrack);
+	stopBtn.addEventListener('click', stopPlayer);
+	volumeSlider.addEventListener('input', (e) => {
+		playerState.volume = e.target.value;
+		playerState.isMuted = false;
+		if (ytPlayer) {
+			ytPlayer.setVolume(playerState.volume);
+			ytPlayer.unMute();
+		}
+		updatePlayerUI();
+	});
+	muteBtn.addEventListener('click', () => {
+		playerState.isMuted = !playerState.isMuted;
+		if (ytPlayer) {
+			if (playerState.isMuted) {
+				ytPlayer.mute();
+			} else {
+				ytPlayer.unMute();
+			}
+		}
+		updatePlayerUI();
+	});
+
 
 	const scrapeButton = document.getElementById("scrape-button");
 	if (scrapeButton) {
@@ -523,6 +739,45 @@ document.addEventListener("DOMContentLoaded", () => {
 			});
 			return; // Stop processing other click handlers
 		}
+
+		const trackPlayBtn = e.target.closest('.track-play-button');
+		if (trackPlayBtn) {
+			e.preventDefault();
+			const trackId = trackPlayBtn.dataset.trackId;
+
+			// If the clicked track is the one already playing, just toggle play/pause
+			if (trackId === playerState.currentTrackId) {
+				togglePlayPause();
+				return;
+			}
+
+			// Otherwise, play the new track
+			const tableBody = trackPlayBtn.closest('tbody');
+			if (!tableBody) return;
+
+			// Build the playlist only if it hasn't been built for this view yet.
+			if (!tableBody.dataset.playlistBuilt) {
+				const allRows = Array.from(tableBody.querySelectorAll('tr'));
+				playerState.playlist = allRows.map(row => {
+					const titleLink = row.querySelector('td:nth-child(3) a');
+					const producerLink = row.querySelector('td:nth-child(4) a');
+					const playButton = row.querySelector('.track-play-button');
+					return {
+						id: playButton ? playButton.dataset.trackId : null,
+						title: titleLink ? titleLink.textContent.trim() : 'Unknown',
+						producer: producerLink ? producerLink.textContent.trim() : 'Unknown',
+						link: titleLink ? titleLink.href : '',
+						imageUrl: row.querySelector('td:nth-child(1) img').src,
+					};
+				}).filter(t => t.id);
+				tableBody.dataset.playlistBuilt = 'true';
+			}
+
+			loadAndPlayTrack(trackId);
+			return;
+		}
+
+
 		const clearBtn = e.target.closest(".clear-input-btn");
 		if (clearBtn) {
 			const wrapper = clearBtn.parentElement;
@@ -835,4 +1090,62 @@ document.addEventListener("DOMContentLoaded", () => {
 		},
 		true,
 	);
+
+	document.getElementById('player-jump-to-btn').addEventListener('click', () => {
+		if (playerState.currentTrackId) {
+			const trackRow = document.querySelector(`tr.is-playing`);
+			if (trackRow) {
+				trackRow.scrollIntoView({
+					behavior: 'smooth',
+					block: 'center'
+				});
+			}
+		}
+	});
+
+	progressBar.addEventListener('input', () => {
+		stopProgressUpdater(); // Pause updates while user is scrubbing
+	});
+	progressBar.addEventListener('change', () => {
+		seekVideo(); // Seek when user releases the slider
+		startProgressUpdater(); // Resume updates
+	});
+
+	document.getElementById('player-embed-btn').addEventListener('click', () => {
+		if (!playerState.currentTrackId || !ytPlayer) return;
+
+		// 1. Find the corresponding row and its original embed button
+		const trackRow = document.querySelector(`tr[data-track-id="${playerState.currentTrackId}"]`);
+		if (!trackRow) return;
+		const embedButton = trackRow.querySelector('.embed-button');
+		if (!embedButton) return;
+
+		// 2. Scroll to the row so the user sees the action
+		trackRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+		// 3. Get the current time from the floating player
+		const currentTime = ytPlayer.getCurrentTime();
+
+		// 4. "Click" the embed button to create the iframe, but only if it's not already open
+		if (!embedButton.classList.contains('is-open')) {
+			embedButton.click();
+		}
+
+		// 5. Find the newly created iframe and modify its src to include the start time
+		// We need to wait a brief moment for the iframe to be added to the DOM.
+		setTimeout(() => {
+			const videoContainer = trackRow.querySelector('.youtube-embed-container');
+			const iframe = videoContainer.querySelector('iframe');
+			if (iframe) {
+				const currentSrc = new URL(iframe.src);
+				// Add the 'start' parameter to the URL
+				currentSrc.searchParams.set('start', Math.floor(currentTime));
+				iframe.src = currentSrc.toString();
+			}
+		}, 100); // 100ms is a safe delay
+
+		// 6. Pause the floating player since playback is now happening in the embed
+		ytPlayer.pauseVideo();
+	});
+
 });

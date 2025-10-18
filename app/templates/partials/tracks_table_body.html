@@ -15,6 +15,7 @@
 
         <!-- Action Buttons -->
         <div class="action-buttons">
+            <button class="track-play-button" data-track-id="{{ track.id }}" title="Play this track">&#9654;</button>
             <button class="embed-button" data-youtube-url="{{ track.link }}">Embed</button>
             <button class="vocadb-button" data-title-en="{{ track.title }}"
                 data-producer="{{ track.producer.split(',')[0].strip() }}" {% if track.title_jp

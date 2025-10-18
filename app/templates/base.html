@@ -32,6 +32,34 @@
 </head>
 
 <body>
+    <div id="music-player" class="music-player-hidden">
+        <div class="player-track-info">
+            <img id="player-thumbnail" src="" alt="Track thumbnail">
+            <div>
+                <p id="player-title" class="truncate-cell"></p>
+                <p id="player-producer" class="truncate-cell"></p>
+            </div>
+        </div>
+        <button id="player-jump-to-btn" title="Jump to playing track">&#8681;</button>
+        <button id="player-embed-btn" title="Embed video at current time">&#10531;</button>
+        <div class="player-controls">
+            <button id="player-prev-btn" title="Previous Track">&#9664;&#9664;</button>
+            <button id="player-play-pause-btn" title="Play/Pause">&#9654;</button>
+            <div class="player-progress-container">
+                <span id="player-current-time">0:00</span>
+                <input type="range" id="player-progress-bar" min="0" max="100" value="0" step="0.1">
+                <span id="player-duration">0:00</span>
+            </div>
+            <button id="player-next-btn" title="Next Track">&#9654;&#9654;</button>
+            <button id="player-stop-btn" title="Stop Player">&times;</button>
+        </div>
+        <div class="player-volume-controls">
+            <button id="player-mute-btn" title="Mute/Unmute">&#128266;</button>
+            <input type="range" id="player-volume-slider" min="0" max="100" value="100" title="Volume">
+        </div>
+    </div>
+    <div id="youtube-player-container"></div>
+
 
     {% block content %}{% endblock %}
 
@@ -39,6 +67,8 @@
         <p>Data sourced from <a href="https://vocaloard.injpok.tokyo/en/" target="_blank">Vocaloard</a>. This is an
             independent project.</p>
     </footer>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
 
 </body>
 
