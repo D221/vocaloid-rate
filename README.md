@@ -103,7 +103,8 @@ docker compose up -d
 ```
 
 ### 3. Access the Application:
-   - Open your web browser and navigate to `http://127.0.0.1:8000`.
+   - Open your web browser and navigate to `http://localhost:8000`.
+   > **Important:** You must use `localhost` and not the IP address `127.0.0.1`. Using the IP address will cause the YouTube video embeds to fail due to API security policies.
 
 ### 4. How to Stop:
 ```bash
