@@ -219,6 +219,11 @@ function loadAndPlayTrack(trackId) {
 		return;
 	}
 
+	// Immediately reset the progress bar and timers to zero
+	progressBar.value = 0;
+	currentTimeEl.textContent = "0:00";
+	durationEl.textContent = "0:00";
+
 	// Show the player UI immediately
 	musicPlayerEl.classList.remove("music-player-hidden");
 	updatePlayerUI();
@@ -292,6 +297,11 @@ function playNextTrack() {
 	// Update current track
 	playerState.currentTrackId = nextTrack.id;
 	playerState.isEmbedded = false;
+
+	// Immediately reset the progress bar and timers to zero
+	progressBar.value = 0;
+	currentTimeEl.textContent = "0:00";
+	durationEl.textContent = "0:00";
 
 	// Update UI
 	document.getElementById("player-thumbnail").src = nextTrack.imageUrl;
@@ -384,6 +394,11 @@ function playPrevTrack() {
 	// Update current track
 	playerState.currentTrackId = prevTrack.id;
 	playerState.isEmbedded = false;
+
+	// Immediately reset the progress bar and timers to zero
+	progressBar.value = 0;
+	currentTimeEl.textContent = "0:00";
+	durationEl.textContent = "0:00";
 
 	// Update UI
 	document.getElementById("player-thumbnail").src = prevTrack.imageUrl;
