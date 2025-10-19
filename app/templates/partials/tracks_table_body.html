@@ -77,11 +77,12 @@
                 <textarea name="notes" class="notes-input"
                     style="display: none;">{{ track.ratings[0].notes if has_note }}</textarea>
             </div>
-            {% if track.ratings %}
-            <button type="submit" formmethod="post" formaction="/rate/{{ track.id }}/delete"
-                class="clear-rating-btn">X</button>
-            {% endif %}
         </form>
+        {% if track.ratings %}
+        <form action="/rate/{{ track.id }}/delete" method="post" class="delete-rating-form">
+            <button type="submit" class="clear-rating-btn">X</button>
+        </form>
+        {% endif %}
     </td>
 </tr>
 {% endfor %}
