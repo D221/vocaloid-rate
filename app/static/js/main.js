@@ -1095,6 +1095,40 @@ document.addEventListener("DOMContentLoaded", () => {
 			return;
 		}
 
+		const clearAllBtn = e.target.closest("a.clear.button");
+		if (clearAllBtn) {
+			e.preventDefault(); // This is the most important line: it stops the link from reloading the page.
+
+			// 1. Manually and explicitly clear the form to its default state
+			const filterForm = document.getElementById("filter-form");
+			if (filterForm) {
+				// Set text/search inputs to empty
+				filterForm.querySelectorAll('input[type="text"], input[type="search"]')
+					.forEach((input) => {
+						input.value = "";
+						toggleClearButton(input);
+					});
+
+				// Set radio buttons to the default ('ranked') if they exist
+				const rankRanked = filterForm.querySelector("#rank_ranked");
+				if (rankRanked) rankRanked.checked = true;
+
+				// Set select dropdowns to the default ('all') if they exist
+				const ratedFilter = filterForm.querySelector('#rated_filter');
+				if (ratedFilter) ratedFilter.value = 'all';
+			}
+
+			// 2. Clear the URL parameters
+			const cleanPath = window.location.pathname; // This gets "/" or "/rated_tracks"
+			window.history.pushState({}, "", cleanPath);
+
+			// 3. Reset pagination and fetch the default track list without a page reload
+			currentPage = 1;
+			updateTracks(); // This re-uses your existing logic and preserves player state
+			return; // Stop processing other click handlers
+		}
+
+
 		const ratingContainer = e.target.closest(".star-rating-container");
 		if (ratingContainer) {
 			const rating = updateStarPreview(ratingContainer, e);
