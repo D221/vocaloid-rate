@@ -85,7 +85,7 @@ const buildPlaylistFromDOM = () => {
 				imageUrl: imageUrl,
 			};
 		})
-		.filter((t) => t && t.id); // Filter out any nulls
+		.filter((t) => t?.id); // Filter out any nulls
 
 	if (playerState.isShuffle) {
 		generateShuffledPlaylist();
@@ -677,25 +677,27 @@ const updateTracks = async () => {
 			paramsForFetch.set("limit", currentLimit);
 		}
 
-
 		// Step 2: Create a separate parameter list for the browser URL bar, removing defaults.
 		const paramsForBrowser = new URLSearchParams(paramsForFetch.toString());
 
 		// Remove default filters
-		if (paramsForBrowser.get("rank_filter") === "ranked") paramsForBrowser.delete("rank_filter");
-		if (paramsForBrowser.get("rated_filter") === "all") paramsForBrowser.delete("rated_filter");
+		if (paramsForBrowser.get("rank_filter") === "ranked")
+			paramsForBrowser.delete("rank_filter");
+		if (paramsForBrowser.get("rated_filter") === "all")
+			paramsForBrowser.delete("rated_filter");
 
 		// Remove default pagination, correctly checking against localStorage
 		const defaultPageSize = localStorage.getItem("defaultPageSize") || "all";
-		if (paramsForBrowser.get("limit") === defaultPageSize) paramsForBrowser.delete("limit");
+		if (paramsForBrowser.get("limit") === defaultPageSize)
+			paramsForBrowser.delete("limit");
 		if (paramsForBrowser.get("page") === "1") paramsForBrowser.delete("page");
-
 
 		// Step 3: Construct the final URLs
 		const fetchUrl = `${baseUrl}?${paramsForFetch.toString()}`;
 		const browserQueryString = paramsForBrowser.toString();
-		const browserUrl = browserQueryString ? `${window.location.pathname}?${browserQueryString}` : window.location.pathname;
-
+		const browserUrl = browserQueryString
+			? `${window.location.pathname}?${browserQueryString}`
+			: window.location.pathname;
 
 		try {
 			const response = await fetch(fetchUrl);
