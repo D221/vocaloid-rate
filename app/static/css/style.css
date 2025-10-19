@@ -791,7 +791,7 @@ input[type="search"]::-webkit-search-results-decoration {
 	table th,
 	table td {
 		min-width: initial;
-		width: auto;
+		width: auto !important;
 	}
 
 	/* --- 2. Basic Card Setup --- */
@@ -936,66 +936,131 @@ input[type="search"]::-webkit-search-results-decoration {
 	border-top-color: #eee;
 }
 
+/* --- Styles for elements outside the player --- */
+tr.is-playing {
+	background-color: var(--header-bg-color);
+	box-shadow: inset 4px 0 0 0 var(--link-color);
+}
+
+#youtube-player-container {
+	position: absolute;
+	top: -9999px;
+	left: -9999px;
+	width: 320px;
+	height: 180px;
+	z-index: -1;
+}
+
+/* --- Music Player Base Styles --- */
 #music-player {
 	position: fixed;
 	bottom: 0;
 	left: 0;
-	width: 100%;
+	right: 0;
 	background-color: var(--card-bg-color);
 	border-top: 2px solid var(--border-color);
 	box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.2);
-	display: flex;
+	display: grid;
+	/* THIS IS THE KEY: Left/Right columns take minimum space, Center takes all the rest. */
+	grid-template-columns: 1fr auto 1fr;
 	align-items: center;
-	justify-content: space-between;
-	padding: 10px 20px;
+	padding: 8px 20px;
+	gap: 20px;
 	z-index: 1000;
 	transform: translateY(100%);
 	transition: transform 0.3s ease-in-out;
 }
-
 #music-player:not(.music-player-hidden) {
 	transform: translateY(0);
 }
 
+/* --- Placing the Grid Items --- */
 .player-track-info {
+	grid-column: 1;
+}
+.player-controls {
+	grid-column: 2;
+}
+.player-volume-controls {
+	grid-column: 3;
+}
+
+/* --- Left & Right Sections --- */
+.player-track-info,
+.player-volume-controls {
 	display: flex;
 	align-items: center;
 	gap: 15px;
-	width: 30%;
-	min-width: 200px;
 }
-
 #player-thumbnail {
 	width: 50px;
 	height: 50px;
 	object-fit: cover;
 	border-radius: 4px;
+	flex-shrink: 0;
 }
-
+.player-track-info div {
+	overflow: hidden;
+	flex-grow: 1;
+}
 .player-track-info div p {
 	margin: 0;
 	font-size: 0.9em;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
-
 #player-title {
 	font-weight: bold;
 }
 
+/* --- Main Controls (Center - Stacked Layout) --- */
 .player-controls {
 	display: flex;
+	flex-direction: column;
 	align-items: center;
-	gap: 15px;
+	gap: 4px;
+	/* Use viewport width for a responsive size */
+	width: 45vw;
+	max-width: 700px;
+	min-width: 350px;
 }
 
-.player-controls button,
-.player-volume-controls button {
+.player-progress-container {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%; /* This now works perfectly because the parent column is flexible */
+}
+#player-progress-bar {
+	flex-grow: 1;
+	cursor: pointer;
+}
+#player-current-time,
+#player-duration {
+	font-size: 0.8em;
+	min-width: 35px;
+	text-align: center;
+}
+.player-buttons-container {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 15px;
+}
+#player-volume-slider {
+	width: 100px;
+}
+
+/* --- UNIFIED BUTTON STYLES --- */
+.player-btn {
 	background: none;
-	border: 2px solid var(--text-color);
+	border: none;
 	border-radius: 50%;
 	width: 40px;
 	height: 40px;
 	cursor: pointer;
-	font-size: 1em;
+	font-size: 1.2em;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -1003,144 +1068,53 @@ input[type="search"]::-webkit-search-results-decoration {
 	transition:
 		background-color 0.2s,
 		color 0.2s;
+	flex-shrink: 0;
+	padding: 0;
 }
-
-.player-controls button:hover,
-.player-volume-controls button:hover {
+.player-btn:hover {
 	background-color: var(--header-bg-color);
 }
-
-#player-play-pause-btn {
+.player-btn--primary {
 	width: 50px;
 	height: 50px;
 	font-size: 1.5em;
 	background-color: var(--link-color);
-	border-color: var(--link-color);
 	color: white;
 }
-[data-theme="dark"] #player-play-pause-btn {
+[data-theme="dark"] .player-btn--primary {
 	color: var(--bg-color);
 }
-
-.player-volume-controls {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	width: 30%;
-	justify-content: flex-end;
+.player-btn--primary:hover {
+	background-color: var(--link-active-color);
 }
 
-#player-volume-slider {
-	width: 100px;
-}
-
-.track-play-button {
-	background: none;
-	border: none;
+.player-btn--close {
 	font-size: 1.5em;
-	cursor: pointer;
-	color: var(--link-color);
-	padding: 0 8px;
-	vertical-align: middle;
+}
+.player-btn--close:hover {
+	color: #dc3545; /* Red on hover */
 }
 
-.player-controls {
-	display: flex;
-	align-items: center;
-	gap: 15px;
-	flex-grow: 1; /* Allow the controls to take up available space */
-	justify-content: center;
-}
-
-.player-progress-container {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	width: 100%;
-	max-width: 500px; /* Give the progress bar a max width */
-}
-
-#player-progress-bar {
-	flex-grow: 1;
-	cursor: pointer;
-}
-
-#player-current-time,
-#player-duration {
-	font-size: 0.8em;
-	min-width: 35px; /* Prevent layout shift as numbers change */
-	text-align: center;
-}
-
-.player-track-info,
-.player-volume-controls {
-	width: 25%; /* Adjust widths to make room for progress bar */
-	flex-shrink: 0;
-}
-
-tr.is-playing {
-	background-color: var(--header-bg-color);
-	box-shadow: inset 4px 0 0 0 var(--link-color); /* A nice left-border highlight */
-}
-
-#player-jump-to-btn,
-#player-embed-btn {
-	background: none;
-	border: 1px solid var(--border-color);
-	border-radius: 4px;
-	cursor: pointer;
-	padding: 0 8px;
-	margin-left: 10px;
-	color: var(--text-color);
-}
-#player-jump-to-btn:hover,
-#player-embed-btn:hover {
-	background-color: var(--header-bg-color);
-}
-
-#youtube-player-container {
-	position: absolute; /* Position relative to its parent */
-	/* By default, it's hidden off-screen */
-	top: -9999px;
-	left: -9999px;
-	width: 320px; /* A small default size is fine */
-	height: 180px;
-	z-index: -1; /* Keep it behind other elements */
-}
-
-/* This is the new style for when the player is "popped out" into the track list */
-.youtube-embed-container.is-active-player {
-	display: block; /* Force it to be visible */
-	padding: 10px 0;
-}
-
-#youtube-player-api-target {
-	/* This is where the YouTube API will initially build the player */
-	position: fixed;
-	/* Move it off-screen but keep it active and in the DOM */
-	top: -9999px;
-	left: -9999px;
-	z-index: -1;
-}
-
-#player-shuffle-btn,
-#player-repeat-btn {
-	font-size: 1.2em;
-	padding: 0;
-	width: 35px;
-	height: 35px;
-	border: none; /* Make them look less prominent than play/pause */
-	opacity: 0.7;
-}
-
-#player-shuffle-btn:hover,
-#player-repeat-btn:hover {
-	opacity: 1;
-}
-
-/* Style for when the buttons are active */
 #player-shuffle-btn.active,
 #player-repeat-btn.active {
 	opacity: 1;
 	color: var(--link-color);
+}
+
+.player-track-info {
+	justify-self: start; /* Pins this to the far left */
+}
+.player-volume-controls {
+	justify-self: end; /* Pins this to the far right */
+}
+
+/* --- NEW: Mobile Responsive Player --- */
+@media (max-width: 850px) {
+	.player-track-info,
+	.player-volume-controls {
+		display: none; /* Hide track info and volume controls on smaller screens */
+	}
+	#music-player {
+		grid-template-columns: auto;
+	}
 }

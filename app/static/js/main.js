@@ -503,15 +503,15 @@ function generateShuffledPlaylist() {
 
 function updatePlayerUI() {
 	playPauseBtn.innerHTML = playerState.isPlaying
-		? "&#10074;&#10074;"
-		: "&#9654;";
+		? '<i class="fa-solid fa-pause"></i>'
+		: '<i class="fa-solid fa-play"></i>';
 
 	// Clear previous highlights and icons
 	document.querySelectorAll("tr.is-playing").forEach((row) => {
 		row.classList.remove("is-playing");
 	});
 	document.querySelectorAll(".track-play-button.is-playing").forEach((btn) => {
-		btn.innerHTML = "&#9654;"; // Reset to play icon
+		btn.innerHTML = '<i class="fa-solid fa-play"></i>'; // Reset to play icon
 		btn.classList.remove("is-playing");
 	});
 
@@ -537,8 +537,8 @@ function updatePlayerUI() {
 				const playButtonInRow = trackRow.querySelector(".track-play-button");
 				if (playButtonInRow) {
 					playButtonInRow.innerHTML = playerState.isPlaying
-						? "&#10074;&#10074;"
-						: "&#9654;";
+						? '<i class="fa-solid fa-pause"></i>'
+						: '<i class="fa-solid fa-play"></i>';
 					playButtonInRow.classList.add("is-playing");
 				}
 			}
@@ -546,7 +546,9 @@ function updatePlayerUI() {
 	}
 
 	volumeSlider.value = playerState.isMuted ? 0 : playerState.volume;
-	muteBtn.innerHTML = playerState.isMuted ? "&#128263;" : "&#128266;";
+	muteBtn.innerHTML = playerState.isMuted
+		? '<i class="fa-solid fa-volume-xmark"></i>'
+		: '<i class="fa-solid fa-volume-high"></i>';
 }
 
 const updatePaginationUI = (pagination) => {
