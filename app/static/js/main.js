@@ -1390,18 +1390,26 @@ document.addEventListener("DOMContentLoaded", () => {
 					},
 					events: {
 						onReady: (event) => {
-							// If this is the currently playing track, sync it
-							if (trackId === playerState.currentTrackId && ytPlayer) {
-								const currentTime = ytPlayer.getCurrentTime();
-								const wasPlaying = playerState.isPlaying;
+							// Get the video ID of the hidden player, if it exists and has a video
+							const hiddenPlayerVideoId = ytPlayer
+								? getYouTubeVideoId(ytPlayer.getVideoUrl())
+								: null;
 
-								ytPlayer.pauseVideo();
+							// Only sync time if this new embed is for the EXACT same video
+							// that is currently paused in the hidden audio player.
+							if (videoId === hiddenPlayerVideoId) {
+								const currentTime = ytPlayer.getCurrentTime();
+								ytPlayer.pauseVideo(); // Pause the hidden player
 								event.target.seekTo(currentTime, true);
-								if (wasPlaying) {
+								// Only play if the original was playing.
+								if (playerState.isPlaying) {
 									event.target.playVideo();
 								}
-								playerState.isEmbedded = true;
 							}
+
+							// If it's not the same video (like in playNext), this block is skipped,
+							// and the new video correctly starts from 0 because of autoplay:1.
+							playerState.isEmbedded = true;
 						},
 						onStateChange: (event) => {
 							if (event.data === YT.PlayerState.PLAYING) {
