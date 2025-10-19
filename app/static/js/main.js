@@ -289,7 +289,6 @@ function playNextTrack() {
 					container.style.display = "none";
 				}
 				prevEmbedBtn.classList.remove("is-open");
-				prevEmbedBtn.textContent = "Embed";
 			}
 		}
 	}
@@ -386,7 +385,6 @@ function playPrevTrack() {
 					container.style.display = "none";
 				}
 				prevEmbedBtn.classList.remove("is-open");
-				prevEmbedBtn.textContent = "Embed";
 			}
 		}
 	}
@@ -482,7 +480,6 @@ function stopPlayer() {
 
 	document.querySelectorAll(".embed-button.is-open").forEach((btn) => {
 		btn.classList.remove("is-open");
-		btn.textContent = "Embed";
 		const container = btn
 			.closest("td")
 			.querySelector(".youtube-embed-container");
@@ -775,15 +772,12 @@ const updateActiveFilterDisplay = () => {
 
 const updateThemeUI = () => {
 	const themeIcon = document.getElementById("theme-icon");
-	const themeText = document.getElementById("theme-text");
-	if (!themeIcon || !themeText) return;
+	if (!themeIcon) return;
 	const currentTheme = document.documentElement.dataset.theme;
 	if (currentTheme === "dark") {
-		themeIcon.innerHTML = "&#9728;";
-		themeText.textContent = "Light Mode";
+		themeIcon.innerHTML = '<i class="fa-solid fa-sun"></i>';
 	} else {
-		themeIcon.innerHTML = "&#127769;";
-		themeText.textContent = "Dark Mode";
+		themeIcon.innerHTML = '<i class="fa-solid fa-moon"></i>';
 	}
 };
 const toggleClearButton = (input) => {
@@ -1301,7 +1295,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				.catch(() => alert("Could not search VocaDB for this producer."))
 				.finally(() => {
 					vocadbProducerBtn.disabled = false;
-					vocadbProducerBtn.textContent = "VDB";
+					vocadbProducerBtn.textContent = "VocaDB";
 				});
 			return;
 		}
@@ -1377,7 +1371,6 @@ document.addEventListener("DOMContentLoaded", () => {
 				const embedId = `embedded-player-${trackId}`;
 				videoContainer.innerHTML = `<div id="${embedId}" style="width: 100%; aspect-ratio: 16/9;"></div>`;
 				videoContainer.style.display = "block";
-				embedButton.textContent = "Close";
 
 				// Create YouTube player for this embed
 				playerState.embeddedPlayers[trackId] = new YT.Player(embedId, {
@@ -1478,7 +1471,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 				videoContainer.innerHTML = "";
 				videoContainer.style.display = "none";
-				embedButton.textContent = "Embed";
 
 				// If this was the playing track, switch back to hidden audio player
 				if (trackId === playerState.currentTrackId) {
