@@ -66,7 +66,7 @@
         <a href="/" class="clear button">Clear</a>
 
         <label for="limit_filter">Per Page:</label>
-        <select id="limit_filter">
+        <select name="limit" id="limit_filter">
             <option value="all" {% if pagination.limit=='all' %}selected{% endif %}>All</option>
             <option value="25" {% if pagination.limit=='25' %}selected{% endif %}>25</option>
             <option value="50" {% if pagination.limit=='50' %}selected{% endif %}>50</option>

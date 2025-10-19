@@ -647,7 +647,6 @@ const updateTracks = async () => {
 	const baseUrl = tableBody.dataset.updateUrl;
 	if (!baseUrl) return;
 
-	// Remember what was playing before we update the table.
 	const currentTrackIdBeforeUpdate = playerState.currentTrackId;
 
 	let skeletonTimer;
@@ -656,25 +655,47 @@ const updateTracks = async () => {
 		tableBody.innerHTML = skeletonRowHTML.repeat(10);
 	};
 	skeletonTimer = setTimeout(showSkeleton, 250);
+
 	if (filterForm) {
-		// 1. Start with all parameters currently in the URL's query string.
-		//    This correctly preserves state from programmatic changes (like chart clicks).
-		const newParams = new URLSearchParams(window.location.search);
+		// Start with the current URL's params to preserve sorting state.
+		const paramsForFetch = new URLSearchParams(window.location.search);
 
-		// 2. Let the current state of the form fields OVERRIDE the parameters.
-		//    This ensures user input is always prioritized.
 		const formData = new FormData(filterForm);
+
+		// Step 1: Update the fetch parameters with the latest form data.
+		// .set() will overwrite existing keys, which is what we want.
 		formData.forEach((value, key) => {
-			newParams.set(key, value);
+			if (value) {
+				paramsForFetch.set(key, value);
+			} else {
+				// If a form field is cleared, remove it from the params.
+				paramsForFetch.delete(key);
+			}
 		});
+		paramsForFetch.set("page", currentPage);
+		if (!paramsForFetch.has("limit")) {
+			paramsForFetch.set("limit", currentLimit);
+		}
 
-		// 3. Finally, set the pagination state from our JS variables.
-		newParams.set("page", currentPage);
-		newParams.set("limit", currentLimit);
 
-		// --- END OF FIX ---
-		const fetchUrl = `${baseUrl}?${newParams.toString()}`;
-		const browserUrl = `${window.location.pathname}?${newParams.toString()}`;
+		// Step 2: Create a separate parameter list for the browser URL bar, removing defaults.
+		const paramsForBrowser = new URLSearchParams(paramsForFetch.toString());
+
+		// Remove default filters
+		if (paramsForBrowser.get("rank_filter") === "ranked") paramsForBrowser.delete("rank_filter");
+		if (paramsForBrowser.get("rated_filter") === "all") paramsForBrowser.delete("rated_filter");
+
+		// Remove default pagination, correctly checking against localStorage
+		const defaultPageSize = localStorage.getItem("defaultPageSize") || "all";
+		if (paramsForBrowser.get("limit") === defaultPageSize) paramsForBrowser.delete("limit");
+		if (paramsForBrowser.get("page") === "1") paramsForBrowser.delete("page");
+
+
+		// Step 3: Construct the final URLs
+		const fetchUrl = `${baseUrl}?${paramsForFetch.toString()}`;
+		const browserQueryString = paramsForBrowser.toString();
+		const browserUrl = browserQueryString ? `${window.location.pathname}?${browserQueryString}` : window.location.pathname;
+
 
 		try {
 			const response = await fetch(fetchUrl);
@@ -682,21 +703,16 @@ const updateTracks = async () => {
 			const data = await response.json();
 			tableBody.innerHTML = data.table_body_html;
 
-			// Immediately rebuild the playlist from the new DOM.
 			buildPlaylistFromDOM();
 
-			// Check if the previously playing track is still in the new list.
 			if (currentTrackIdBeforeUpdate) {
 				const isTrackStillVisible = playerState.playlist.some(
 					(t) => t.id === currentTrackIdBeforeUpdate,
 				);
 
 				if (isTrackStillVisible) {
-					// If it is, just update the UI to re-apply highlights.
-					// The player's internal state (ID, isPlaying) is still valid.
 					updatePlayerUI();
 				} else {
-					// If it was filtered out, stop the player completely.
 					stopPlayer();
 				}
 			}
@@ -1103,7 +1119,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			const filterForm = document.getElementById("filter-form");
 			if (filterForm) {
 				// Set text/search inputs to empty
-				filterForm.querySelectorAll('input[type="text"], input[type="search"]')
+				filterForm
+					.querySelectorAll('input[type="text"], input[type="search"]')
 					.forEach((input) => {
 						input.value = "";
 						toggleClearButton(input);
@@ -1114,8 +1131,8 @@ document.addEventListener("DOMContentLoaded", () => {
 				if (rankRanked) rankRanked.checked = true;
 
 				// Set select dropdowns to the default ('all') if they exist
-				const ratedFilter = filterForm.querySelector('#rated_filter');
-				if (ratedFilter) ratedFilter.value = 'all';
+				const ratedFilter = filterForm.querySelector("#rated_filter");
+				if (ratedFilter) ratedFilter.value = "all";
 			}
 
 			// 2. Clear the URL parameters
@@ -1127,7 +1144,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			updateTracks(); // This re-uses your existing logic and preserves player state
 			return; // Stop processing other click handlers
 		}
-
 
 		const ratingContainer = e.target.closest(".star-rating-container");
 		if (ratingContainer) {
