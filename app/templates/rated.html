@@ -120,12 +120,16 @@
         <thead id="tracks-table-head">
             <tr>
                 <th>Image</th>
-                <th><a href="/rated_tracks?sort_by=rank" data-sort="rank">Rank</a></th>
-                <th class="truncate-cell"><a href="/?sort_by=title" data-sort="title">Title</a></th>
-                <th class="truncate-cell"><a href="/?sort_by=producer" data-sort="producer">Producer</a></th>
-                <th class="truncate-cell"><a href="/?sort_by=voicebank" data-sort="voicebank">Voicebank</a></th>
-                <th><a href="/rated_tracks?sort_by=published_date" data-sort="published_date">Published</a></th>
-                <th><a href="/rated_tracks?sort_by=rating" data-sort="rating">My Rating</a></th>
+                <th><a href="{{ request.url.path }}?sort_by=rank" data-sort="rank">Rank</a></th>
+                <th class="truncate-cell"><a href="{{ request.url.path }}?sort_by=title" data-sort="title">Title</a>
+                </th>
+                <th class="truncate-cell"><a href="{{ request.url.path }}?sort_by=producer"
+                        data-sort="producer">Producer</a></th>
+                <th class="truncate-cell"><a href="{{ request.url.path }}?sort_by=voicebank"
+                        data-sort="voicebank">Voicebank</a></th>
+                <th><a href="{{ request.url.path }}?sort_by=published_date" data-sort="published_date">Published</a>
+                </th>
+                <th><a href="{{ request.url.path }}?sort_by=rating" data-sort="rating">My Rating</a></th>
             </tr>
         </thead>
         <tbody id="tracks-table-body" data-update-url="/_/rated_tracks_table_body">

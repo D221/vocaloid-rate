@@ -65,6 +65,33 @@ const updateSortIndicators = () => {
 let currentPage = 1;
 let currentLimit = localStorage.getItem("defaultPageSize") || "all";
 
+const buildPlaylistFromDOM = () => {
+	const tableBody = document.getElementById("tracks-table-body");
+	if (!tableBody) return;
+
+	const allRows = Array.from(tableBody.querySelectorAll("tr[data-track-id]"));
+	playerState.playlist = allRows
+		.map((row) => {
+			const titleLink = row.querySelector("td:nth-child(3) a");
+			const producerLink = row.querySelector("td:nth-child(4) a");
+			const playButton = row.querySelector(".track-play-button");
+			const imageUrl = row.querySelector("td:nth-child(1) img")?.src;
+			if (!playButton || !imageUrl) return null; // Skip skeleton rows
+			return {
+				id: playButton.dataset.trackId,
+				title: titleLink ? titleLink.textContent.trim() : "Unknown",
+				producer: producerLink ? producerLink.textContent.trim() : "Unknown",
+				link: titleLink ? titleLink.href : "",
+				imageUrl: imageUrl,
+			};
+		})
+		.filter((t) => t && t.id); // Filter out any nulls
+
+	if (playerState.isShuffle) {
+		generateShuffledPlaylist();
+	}
+};
+
 let ytPlayer;
 let progressUpdateInterval;
 const playerState = {
@@ -619,6 +646,10 @@ const updateTracks = async () => {
 	const filterForm = document.getElementById("filter-form");
 	const baseUrl = tableBody.dataset.updateUrl;
 	if (!baseUrl) return;
+
+	// Remember what was playing before we update the table.
+	const currentTrackIdBeforeUpdate = playerState.currentTrackId;
+
 	let skeletonTimer;
 	const showSkeleton = () => {
 		const skeletonRowHTML = `<tr class="skeleton-row"><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td></tr>`;
@@ -650,6 +681,26 @@ const updateTracks = async () => {
 			clearTimeout(skeletonTimer);
 			const data = await response.json();
 			tableBody.innerHTML = data.table_body_html;
+
+			// Immediately rebuild the playlist from the new DOM.
+			buildPlaylistFromDOM();
+
+			// Check if the previously playing track is still in the new list.
+			if (currentTrackIdBeforeUpdate) {
+				const isTrackStillVisible = playerState.playlist.some(
+					(t) => t.id === currentTrackIdBeforeUpdate,
+				);
+
+				if (isTrackStillVisible) {
+					// If it is, just update the UI to re-apply highlights.
+					// The player's internal state (ID, isPlaying) is still valid.
+					updatePlayerUI();
+				} else {
+					// If it was filtered out, stop the player completely.
+					stopPlayer();
+				}
+			}
+
 			updatePaginationUI(data.pagination);
 		} catch (error) {
 			clearTimeout(skeletonTimer);
@@ -1015,28 +1066,10 @@ document.addEventListener("DOMContentLoaded", () => {
 			e.preventDefault();
 			const trackId = trackPlayBtn.dataset.trackId;
 
-			const currentTrackInPlaylist = playerState.playlist.find(
-				(t) => t.id === playerState.currentTrackId,
-			);
-			if (playerState.playlist.length === 0 || !currentTrackInPlaylist) {
-				const allRows = Array.from(
-					document.getElementById("tracks-table-body").querySelectorAll("tr"),
-				);
-				playerState.playlist = allRows
-					.map((row) => ({
-						id: row.dataset.trackId,
-						title:
-							row.querySelector("td:nth-child(3) a")?.textContent.trim() ||
-							"Unknown",
-						producer:
-							row.querySelector("td:nth-child(4) a")?.textContent.trim() ||
-							"Unknown",
-						link: row.querySelector("td:nth-child(3) a")?.href || "",
-						imageUrl: row.querySelector("td:nth-child(1) img")?.src,
-					}))
-					.filter((t) => t.id);
-				// If shuffle is on, immediately create a shuffled version
-				if (playerState.isShuffle) generateShuffledPlaylist();
+			// The playlist is now built/rebuilt by updateTracks,
+			// so we just check if it's empty on the very first play action of a page load.
+			if (playerState.playlist.length === 0) {
+				buildPlaylistFromDOM();
 			}
 
 			// If the clicked track is the one already playing, just toggle play/pause
@@ -1046,31 +1079,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
 
 			// Otherwise, play the new track
-			const tableBody = trackPlayBtn.closest("tbody");
-			if (!tableBody) return;
-
-			// Build the playlist only if it hasn't been built for this view yet.
-			if (!tableBody.dataset.playlistBuilt) {
-				const allRows = Array.from(tableBody.querySelectorAll("tr"));
-				playerState.playlist = allRows
-					.map((row) => {
-						const titleLink = row.querySelector("td:nth-child(3) a");
-						const producerLink = row.querySelector("td:nth-child(4) a");
-						const playButton = row.querySelector(".track-play-button");
-						return {
-							id: playButton ? playButton.dataset.trackId : null,
-							title: titleLink ? titleLink.textContent.trim() : "Unknown",
-							producer: producerLink
-								? producerLink.textContent.trim()
-								: "Unknown",
-							link: titleLink ? titleLink.href : "",
-							imageUrl: row.querySelector("td:nth-child(1) img").src,
-						};
-					})
-					.filter((t) => t.id);
-				tableBody.dataset.playlistBuilt = "true";
-			}
-
 			loadAndPlayTrack(trackId);
 			return;
 		}
