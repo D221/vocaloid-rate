@@ -1,121 +1,225 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}Vocaloid Rater{% endblock %}</title>
 
     <!-- Favicon Links -->
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', path='apple-touch-icon.png') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='favicon-16x16.png') }}">
-    <link rel="manifest" href="{{ url_for('static', path='site.webmanifest') }}">
-    <link rel="shortcut icon" href="{{ url_for('static', path='favicon.ico') }}">
-    <meta name="msapplication-TileColor" content="#da532c">
-    <meta name="theme-color" content="#ffffff">
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="{{ url_for('static', path='apple-touch-icon.png') }}"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="{{ url_for('static', path='favicon-32x32.png') }}"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="{{ url_for('static', path='favicon-16x16.png') }}"
+    />
+    <link
+      rel="manifest"
+      href="{{ url_for('static', path='site.webmanifest') }}"
+    />
+    <link
+      rel="shortcut icon"
+      href="{{ url_for('static', path='favicon.ico') }}"
+    />
+    <meta name="msapplication-TileColor" content="#da532c" />
+    <meta name="theme-color" content="#ffffff" />
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
-        integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+      integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
 
-    <link rel="stylesheet" href="{{ url_for('static', path='css/app.css')}}" />
+    <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}" />
     <script>
-        // Apply theme immediately to prevent flashing
-        (function () {
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme) {
-                document.documentElement.dataset.theme = savedTheme;
-            } else {
-                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                document.documentElement.dataset.theme = prefersDark ? 'dark' : 'light';
-            }
-        })();
+      // Apply theme immediately to prevent flashing
+      (function () {
+        const savedTheme = localStorage.getItem("theme");
+        if (savedTheme) {
+          document.documentElement.dataset.theme = savedTheme;
+        } else {
+          const prefersDark =
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches;
+          document.documentElement.dataset.theme = prefersDark
+            ? "dark"
+            : "light";
+        }
+      })();
     </script>
     {% block head_extra %}{% endblock %}
-</head>
+  </head>
 
-<body class="font-sans m-4 bg-background text-foreground transition-colors duration-300">
-    <div id="music-player"
-        class="hidden fixed bottom-0 left-0 right-0 border-t-2 border-border shadow-md grid-cols-[1fr auto 1fr] items-center py-2 px-5 gap-5 z-[1000] bg-background">
-        <!-- Left Column: Track Info -->
-        <div class="justify-self-start hidden md:flex items-center gap-4 col-1">
-            <img id="player-thumbnail" class="w-12 h-12 object-cover rounded shrink-0" src="" alt="Track thumbnail">
-            <div class="overflow-hidden grow">
-                <p id="player-title"
-                    class="font-bold max-w-64 m-0 text-[0.9em] whitespace-nowrap overflow-hidden overflow-ellipsis"></p>
-                <p id="player-producer"
-                    class="max-w-64 m-0 text-[0.9em] whitespace-nowrap overflow-hidden overflow-ellipsis"></p>
-            </div>
-            <!-- UPDATED: Reverted to cleaner icon-only buttons -->
-            <button id="player-jump-to-btn"
-                class="bg-transparent border-0 rounded-full w-10 h-10 cursor-pointer text-xl flex items-center justify-center transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover shrink-0 p-0"
-                title="Jump to playing track">
-                <i class="fa-solid fa-arrow-up"></i>
-            </button>
-            <button id="player-embed-btn"
-                class="bg-transparent border-0 rounded-full w-10 h-10 cursor-pointer text-xl flex items-center justify-center transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover shrink-0 p-0"
-                title="Toggle Video/Audio Mode">
-                <i class="fa-solid fa-tv"></i>
-            </button>
+  <body
+    class="m-4 bg-background font-sans text-foreground transition-colors duration-300"
+  >
+    <div
+      id="music-player"
+      class="fixed right-0 bottom-0 left-0 z-[1000] hidden h-24 border-t-2 border-border bg-background px-5 shadow-md"
+    >
+      <div class="flex items-center justify-between">
+        <!-- Left Column -->
+        <div class="hidden items-center gap-4 md:flex">
+          <img
+            id="player-thumbnail"
+            class="h-12 w-12 shrink-0 rounded object-cover"
+            src=""
+            alt="Track thumbnail"
+          />
+          <div class="grow overflow-hidden">
+            <p
+              id="player-title"
+              class="m-0 max-w-64 overflow-hidden text-[0.9em] font-bold overflow-ellipsis whitespace-nowrap"
+            ></p>
+            <p
+              id="player-producer"
+              class="m-0 max-w-64 overflow-hidden text-[0.9em] overflow-ellipsis whitespace-nowrap"
+            ></p>
+          </div>
+          <button
+            id="player-jump-to-btn"
+            class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-xl transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover"
+            title="Jump to playing track"
+          >
+            <i class="fa-solid fa-arrow-up"></i>
+          </button>
+          <button
+            id="player-embed-btn"
+            class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-xl transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover"
+            title="Toggle Video/Audio Mode"
+          >
+            <i class="fa-solid fa-tv"></i>
+          </button>
         </div>
 
-        <!-- Center Column: Main Controls -->
+        <!-- Right Column -->
+        <div class="hidden items-center gap-4 md:flex">
+          <button
+            id="player-mute-btn"
+            class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-xl transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover"
+            title="Mute/Unmute"
+          >
+            <i class="fa-solid fa-volume-high"></i>
+          </button>
+          <input
+            type="range"
+            id="player-volume-slider"
+            min="0"
+            max="100"
+            value="100"
+            title="Volume"
+            class="w-24"
+          />
+          <button
+            id="player-stop-btn"
+            class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-2xl transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover"
+            title="Close Player"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Middle Column -->
+      <div
+        class="pointer-events-none absolute inset-x-0 top-0 bottom-0 flex flex-col items-center justify-center"
+      >
         <div
-            class="justify-self-center flex flex-col items-center gap-1 w-[45vw] max-w-[700px] min-w-[350px] col-1 md:col-2">
-            <div class="flex items-center gap-2 w-full">
-                <span class="text-[0.8em] min-w-9 text-center" id="player-current-time">0:00</span>
-                <input class="grow cursor-pointer" type="range" id="player-progress-bar" min="0" max="100" value="0"
-                    step="0.1">
-                <span class="text-[0.8em] min-w-9 text-center" id="player-duration">0:00</span>
-            </div>
-            <div class="flex items-center justify-center gap-4">
-                <button id="player-repeat-btn"
-                    class="bg-transparent border-0 rounded-full w-10 h-10 cursor-pointer text-xl flex items-center justify-center transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover shrink-0 p-0"
-                    title="Repeat"><i class="fa-solid fa-repeat"></i></button>
-                <button id="player-prev-btn"
-                    class="bg-transparent border-0 rounded-full w-10 h-10 cursor-pointer text-xl flex items-center justify-center transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover shrink-0 p-0"
-                    title="Previous Track"><i class="fa-solid fa-backward"></i></button>
-                <button id="player-play-pause-btn"
-                    class="border-0 rounded-full w-12 h-12 cursor-pointer text-2xl flex items-center justify-center transition-colors duration-200 ease-in-out enabled:hover:bg-cyan-700 shrink-0 p-0 bg-cyan-text text-white"
-                    title="Play/Pause"><i class="fa-solid fa-play"></i></button>
-                <button id="player-next-btn"
-                    class="bg-transparent border-0 rounded-full w-10 h-10 cursor-pointer text-xl flex items-center justify-center transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover shrink-0 p-0"
-                    title="Next Track"><i class="fa-solid fa-forward"></i></button>
-                <button id="player-shuffle-btn"
-                    class="bg-transparent border-0 rounded-full w-10 h-10 cursor-pointer text-xl flex items-center justify-center transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover shrink-0 p-0"
-                    title="Shuffle"><i class="fa-solid fa-shuffle"></i></button>
-            </div>
-        </div>
-
-        <!-- Right Column: Volume and Close -->
-        <div class="justify-self-end hidden md:flex items-center gap-4 col-3">
-            <button id="player-mute-btn"
-                class="bg-transparent border-0 rounded-full w-10 h-10 cursor-pointer text-xl flex items-center justify-center transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover shrink-0 p-0"
-                title="Mute/Unmute"><i class="fa-solid fa-volume-high"></i></button>
-            <input type="range" id="player-volume-slider" min="0" max="100" value="100" title="Volume" class="w-24">
-            <button id="player-stop-btn"
-                class="bg-transparent border-0 rounded-full w-10 h-10 cursor-pointer text-2xl flex items-center justify-center transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover shrink-0 p-0"
-                title="Close Player">
-                <i class="fa-solid fa-xmark"></i>
+          class="pointer-events-auto flex w-[45vw] max-w-[700px] min-w-[350px] flex-col items-center gap-1"
+        >
+          <div class="flex w-full items-center gap-2">
+            <span
+              class="min-w-9 text-center text-[0.8em]"
+              id="player-current-time"
+              >0:00</span
+            >
+            <input
+              class="grow cursor-pointer"
+              type="range"
+              id="player-progress-bar"
+              min="0"
+              max="100"
+              value="0"
+              step="0.1"
+            />
+            <span class="min-w-9 text-center text-[0.8em]" id="player-duration"
+              >0:00</span
+            >
+          </div>
+          <div class="flex items-center justify-center gap-4">
+            <button
+              id="player-repeat-btn"
+              class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-xl transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover"
+              title="Repeat"
+            >
+              <i class="fa-solid fa-repeat"></i>
             </button>
+            <button
+              id="player-prev-btn"
+              class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-xl transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover"
+              title="Previous Track"
+            >
+              <i class="fa-solid fa-backward"></i>
+            </button>
+            <button
+              id="player-play-pause-btn"
+              class="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-cyan-text p-0 text-2xl text-white transition-colors duration-200 ease-in-out enabled:hover:bg-cyan-700"
+              title="Play/Pause"
+            >
+              <i class="fa-solid fa-play"></i>
+            </button>
+            <button
+              id="player-next-btn"
+              class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-xl transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover"
+              title="Next Track"
+            >
+              <i class="fa-solid fa-forward"></i>
+            </button>
+            <button
+              id="player-shuffle-btn"
+              class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-xl transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover"
+              title="Shuffle"
+            >
+              <i class="fa-solid fa-shuffle"></i>
+            </button>
+          </div>
         </div>
+      </div>
     </div>
-
-
 
     {% block content %}{% endblock %}
 
-    <footer class="text-center mt-12 pt-6 border-t border-border text-foreground">
-        <p>Data sourced from <a class="text-cyan-text" href="https://vocaloard.injpok.tokyo/en/"
-                target="_blank">Vocaloard</a>. This is an
-            independent project.</p>
+    <footer
+      class="mt-12 border-t border-border pt-6 text-center text-foreground"
+    >
+      <p>
+        Data sourced from
+        <a
+          class="text-cyan-text"
+          href="https://vocaloard.injpok.tokyo/en/"
+          target="_blank"
+          >Vocaloard</a
+        >. This is an independent project.
+      </p>
     </footer>
 
-    <div id="youtube-player-container" style="position: fixed; top: -9999px; left: -9999px;"></div>
+    <div
+      id="youtube-player-container"
+      style="position: fixed; top: -9999px; left: -9999px;"
+    ></div>
 
     <script src="https://www.youtube.com/iframe_api"></script>
-
-</body>
-
+  </body>
 </html>

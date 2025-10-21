@@ -28,6 +28,13 @@ const getYouTubeVideoId = (url) => {
 	return url.match(regex)?.[1] || null;
 };
 
+const getActivePlayer = () => {
+    if (playerState.isEmbedded && playerState.embeddedPlayers[playerState.currentTrackId]) {
+        return playerState.embeddedPlayers[playerState.currentTrackId];
+    }
+    return ytPlayer;
+};
+
 const formatAllDates = () => {
 	document.querySelectorAll('td[data-label="Published"]').forEach((td) => {
 		if (td.dataset.date) td.textContent = timeAgo(td.dataset.date);
@@ -1054,24 +1061,37 @@ document.addEventListener("DOMContentLoaded", () => {
 	prevBtn.addEventListener("click", playPrevTrack);
 	stopBtn.addEventListener("click", stopPlayer);
 	volumeSlider.addEventListener("input", (e) => {
-		playerState.volume = e.target.value;
-		playerState.isMuted = false;
-		if (ytPlayer) {
-			ytPlayer.setVolume(playerState.volume);
-			ytPlayer.unMute();
-		}
-		updatePlayerUI();
+    const newVolume = e.target.value;
+    playerState.volume = newVolume;
+    playerState.isMuted = newVolume == 0;
+
+    const activePlayer = getActivePlayer();
+    if (activePlayer) {
+        activePlayer.setVolume(newVolume);
+        if (playerState.isMuted) {
+            activePlayer.mute();
+        } else {
+            activePlayer.unMute();
+        }
+    }
+    updatePlayerUI();
 	});
 	muteBtn.addEventListener("click", () => {
-		playerState.isMuted = !playerState.isMuted;
-		if (ytPlayer) {
-			if (playerState.isMuted) {
-				ytPlayer.mute();
-			} else {
-				ytPlayer.unMute();
-			}
-		}
-		updatePlayerUI();
+    playerState.isMuted = !playerState.isMuted;
+    
+    const activePlayer = getActivePlayer();
+    if (activePlayer) {
+        if (playerState.isMuted) {
+            activePlayer.mute();
+        } else {
+            activePlayer.unMute();
+            if (playerState.volume == 0) {
+                playerState.volume = 50;
+                activePlayer.setVolume(playerState.volume);
+            }
+        }
+    }
+    updatePlayerUI();
 	});
 
 	const scrapeButton = document.getElementById("scrape-button");
@@ -1537,51 +1557,7 @@ document.addEventListener("DOMContentLoaded", () => {
 							// and the new video correctly starts from 0 because of autoplay:1.
 							playerState.isEmbedded = true;
 						},
-						onStateChange: (event) => {
-							if (event.data === YT.PlayerState.PLAYING) {
-								// This embed started playing
-								if (trackId !== playerState.currentTrackId) {
-									// Switch to this track
-									playerState.currentTrackId = trackId;
-									const track = playerState.playlist.find(
-										(t) => t.id === trackId,
-									);
-									if (track) {
-										document.getElementById("player-thumbnail").src =
-											track.imageUrl;
-										document.getElementById("player-title").textContent =
-											track.title;
-										document.getElementById("player-producer").textContent =
-											track.producer;
-									}
-								}
-
-								// Pause the hidden player
-								if (ytPlayer) ytPlayer.pauseVideo();
-
-								// Pause other embeds
-								for (const id in playerState.embeddedPlayers) {
-									if (id !== trackId && playerState.embeddedPlayers[id]) {
-										playerState.embeddedPlayers[id].pauseVideo();
-									}
-								}
-
-								playerState.isPlaying = true;
-								playerState.isEmbedded = true;
-								startProgressUpdater();
-								updatePlayerUI();
-							} else if (event.data === YT.PlayerState.PAUSED) {
-								if (trackId === playerState.currentTrackId) {
-									playerState.isPlaying = false;
-									stopProgressUpdater();
-									updatePlayerUI();
-								}
-							} else if (event.data === YT.PlayerState.ENDED) {
-								if (trackId === playerState.currentTrackId) {
-									playNextTrack();
-								}
-							}
-						},
+						onStateChange: onPlayerStateChange,
 						onError: onPlayerError,
 					},
 				});
