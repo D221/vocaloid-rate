@@ -121,3 +121,63 @@ docker compose down
 **Explore**: Use the filter and sort options to explore the music. Click on producer or voicebank names to quickly filter the list.
 
 **View Rated Tracks**: Navigate to the "View Rated Tracks" page to see your personal collection and statistics.
+
+
+## Development Setup
+
+If you wish to modify the frontend styles or JavaScript, you will need to have Node.js and npm installed. The project uses Tailwind CSS v4 for styling, which requires a build step.
+
+### Prerequisites
+
+-   **Node.js** (LTS version recommended) and **npm**. You can download them from [nodejs.org](https://nodejs.org/).
+-   **Python 3.8+** for the backend.
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/D221/vocaloid-rate
+cd vocaloid-rate
+```
+
+### 2. Install Dependencies
+
+First, set up the Python backend environment as described in the "Installation & Setup" section (e.g., by running `run.sh` or `run.bat` once to create the virtual environment).
+
+Next, install the required Node.js packages for the frontend build process:
+
+```bash
+npm install -D @tailwindcss/cli
+```
+
+### 3. Running the Development Servers
+
+You will need to run two processes simultaneously in separate terminal windows.
+
+**Terminal 1: Start the Tailwind CSS Build Process**
+
+This command will watch for any changes in your HTML templates and CSS files and automatically rebuild your stylesheet (`app.css`).
+
+```bash
+npx @tailwindcss/cli -i ./app/static/css/input.css -o ./app/static/css/app.css --watch
+```
+
+**Terminal 2: Start the FastAPI Backend Server**
+
+Use the provided scripts to run the backend server.
+
+-   On Windows:
+    ```bash
+    run.bat
+    ```
+-   On macOS / Linux:
+    ```bash
+    bash run.sh
+    ```
+
+### 4. Making Changes
+
+-   Edit HTML files in the `app/templates/` directory.
+-   Edit your theme and custom styles in `app/static/css/input.css`.
+-   Edit JavaScript files in the `app/static/js/` directory.
+
+The Tailwind CLI will automatically detect your changes and update `app/static/css/app.css`. Your browser should reflect the style changes upon refresh.
