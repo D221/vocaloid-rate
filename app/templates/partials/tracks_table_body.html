@@ -3,9 +3,10 @@
     class="block text-center md:text-left mb-6 overflow-hidden border rounded-md shadow-md border-border bg-card-bg md:bg-background md:table-row md:mb-0 md:border-none md:shadow-none">
 
     <!-- Image -->
-    <td data-label="Image" class="p-0 border-b border-border md:table-cell md:border md:p-2 md:whitespace-nowrap">
+    <td data-label="Image" class="p-0 border-b border-border md:p-2 md:table-cell md:border md:whitespace-nowrap">
         <a href="{{ track.link }}" target="_blank">
-            <img src="{{ track.image_url }}" alt="{{ track.title }}" class="track-thumbnail md:rounded-md">
+            <img src="{{ track.image_url }}" alt="{{ track.title }}" class="track-thumbnail block w-full h-auto rounded-t-md 
+                    md:w-24 md:h-auto md:rounded-md">
         </a>
     </td>
 

@@ -127,29 +127,46 @@ const truncateTextByWords = (selector, maxLength) => {
 	});
 };
 
-const upgradeThumbnailsToHD = () => {
-    // We only run this on smaller screens where the card layout is active.
-    if (window.innerWidth >= 768) {
-        return; // Don't do anything on desktop
-    }
-
+const upgradeThumbnails = () => {
     document.querySelectorAll('img.track-thumbnail').forEach(img => {
+        // --- Desktop Logic (Corrected) ---
+        if (window.innerWidth >= 768) {
+            if (img.src.includes('i.ytimg.com')) {
+                // This regex now correctly targets ALL possible endings and replaces them with mqdefault.jpg.
+                // It's safe to run even if the src is already correct.
+                const mqUrl = img.src.replace(/(\/)(maxresdefault|hqdefault|mqdefault|default)(\.jpg)/, '$1mqdefault$3');
+                
+                if (img.src !== mqUrl) {
+                    img.src = mqUrl;
+                }
+            }
+            img.classList.remove('object-cover', 'aspect-video');
+            return;
+        }
+
+        // --- Mobile Logic (Unchanged and Working) ---
         const currentSrc = img.src;
-        // Check if it's a YouTube thumbnail that can be upgraded.
-        if (currentSrc.includes('i.ytimg.com')) {
-            let newSrc = currentSrc;
-            if (currentSrc.includes('mqdefault.jpg')) {
-                newSrc = currentSrc.replace('mqdefault.jpg', 'maxresdefault.jpg');
-            } else if (currentSrc.includes('default.jpg') && !currentSrc.includes('maxresdefault.jpg')) {
-                // This 'else if' is key. It only runs if mqdefault wasn't found.
-                // The extra check prevents hqdefault from matching.
-                newSrc = currentSrc.replace('default.jpg', 'hqdefault.jpg');
-            }
-            
-            // Only update the src if it has actually changed.
-            if (newSrc !== currentSrc) {
-                img.src = newSrc;
-            }
+
+        if (currentSrc.includes('i.ytimg.com') && !img.dataset.processed) {
+            img.dataset.processed = 'true';
+
+            const maxResUrl = currentSrc.replace(/(\/)(mqdefault|hqdefault|default)(\.jpg)/, '$1maxresdefault$3');
+            const hqUrl = currentSrc.replace(/(\/)(mqdefault|hqdefault|default)(\.jpg)/, '$1hqdefault$3');
+
+            fetch(maxResUrl, { method: 'HEAD' })
+                .then(response => {
+                    if (response.ok && parseInt(response.headers.get('Content-Length'), 10) > 1024) {
+                        img.src = maxResUrl;
+                    } else {
+                        throw new Error('maxresdefault not available or is a placeholder');
+                    }
+                })
+                .catch(() => {
+                    img.src = hqUrl;
+                })
+                .finally(() => {
+                    img.classList.add('object-cover', 'aspect-video');
+                });
         }
     });
 };
@@ -795,7 +812,7 @@ const updateTracks = async () => {
 
 			updatePaginationUI(data.pagination);
 			truncateTextByWords("[data-js-truncate]", 35);
-			upgradeThumbnailsToHD();
+			upgradeThumbnails();
 		} catch (error) {
 			clearTimeout(skeletonTimer);
 			console.error("Failed to update tracks:", error);
@@ -950,7 +967,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	updateThemeUI();
 	updateActiveFilterDisplay();
 	truncateTextByWords("[data-js-truncate]", 35);
-	upgradeThumbnailsToHD();
+	upgradeThumbnails();
 
 	const limitFilter = document.getElementById("limit_filter");
 	if (limitFilter) {
