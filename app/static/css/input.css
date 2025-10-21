@@ -4,90 +4,90 @@
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 @theme {
-	--color-background: oklch(97% 0.001 106.424);
-	--color-foreground: oklch(21.6% 0.006 56.043);
-	--color-card-bg: oklch(98.5% 0.001 106.423);
-	--color-border: oklch(86.9% 0.005 56.366);
-	--color-table-header: oklch(92.3% 0.003 48.717);
-	--color-header: oklch(26.8% 0.007 34.298);
-	--color-cyan-text: oklch(60.9% 0.126 221.723);
-	--color-cyan-hover: oklch(98.4% 0.019 200.873);
-	--color-gray-text: oklch(43.9% 0 0);
-	--color-gray-hover: oklch(97% 0 0);
-	--color-green-text: oklch(62.7% 0.194 149.214);
-	--color-green-hover: oklch(98.2% 0.018 155.826);
-	--color-purple-text: oklch(55.8% 0.288 302.321);
-	--color-purple-hover: oklch(97.7% 0.014 308.299);
-	--color-sky-text: oklch(60.9% 0.126 221.723);
-	--color-sky-hover: oklch(97.7% 0.013 236.62);
-	--color-red-text: oklch(57.7% 0.245 27.325);
-	--color-red-hover: oklch(97.1% 0.013 17.38);
+  --color-background: oklch(97% 0.001 106.424);
+  --color-foreground: oklch(21.6% 0.006 56.043);
+  --color-card-bg: oklch(98.5% 0.001 106.423);
+  --color-border: oklch(86.9% 0.005 56.366);
+  --color-table-header: oklch(92.3% 0.003 48.717);
+  --color-header: oklch(26.8% 0.007 34.298);
+  --color-cyan-text: oklch(60.9% 0.126 221.723);
+  --color-cyan-hover: oklch(98.4% 0.019 200.873);
+  --color-gray-text: oklch(43.9% 0 0);
+  --color-gray-hover: oklch(97% 0 0);
+  --color-green-text: oklch(62.7% 0.194 149.214);
+  --color-green-hover: oklch(98.2% 0.018 155.826);
+  --color-purple-text: oklch(55.8% 0.288 302.321);
+  --color-purple-hover: oklch(97.7% 0.014 308.299);
+  --color-sky-text: oklch(60.9% 0.126 221.723);
+  --color-sky-hover: oklch(97.7% 0.013 236.62);
+  --color-red-text: oklch(57.7% 0.245 27.325);
+  --color-red-hover: oklch(97.1% 0.013 17.38);
 }
 
 @layer theme {
-	:root {
-		@variant dark {
-			--color-background: oklch(21.6% 0.006 56.043);
-			--color-foreground: oklch(97% 0.001 106.424);
-			--color-card-bg: oklch(26.8% 0.007 34.298);
-			--color-border: oklch(37.4% 0.01 67.558);
-			--color-table-header: oklch(37.4% 0.01 67.558);
-			--color-header: oklch(92.3% 0.003 48.717);
-			--color-cyan-text: oklch(78.9% 0.154 211.53);
-			--color-cyan-hover: oklch(30.2% 0.056 229.695);
-			--color-gray-text: oklch(70.8% 0 0);
-			--color-gray-hover: oklch(26.9% 0 0);
-			--color-green-text: oklch(79.2% 0.209 151.711);
-			--color-green-hover: oklch(26.6% 0.065 152.934);
-			--color-purple-text: oklch(71.4% 0.203 305.504);
-			--color-purple-hover: oklch(29.1% 0.149 302.717);
-			--color-sky-text: oklch(74.6% 0.16 232.661);
-			--color-sky-hover: oklch(29.3% 0.066 243.157);
-			--color-red-text: oklch(70.4% 0.191 22.216);
-			--color-red-hover: oklch(25.8% 0.092 26.042);
-		}
-	}
+  :root {
+    @variant dark {
+      --color-background: oklch(21.6% 0.006 56.043);
+      --color-foreground: oklch(97% 0.001 106.424);
+      --color-card-bg: oklch(26.8% 0.007 34.298);
+      --color-border: oklch(37.4% 0.01 67.558);
+      --color-table-header: oklch(37.4% 0.01 67.558);
+      --color-header: oklch(92.3% 0.003 48.717);
+      --color-cyan-text: oklch(78.9% 0.154 211.53);
+      --color-cyan-hover: oklch(30.2% 0.056 229.695);
+      --color-gray-text: oklch(70.8% 0 0);
+      --color-gray-hover: oklch(26.9% 0 0);
+      --color-green-text: oklch(79.2% 0.209 151.711);
+      --color-green-hover: oklch(26.6% 0.065 152.934);
+      --color-purple-text: oklch(71.4% 0.203 305.504);
+      --color-purple-hover: oklch(29.1% 0.149 302.717);
+      --color-sky-text: oklch(74.6% 0.16 232.661);
+      --color-sky-hover: oklch(29.3% 0.066 243.157);
+      --color-red-text: oklch(70.4% 0.191 22.216);
+      --color-red-hover: oklch(25.8% 0.092 26.042);
+    }
+  }
 }
 
 @layer components {
-	button[data-notes-toggle].has-note {
-		@apply border-green-text text-green-text;
-	}
+  button[data-notes-toggle].has-note {
+    @apply border-green-text text-green-text;
+  }
 
-	button[data-notes-toggle] {
-		@apply border-gray-text text-gray-text;
-	}
+  button[data-notes-toggle] {
+    @apply border-gray-text text-gray-text;
+  }
 
-	#player-repeat-btn.active,
-	#player-shuffle-btn.active {
-		@apply text-cyan-text;
-	}
+  #player-repeat-btn.active,
+  #player-shuffle-btn.active {
+    @apply text-cyan-text;
+  }
 
-	.is-playing {
-		background-color: var(--color-cyan-hover);
-	}
+  tr.is-playing > td {
+    background-color: var(--color-cyan-hover);
+  }
 }
 
 @layer base {
-	/* Scrollbar styles for WebKit browsers (Chrome, Safari, Edge) */
-	::-webkit-scrollbar {
-		width: 12px;
-		height: 12px;
-	}
-	::-webkit-scrollbar-track {
-		background-color: var(--color-card-bg);
-	}
-	::-webkit-scrollbar-thumb {
-		background-color: var(--color-border);
-		border-radius: 6px;
-		border: 3px solid var(--color-card-bg);
-	}
-	::-webkit-scrollbar-thumb:hover {
-		background-color: var(--color-gray-text);
-	}
+  /* Scrollbar styles for WebKit browsers (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  ::-webkit-scrollbar-track {
+    background-color: var(--color-card-bg);
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--color-border);
+    border-radius: 6px;
+    border: 3px solid var(--color-card-bg);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-gray-text);
+  }
 
-	/* Basic scrollbar colors for Firefox */
-	html {
-		scrollbar-color: var(--color-border) var(--color-card-bg);
-	}
+  /* Basic scrollbar colors for Firefox */
+  html {
+    scrollbar-color: var(--color-border) var(--color-card-bg);
+  }
 }
