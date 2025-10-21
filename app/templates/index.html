@@ -3,158 +3,350 @@
 {% block title %}Vocaloid Tracks - Vocaloid Rater{% endblock %}
 
 {% block content %}
-<div class="flex flex-wrap items-center justify-between gap-4 border-b border-border mb-8 pb-4">
+  <div
+    class="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4"
+  >
     <h1 class="flex-grow text-center text-4xl font-bold text-cyan-text">
-        Vocaloid Tracks
+      Vocaloid Tracks
     </h1>
     <div class="flex flex-shrink-0 items-center gap-4">
-        <a href="/rated_tracks"
-            class="shadow-md p-3 rounded border border-cyan-text text-cyan-text font-bold cursor-pointer transition-colors duration-200 ease-in-out hover:bg-cyan-hover">
-            View Rated Tracks
-        </a>
-        <a href="/options"
-            class="shadow-md p-3 rounded border border-cyan-text text-cyan-text font-bold cursor-pointer transition-colors duration-200 ease-in-out hover:bg-cyan-hover">
-            Options
-        </a>
-        <div id="theme-switcher">
-            <span id="theme-icon"><i class="fa-solid fa-moon text-xl text-foreground"></i></span>
-        </div>
+      <a
+        href="/rated_tracks"
+        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
+      >
+        View Rated Tracks
+      </a>
+      <a
+        href="/options"
+        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
+      >
+        Options
+      </a>
+      <div id="theme-switcher">
+        <span id="theme-icon"
+          ><i class="fa-solid fa-moon text-xl text-foreground"></i
+        ></span>
+      </div>
     </div>
-</div>
+  </div>
 
-<div class="mb-8 rounded-md shadow-md p-5 bg-card-bg">
-    <form id="filter-form" class="flex flex-col items-stretch gap-5 md:items-center md:flex-wrap md:flex-row ">
-        <div class="flex items-center gap-2 p-3 border border-border rounded">
-            <label class="font-bold">Chart Status:</label>
-            <input type="radio" id="rank_ranked" name="rank_filter" value="ranked" {% if filters.rank_filter=='ranked'
-                or not filters.rank_filter %}checked{% endif %}>
-            <label for="rank_ranked">On Chart</label>
+  <div class="mb-8 rounded-md bg-card-bg p-5 shadow-md">
+    <form
+      id="filter-form"
+      class="flex flex-col items-stretch gap-5 md:flex-row md:flex-wrap md:items-center"
+    >
+      <div class="flex items-center gap-2 rounded border border-border p-3">
+        <label class="font-bold">Chart Status:</label>
+        <input
+          type="radio"
+          id="rank_ranked"
+          name="rank_filter"
+          value="ranked"
+          {%
+            if filters.rank_filter=='ranked'
+            or not filters.rank_filter
+          %}
+            checked
+          {% endif %}
+        />
+        <label for="rank_ranked">On Chart</label>
 
-            <input type="radio" id="rank_unranked" name="rank_filter" value="unranked" {% if
-                filters.rank_filter=='unranked' %}checked{% endif %}>
-            <label for="rank_unranked">Expired (Archive)</label>
+        <input
+          type="radio"
+          id="rank_unranked"
+          name="rank_filter"
+          value="unranked"
+          {%
+            if
+            filters.rank_filter=='unranked'
+          %}
+            checked
+          {% endif %}
+        />
+        <label for="rank_unranked">Expired (Archive)</label>
 
-            <input type="radio" id="rank_all" name="rank_filter" value="all" {% if filters.rank_filter=='all'
-                %}checked{% endif %}>
-            <label for="rank_all">Show All</label>
-        </div>
+        <input
+          type="radio"
+          id="rank_all"
+          name="rank_filter"
+          value="all"
+          {% if filters.rank_filter=='all' %}
+            checked
+          {% endif %}
+        />
+        <label for="rank_all">Show All</label>
+      </div>
 
-        <div class="relative w-full md:items-center md:flex md:w-50 md:gap-2">
-            <label for="rated_filter" class="font-bold mb-1 block md:mb-0 md:text-right">Rating:</label>
-            <select name="rated_filter" id="rated_filter"
-                class="shadow-md w-full px-3 py-2 pr-10 rounded border border-border bg-background text-foreground leading-normal">
-                <option value="all" {% if filters.rated_filter=='all' %}selected{% endif %}>All</option>
-                <option value="rated" {% if filters.rated_filter=='rated' %}selected{% endif %}>Rated</option>
-                <option value="unrated" {% if filters.rated_filter=='unrated' %}selected{% endif %}>Unrated</option>
-            </select>
-        </div>
+      <div class="relative w-full md:flex md:w-50 md:items-center md:gap-2">
+        <label
+          for="rated_filter"
+          class="mb-1 block font-bold md:mb-0 md:text-right"
+          >Rating:</label
+        >
+        <select
+          name="rated_filter"
+          id="rated_filter"
+          class="w-full rounded border border-border bg-background px-3 py-2 pr-10 leading-normal text-foreground shadow-md"
+        >
+          <option
+            value="all"
+            {% if filters.rated_filter=='all' %}selected{% endif %}
+          >
+            All
+          </option>
+          <option
+            value="rated"
+            {% if filters.rated_filter=='rated' %}selected{% endif %}
+          >
+            Rated
+          </option>
+          <option
+            value="unrated"
+            {% if filters.rated_filter=='unrated' %}selected{% endif %}
+          >
+            Unrated
+          </option>
+        </select>
+      </div>
 
-        <div class="relative w-full md:items-center md:flex md:w-70 md:gap-2">
-            <label for="title_filter" class="font-bold mb-1 block md:mb-0 md:text-right">Title:</label>
-            <input type="text" name="title_filter" id="title_filter" autocomplete="off" placeholder="Search..."
-                class="shadow-md w-full px-3 py-2 pr-10 rounded border border-border bg-background text-foreground leading-normal"
-                value="{{ filters.title_filter or '' }}">
-            <button type="button" data-clear
-                class="absolute right-2 top-1/2 -translate-y-1/2 text-foreground text-xl leading-none px-1 py-0 cursor-pointer opacity-0 invisible"
-                aria-label="Clear title search">&times;</button>
-        </div>
-
-        <div class="relative w-full md:items-center md:flex md:w-70 md:gap-2">
-            <label for="producer_filter" class="font-bold mb-1 block md:mb-0 md:text-right">Producer:</label>
-            <input type="text" name="producer_filter" id="producer_filter" list="producers-list" autocomplete="off"
-                placeholder="Filter..." value="{{ filters.producer_filter or '' }}"
-                class="shadow-md w-full px-3 py-2 pr-10 rounded border border-border bg-background text-foreground leading-normal"
-                value="{{ filters.producer_filter or '' }}" />
-            <button type="button" data-clear
-                class="absolute right-2 top-1/2 -translate-y-1/2 text-foreground text-xl leading-none px-1 py-0 cursor-pointer opacity-0 invisible"
-                aria-label="Clear producer filter">
-                &times;
-            </button>
-            <datalist id="producers-list">
-                {% for producer in all_producers %}<option value="{{ producer }}">{% endfor %}
-            </datalist>
-        </div>
-
-        <div class="relative w-full md:items-center md:flex md:w-70 md:gap-2">
-            <label for="voicebank_filter" class="font-bold mb-1 block md:mb-0 md:text-right">Voicebank:</label>
-            <input type="text" name="voicebank_filter" id="voicebank_filter" list="voicebanks-list" autocomplete="off"
-                placeholder="Filter..." value="{{ filters.voicebank_filter or '' }}"
-                class="shadow-md w-full px-3 py-2 pr-10 rounded border border-border bg-background text-foreground leading-normal" />
-            <button type="button" data-clear
-                class="absolute right-2 top-1/2 -translate-y-1/2 text-foreground text-xl leading-none px-1 py-0 cursor-pointer opacity-0 invisible"
-                aria-label="Clear voicebank filter">&times;</button>
-            <datalist id="voicebanks-list">
-                {% for voicebank in all_voicebanks %}<option value="{{ voicebank }}">{% endfor %}
-            </datalist>
-        </div>
-
-        <div class="relative w-full md:items-center md:flex md:w-50 md:gap-2">
-            <label for="limit_filter" class="font-bold mb-1 block md:mb-0 md:text-right">Per Page:</label>
-            <select name="limit" id="limit_filter"
-                class="shadow-md w-full px-3 py-2 pr-10 rounded border border-border bg-background text-foreground leading-normal">
-                <option value="all" {% if pagination.limit=='all' %}selected{% endif %}>All</option>
-                <option value="25" {% if pagination.limit=='25' %}selected{% endif %}>25</option>
-                <option value="50" {% if pagination.limit=='50' %}selected{% endif %}>50</option>
-                <option value="100" {% if pagination.limit=='100' %}selected{% endif %}>100</option>
-            </select>
-        </div>
-
-        <button type="button" id="clear-filters-btn"
-            class="shadow-md p-2 rounded border border-gray-text text-gray-text font-bold cursor-pointer transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover">Clear</button>
-
-        <button type="button" id="scrape-button"
-            class="shadow-md p-2 rounded border border-green-text text-green-text font-bold cursor-pointer transition-colors duration-200 ease-in-out enabled:hover:bg-green-hover">Update
-            Tracks
+      <div class="relative w-full md:flex md:w-70 md:items-center md:gap-2">
+        <label
+          for="title_filter"
+          class="mb-1 block font-bold md:mb-0 md:text-right"
+          >Title:</label
+        >
+        <input
+          type="text"
+          name="title_filter"
+          id="title_filter"
+          autocomplete="off"
+          placeholder="Search..."
+          class="w-full rounded border border-border bg-background px-3 py-2 pr-10 leading-normal text-foreground shadow-md"
+          value="{{ filters.title_filter or '' }}"
+        />
+        <button
+          type="button"
+          data-clear
+          class="invisible absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer px-1 py-0 text-xl leading-none text-foreground opacity-0"
+          aria-label="Clear title search"
+        >
+          &times;
         </button>
+      </div>
 
-        <span id="last-updated">
-            {% if last_update %}
-            Last updated: {{ last_update.updated_at.strftime('%Y-%m-%d %H:%M') }}
-            {% endif %}
-        </span>
-        <span id="scrape-status"></span>
+      <div class="relative w-full md:flex md:w-70 md:items-center md:gap-2">
+        <label
+          for="producer_filter"
+          class="mb-1 block font-bold md:mb-0 md:text-right"
+          >Producer:</label
+        >
+        <input
+          type="text"
+          name="producer_filter"
+          id="producer_filter"
+          list="producers-list"
+          autocomplete="off"
+          placeholder="Filter..."
+          value="{{ filters.producer_filter or '' }}"
+          class="w-full rounded border border-border bg-background px-3 py-2 pr-10 leading-normal text-foreground shadow-md"
+          value="{{ filters.producer_filter or '' }}"
+        />
+        <button
+          type="button"
+          data-clear
+          class="invisible absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer px-1 py-0 text-xl leading-none text-foreground opacity-0"
+          aria-label="Clear producer filter"
+        >
+          &times;
+        </button>
+        <datalist id="producers-list">
+          {% for producer in all_producers %}
+            <option value="{{ producer }}"></option>
+          {% endfor %}
+        </datalist>
+      </div>
+
+      <div class="relative w-full md:flex md:w-70 md:items-center md:gap-2">
+        <label
+          for="voicebank_filter"
+          class="mb-1 block font-bold md:mb-0 md:text-right"
+          >Voicebank:</label
+        >
+        <input
+          type="text"
+          name="voicebank_filter"
+          id="voicebank_filter"
+          list="voicebanks-list"
+          autocomplete="off"
+          placeholder="Filter..."
+          value="{{ filters.voicebank_filter or '' }}"
+          class="w-full rounded border border-border bg-background px-3 py-2 pr-10 leading-normal text-foreground shadow-md"
+        />
+        <button
+          type="button"
+          data-clear
+          class="invisible absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer px-1 py-0 text-xl leading-none text-foreground opacity-0"
+          aria-label="Clear voicebank filter"
+        >
+          &times;
+        </button>
+        <datalist id="voicebanks-list">
+          {% for voicebank in all_voicebanks %}
+            <option value="{{ voicebank }}"></option>
+          {% endfor %}
+        </datalist>
+      </div>
+
+      <div class="relative w-full md:flex md:w-50 md:items-center md:gap-2">
+        <label
+          for="limit_filter"
+          class="mb-1 block font-bold md:mb-0 md:text-right"
+          >Per Page:</label
+        >
+        <select
+          name="limit"
+          id="limit_filter"
+          class="w-full rounded border border-border bg-background px-3 py-2 pr-10 leading-normal text-foreground shadow-md"
+        >
+          <option
+            value="all"
+            {% if pagination.limit=='all' %}selected{% endif %}
+          >
+            All
+          </option>
+          <option value="25" {% if pagination.limit=='25' %}selected{% endif %}>
+            25
+          </option>
+          <option value="50" {% if pagination.limit=='50' %}selected{% endif %}>
+            50
+          </option>
+          <option
+            value="100"
+            {% if pagination.limit=='100' %}selected{% endif %}
+          >
+            100
+          </option>
+        </select>
+      </div>
+
+      <button
+        type="button"
+        id="clear-filters-btn"
+        class="cursor-pointer rounded border border-gray-text p-2 font-bold text-gray-text shadow-md transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover"
+      >
+        Clear
+      </button>
+
+      <button
+        type="button"
+        id="scrape-button"
+        class="cursor-pointer rounded border border-green-text p-2 font-bold text-green-text shadow-md transition-colors duration-200 ease-in-out enabled:hover:bg-green-hover"
+      >
+        Update Tracks
+      </button>
+
+      <span id="last-updated">
+        {% if last_update %}
+          Last updated: {{ last_update.updated_at.strftime('%Y-%m-%d %H:%M') }}
+        {% endif %}
+      </span>
+      <span id="scrape-status"></span>
     </form>
-</div>
+  </div>
 
-<div class="border-none shadow-md overflow-x-visible md:overflow-x-auto border border-border rounded bg-card-bg">
-    <table class="border-collapse w-full">
-        <thead id="tracks-table-head" class="hidden bg-table-header md:table-header-group">
-            <tr>
-                <th class="min-w-52 w-1 border border-border px-3 py-2 text-left whitespace-nowrap">Image
-                </th>
-                <th class="p-0 min-w-0 w-1 border border-border px-3 py-2 text-left whitespace-nowrap"><a
-                        href="{{ request.url.path }}?sort_by=rank" data-sort="rank">Rank</a></th>
-                <th
-                    class="max-w-64 overflow-hidden text-ellipsis w-1/3 border border-border px-3 py-2 text-left whitespace-nowrap">
-                    <a class="" href="{{ request.url.path }}?sort_by=title" data-sort="title">Title</a>
-                </th>
-                <th class="max-w-64 overflow-hidden text-ellipsis border border-border px-3 py-2 text-left"><a
-                        href=" {{ request.url.path }}?sort_by=producer" data-sort="producer">Producer</a>
-                </th>
-                <th class="max-w-64 overflow-hidden text-ellipsis border border-border px-3 py-2 text-left"><a
-                        href="{{ request.url.path }}?sort_by=voicebank" data-sort="voicebank">Voicebank</a></th>
-                <th class="min-w-0 w-1 border border-border px-3 py-2 text-left"><a
-                        href="{{ request.url.path }}?sort_by=published_date" data-sort="published_date">Published</a>
-                </th>
-                <th class="min-w-0 w-1 border border-border px-3 py-2 text-left"><a
-                        href="{{ request.url.path }}?sort_by=rating" data-sort="rating">My Rating</a></th>
-            </tr>
-        </thead>
-        <tbody id="tracks-table-body" class="bg-background" data-update-url="/_/tracks_table_body">
-            {% include "partials/tracks_table_body.html" %}
-        </tbody>
+  <div
+    class="overflow-x-visible rounded border border-none border-border bg-card-bg shadow-md md:overflow-x-auto"
+  >
+    <table class="w-full border-collapse">
+      <thead
+        id="tracks-table-head"
+        class="hidden bg-table-header md:table-header-group"
+      >
+        <tr>
+          <th
+            class="w-1 min-w-52 border border-border px-3 py-2 text-left whitespace-nowrap"
+          >
+            Image
+          </th>
+          <th
+            class="w-1 min-w-0 border border-border p-0 px-3 py-2 text-left whitespace-nowrap"
+          >
+            <a href="{{ request.url.path }}?sort_by=rank" data-sort="rank"
+              >Rank</a
+            >
+          </th>
+          <th
+            class="w-1/3 max-w-64 overflow-hidden border border-border px-3 py-2 text-left text-ellipsis whitespace-nowrap"
+          >
+            <a
+              class=""
+              href="{{ request.url.path }}?sort_by=title"
+              data-sort="title"
+              >Title</a
+            >
+          </th>
+          <th
+            class="max-w-64 overflow-hidden border border-border px-3 py-2 text-left text-ellipsis"
+          >
+            <a
+              href=" {{ request.url.path }}?sort_by=producer"
+              data-sort="producer"
+              >Producer</a
+            >
+          </th>
+          <th
+            class="max-w-64 overflow-hidden border border-border px-3 py-2 text-left text-ellipsis"
+          >
+            <a
+              href="{{ request.url.path }}?sort_by=voicebank"
+              data-sort="voicebank"
+              >Voicebank</a
+            >
+          </th>
+          <th class="w-1 min-w-0 border border-border px-3 py-2 text-left">
+            <a
+              href="{{ request.url.path }}?sort_by=published_date"
+              data-sort="published_date"
+              >Published</a
+            >
+          </th>
+          <th class="w-1 min-w-0 border border-border px-3 py-2 text-left">
+            <a href="{{ request.url.path }}?sort_by=rating" data-sort="rating"
+              >My Rating</a
+            >
+          </th>
+        </tr>
+      </thead>
+      <tbody
+        id="tracks-table-body"
+        class="bg-background"
+        data-update-url="/_/tracks_table_body"
+      >
+        {% include "partials/tracks_table_body.html" %}
+      </tbody>
     </table>
-</div>
+  </div>
 
-<div class="justify-center items-center gap-3 mt-8 flex-wrap" id="pagination-container">
+  <div
+    class="mt-8 flex-wrap items-center justify-center gap-3"
+    id="pagination-container"
+  >
     <button
-        class="shadow-md p-2 rounded border border-cyan-text text-cyan-text font-bold cursor-pointer transition-colors duration-200 ease-in-out enabled:hover:bg-cyan-hover disabled:border-gray-text/50 disabled:cursor-not-allowed disabled:text-gray-text/50"
-        id="prev-page-btn" disabled>Previous</button>
-    <div class="flex items-center gap-2 " id="page-links"></div>
+      class="cursor-pointer rounded border border-cyan-text p-2 font-bold text-cyan-text shadow-md transition-colors duration-200 ease-in-out enabled:hover:bg-cyan-hover disabled:cursor-not-allowed disabled:border-gray-text/50 disabled:text-gray-text/50"
+      id="prev-page-btn"
+      disabled
+    >
+      Previous
+    </button>
+    <div class="flex items-center gap-2" id="page-links"></div>
     <button
-        class="shadow-md p-2 rounded border border-cyan-text text-cyan-text font-bold cursor-pointer transition-colors duration-200 ease-in-out enabled:hover:bg-cyan-hover disabled:border-gray-text/50 disabled:cursor-not-allowed disabled:text-gray-text/50"
-        id="next-page-btn" disabled>Next</button>
-</div>
+      class="cursor-pointer rounded border border-cyan-text p-2 font-bold text-cyan-text shadow-md transition-colors duration-200 ease-in-out enabled:hover:bg-cyan-hover disabled:cursor-not-allowed disabled:border-gray-text/50 disabled:text-gray-text/50"
+      id="next-page-btn"
+      disabled
+    >
+      Next
+    </button>
+  </div>
 
-<script src="{{ url_for('static', path='js/main.js') }}"></script>
+  <script src="{{ url_for('static', path='js/main.js') }}"></script>
 {% endblock %}

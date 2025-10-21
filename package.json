@@ -1,0 +1,41 @@
+{
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.38.0",
+    "@tailwindcss/cli": "^4.1.14",
+    "eslint": "^9.38.0",
+    "globals": "^16.4.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.5",
+    "prettier": "^3.6.2",
+    "prettier-plugin-jinja-template": "^2.1.0",
+    "prettier-plugin-tailwindcss": "^0.7.1",
+    "tailwindcss": "^4.1.14"
+  },
+  "prettier": {
+    "plugins": [
+      "prettier-plugin-jinja-template",
+      "prettier-plugin-tailwindcss"
+    ],
+    "tailwindStylesheet": "./app/static/css/input.css",
+    "overrides": [
+      {
+        "files": [
+          "*.html"
+        ],
+        "options": {
+          "parser": "jinja-template"
+        }
+      }
+    ]
+  },
+  "lint-staged": {
+    "**/*": "prettier --write --ignore-unknown",
+    "*.js": "eslint --fix"
+  }
+}
