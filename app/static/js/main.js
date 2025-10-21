@@ -29,7 +29,7 @@ const getYouTubeVideoId = (url) => {
 };
 
 const formatAllDates = () => {
-	document.querySelectorAll(".published-date").forEach((td) => {
+	document.querySelectorAll('td[data-label="Published"]').forEach((td) => {
 		if (td.dataset.date) td.textContent = timeAgo(td.dataset.date);
 	});
 };
@@ -54,14 +54,15 @@ const updateSortIndicators = () => {
 		}
 	}
 	document.querySelectorAll("th a[data-sort]").forEach((a) => {
-		a.classList.remove("active");
+		a.classList.remove("active", "font-bold", "text-cyan-text");
 		a.textContent = a.textContent.replace(/ [▲▼]/, "");
 		if (a.dataset.sort === sortBy) {
-			a.classList.add("active");
+			a.classList.add("active", "font-bold", "text-cyan-text");
 			a.textContent += sortDir === "desc" ? " ▼" : " ▲";
 		}
 	});
 };
+
 let currentPage = 1;
 let currentLimit = localStorage.getItem("defaultPageSize") || "all";
 
@@ -72,17 +73,32 @@ const buildPlaylistFromDOM = () => {
 	const allRows = Array.from(tableBody.querySelectorAll("tr[data-track-id]"));
 	playerState.playlist = allRows
 		.map((row) => {
-			const titleLink = row.querySelector("td:nth-child(3) a");
-			const producerLink = row.querySelector("td:nth-child(4) a");
-			const playButton = row.querySelector(".track-play-button");
-			const imageUrl = row.querySelector("td:nth-child(1) img")?.src;
-			if (!playButton || !imageUrl) return null; // Skip skeleton rows
+			// Image
+			const imageEl = row.querySelector('td[data-label="Image"] img');
+			const imageUrl = imageEl?.src;
+			if (!imageUrl) return null;
+
+			// Title link
+			const titleLink = row.querySelector('td[data-label="Title"] a[href]');
+			const title = titleLink ? titleLink.textContent.trim() : "Unknown";
+			const link = titleLink ? titleLink.href : "";
+
+			// Producer
+			const producerLink = row.querySelector('td[data-label="Producer"] a');
+			const producer = producerLink
+				? producerLink.textContent.trim()
+				: "Unknown";
+
+			// Play button (first button inside Title column)
+			const playButton = row.querySelector('td[data-label="Title"] button');
+			if (!playButton) return null;
+
 			return {
 				id: playButton.dataset.trackId,
-				title: titleLink ? titleLink.textContent.trim() : "Unknown",
-				producer: producerLink ? producerLink.textContent.trim() : "Unknown",
-				link: titleLink ? titleLink.href : "",
-				imageUrl: imageUrl,
+				title,
+				producer,
+				link,
+				imageUrl,
 			};
 		})
 		.filter((t) => t?.id); // Filter out any nulls
@@ -90,6 +106,25 @@ const buildPlaylistFromDOM = () => {
 	if (playerState.isShuffle) {
 		generateShuffledPlaylist();
 	}
+};
+
+const truncateTextByWords = (selector, maxLength) => {
+	document.querySelectorAll(selector).forEach((el) => {
+		// Store the original text if it's not already stored
+		if (!el.dataset.originalText) {
+			el.dataset.originalText = el.textContent.trim();
+		}
+
+		const originalText = el.dataset.originalText;
+
+		if (originalText.length > maxLength) {
+			// Hard cut, no word boundary check
+			el.textContent = `${originalText.substring(0, maxLength)}...`;
+		} else {
+			// If it's shorter, ensure it's the full original text
+			el.textContent = originalText;
+		}
+	});
 };
 
 let ytPlayer;
@@ -225,7 +260,7 @@ function loadAndPlayTrack(trackId) {
 	durationEl.textContent = "0:00";
 
 	// Show the player UI immediately
-	musicPlayerEl.classList.remove("music-player-hidden");
+	musicPlayerEl.classList.replace("hidden", "grid");
 	updatePlayerUI();
 
 	// If player exists, just load the video.
@@ -254,6 +289,28 @@ function loadAndPlayTrack(trackId) {
 	}
 }
 
+function _cleanupPreviousEmbed(trackId) {
+	if (!trackId) return;
+	const prevRow = document.querySelector(`tr[data-track-id="${trackId}"]`);
+	if (!prevRow) return;
+
+	const prevEmbedBtn = prevRow.querySelector(
+		"button[data-embed-button].is-open",
+	);
+	if (prevEmbedBtn) {
+		if (playerState.embeddedPlayers[trackId]) {
+			playerState.embeddedPlayers[trackId].destroy();
+			delete playerState.embeddedPlayers[trackId];
+		}
+		const container = prevRow.querySelector("div[data-embed-container]");
+		if (container) {
+			container.innerHTML = "";
+			container.style.display = "none";
+		}
+		prevEmbedBtn.classList.remove("is-open");
+	}
+}
+
 function playNextTrack() {
 	const activePlaylist = playerState.isShuffle
 		? playerState.shuffledPlaylist
@@ -271,26 +328,8 @@ function playNextTrack() {
 	const nextTrack = activePlaylist[nextIndex];
 
 	// Close previous embed if in embed mode
-	if (wasInEmbedMode && previousTrackId) {
-		const prevRow = document.querySelector(
-			`tr[data-track-id="${previousTrackId}"]`,
-		);
-		if (prevRow) {
-			const prevEmbedBtn = prevRow.querySelector(".embed-button.is-open");
-			if (prevEmbedBtn) {
-				// Manually close without triggering audio fallback
-				if (playerState.embeddedPlayers[previousTrackId]) {
-					playerState.embeddedPlayers[previousTrackId].destroy();
-					delete playerState.embeddedPlayers[previousTrackId];
-				}
-				const container = prevRow.querySelector(".youtube-embed-container");
-				if (container) {
-					container.innerHTML = "";
-					container.style.display = "none";
-				}
-				prevEmbedBtn.classList.remove("is-open");
-			}
-		}
+	if (wasInEmbedMode) {
+		_cleanupPreviousEmbed(previousTrackId);
 	}
 
 	// Update current track
@@ -315,7 +354,7 @@ function playNextTrack() {
 				`tr[data-track-id="${nextTrack.id}"]`,
 			);
 			if (nextRow) {
-				const nextEmbedBtn = nextRow.querySelector(".embed-button");
+				const nextEmbedBtn = nextRow.querySelector("button[data-embed-button]");
 				if (nextEmbedBtn && !nextEmbedBtn.classList.contains("is-open")) {
 					nextEmbedBtn.click();
 				}
@@ -367,26 +406,8 @@ function playPrevTrack() {
 	const prevTrack = activePlaylist[prevIndex];
 
 	// Close previous embed if in embed mode
-	if (wasInEmbedMode && previousTrackId) {
-		const prevRow = document.querySelector(
-			`tr[data-track-id="${previousTrackId}"]`,
-		);
-		if (prevRow) {
-			const prevEmbedBtn = prevRow.querySelector(".embed-button.is-open");
-			if (prevEmbedBtn) {
-				// Manually close without triggering audio fallback
-				if (playerState.embeddedPlayers[previousTrackId]) {
-					playerState.embeddedPlayers[previousTrackId].destroy();
-					delete playerState.embeddedPlayers[previousTrackId];
-				}
-				const container = prevRow.querySelector(".youtube-embed-container");
-				if (container) {
-					container.innerHTML = "";
-					container.style.display = "none";
-				}
-				prevEmbedBtn.classList.remove("is-open");
-			}
-		}
+	if (wasInEmbedMode) {
+		_cleanupPreviousEmbed(previousTrackId);
 	}
 
 	// Update current track
@@ -411,7 +432,7 @@ function playPrevTrack() {
 				`tr[data-track-id="${prevTrack.id}"]`,
 			);
 			if (prevRow) {
-				const prevEmbedBtn = prevRow.querySelector(".embed-button");
+				const prevEmbedBtn = prevRow.querySelector("button[data-embed-button]");
 				if (prevEmbedBtn && !prevEmbedBtn.classList.contains("is-open")) {
 					prevEmbedBtn.click();
 				}
@@ -478,22 +499,24 @@ function stopPlayer() {
 		}
 	}
 
-	document.querySelectorAll(".embed-button.is-open").forEach((btn) => {
-		btn.classList.remove("is-open");
-		const container = btn
-			.closest("td")
-			.querySelector(".youtube-embed-container");
-		if (container) {
-			container.innerHTML = "";
-			container.style.display = "none";
-		}
-	});
+	document
+		.querySelectorAll("button[data-embed-button].is-open")
+		.forEach((btn) => {
+			btn.classList.remove("is-open");
+			const container = btn
+				.closest("td")
+				.querySelector("div[data-embed-container]");
+			if (container) {
+				container.innerHTML = "";
+				container.style.display = "none";
+			}
+		});
 
 	playerState.isPlaying = false;
 	playerState.currentTrackId = null;
 	playerState.isEmbedded = false;
 	stopProgressUpdater();
-	musicPlayerEl.classList.add("music-player-hidden");
+	musicPlayerEl.classList.replace("grid", "hidden");
 	progressBar.value = 0;
 	currentTimeEl.textContent = "0:00";
 	durationEl.textContent = "0:00";
@@ -522,10 +545,12 @@ function updatePlayerUI() {
 	document.querySelectorAll("tr.is-playing").forEach((row) => {
 		row.classList.remove("is-playing");
 	});
-	document.querySelectorAll(".track-play-button.is-playing").forEach((btn) => {
-		btn.innerHTML = '<i class="fa-solid fa-play"></i>'; // Reset to play icon
-		btn.classList.remove("is-playing");
-	});
+	document
+		.querySelectorAll("button[data-play-button].is-playing")
+		.forEach((btn) => {
+			btn.innerHTML = '<i class="fa-solid fa-play"></i>'; // Reset to play icon
+			btn.classList.remove("is-playing");
+		});
 
 	if (playerState.currentTrackId !== null) {
 		const track = playerState.playlist.find(
@@ -546,7 +571,9 @@ function updatePlayerUI() {
 				trackRow.classList.add("is-playing");
 
 				// Update the play/pause icon in the table
-				const playButtonInRow = trackRow.querySelector(".track-play-button");
+				const playButtonInRow = trackRow.querySelector(
+					"button[data-play-button]",
+				);
 				if (playButtonInRow) {
 					playButtonInRow.innerHTML = playerState.isPlaying
 						? '<i class="fa-solid fa-pause"></i>'
@@ -601,16 +628,22 @@ const updatePaginationUI = (pagination) => {
 	) => {
 		if (isDisabled) {
 			const ellipsis = document.createElement("span");
-			ellipsis.className = "page-ellipsis";
+			ellipsis.className = "p-2";
 			ellipsis.textContent = "...";
 			return ellipsis;
 		}
 		const button = document.createElement("button");
-		button.className = "page-btn";
+		button.className =
+			"shadow-md py-2 px-4 rounded border border-cyan-text text-cyan-text font-bold cursor-pointer transition-colors duration-200 ease-in-out enabled:hover:bg-cyan-hover";
 		button.textContent = text;
 		button.dataset.page = page;
 		if (isCurrent) {
-			button.classList.add("active");
+			button.classList.add(
+				"bg-cyan-text",
+				"text-stone-950",
+				"border-cyan-text",
+			);
+			button.disabled = true;
 		}
 		return button;
 	};
@@ -734,6 +767,7 @@ const updateTracks = async () => {
 			}
 
 			updatePaginationUI(data.pagination);
+			truncateTextByWords("[data-js-truncate]", 35);
 		} catch (error) {
 			clearTimeout(skeletonTimer);
 			console.error("Failed to update tracks:", error);
@@ -751,18 +785,20 @@ const updateActiveFilterDisplay = () => {
 	const container = document.getElementById(
 		"rating-filter-indicator-container",
 	);
-	if (!container) return; // Only run on pages that have the container
+	if (!container) return;
 
 	const params = new URLSearchParams(window.location.search);
 	const ratingFilter = params.get("exact_rating_filter");
 
 	if (ratingFilter) {
 		container.innerHTML = `
-            <div class="active-filter-indicator">
-                <span>Filtering by rating: <strong>${ratingFilter} ★</strong></span>
-                <button class="clear-rating-filter-btn" title="Clear rating filter">&times;</button>
-            </div>
-        `;
+			<div data-active-rating-filter class="flex items-center justify-between gap-3 bg-gray-100 border border-border rounded px-3 py-2 shadow-sm w-1/6">
+				<span>Filtering by rating: <strong>${ratingFilter} ★</strong></span>
+				<button type="button" data-clear-rating-filter
+					class="text-xl text-gray-500 hover:text-gray-700 leading-none"
+					title="Clear rating filter">&times;</button>
+			</div>
+		`;
 		container.style.display = "block";
 	} else {
 		container.innerHTML = "";
@@ -780,12 +816,19 @@ const updateThemeUI = () => {
 		themeIcon.innerHTML = '<i class="fa-solid fa-moon"></i>';
 	}
 };
+
 const toggleClearButton = (input) => {
-	const wrapper = input.parentElement;
-	const clearBtn = wrapper.querySelector(".clear-input-btn");
-	if (clearBtn) {
-		clearBtn.classList.toggle("visible", input.value.length > 0);
-	}
+	const wrapper = input.closest(".relative"); // safer than parentElement
+	if (!wrapper) return;
+
+	const btn = wrapper.querySelector("[data-clear]");
+	if (!btn) return;
+
+	const visible = input.value.length > 0;
+	btn.classList.toggle("opacity-100", visible);
+	btn.classList.toggle("opacity-0", !visible);
+	btn.classList.toggle("visible", visible);
+	btn.classList.toggle("invisible", !visible);
 };
 
 let ratingChart = null; // Variable to hold the chart instance
@@ -878,6 +921,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	updateSortIndicators();
 	updateThemeUI();
 	updateActiveFilterDisplay();
+	truncateTextByWords("[data-js-truncate]", 35);
 
 	const limitFilter = document.getElementById("limit_filter");
 	if (limitFilter) {
@@ -904,7 +948,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				pageChanged = true;
 			}
 			// Handle specific page number buttons
-			const pageButton = e.target.closest(".page-btn");
+			const pageButton = e.target.closest("button[data-page]");
 			if (pageButton && !pageButton.classList.contains("active")) {
 				const page = parseInt(pageButton.dataset.page, 10);
 				if (!Number.isNaN(page)) {
@@ -937,9 +981,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 		filterForm
 			.querySelectorAll('input[type="text"], input[type="search"]')
-			.forEach((input) => {
-				toggleClearButton(input);
-			});
+			.forEach(toggleClearButton);
 	}
 
 	// --- Initial Page Load Logic ---
@@ -1038,14 +1080,16 @@ document.addEventListener("DOMContentLoaded", () => {
 		container.style.setProperty("--rating-width", `${widthPercentage}%`);
 		return clampedRating;
 	};
+
 	document.body.addEventListener("mousemove", (e) => {
-		const ratingContainer = e.target.closest(".star-rating-container");
+		const ratingContainer = e.target.closest("[data-star-rating]");
 		if (ratingContainer) updateStarPreview(ratingContainer, e);
 	});
+
 	document.body.addEventListener(
 		"mouseleave",
 		(e) => {
-			const ratingContainer = e.target.closest(".star-rating-container");
+			const ratingContainer = e.target.closest("[data-star-rating]");
 			if (ratingContainer) {
 				const actualRating = parseFloat(ratingContainer.dataset.rating) || 0;
 				const widthPercentage = (actualRating / 10.0) * 100;
@@ -1059,38 +1103,55 @@ document.addEventListener("DOMContentLoaded", () => {
 	);
 
 	document.body.addEventListener("click", (e) => {
-		const clearRatingBtn = e.target.closest(".clear-rating-btn");
+		const clearRatingBtn = e.target.closest("[data-clear-rating]");
 		if (clearRatingBtn) {
 			e.preventDefault();
-			const deleteForm = clearRatingBtn.closest("form");
-			if (!deleteForm) return; // Safety check
+			const ratingForm = clearRatingBtn.closest("form[data-rating-form]");
+			const deleteEndpoint = clearRatingBtn.dataset.deleteEndpoint;
+			if (!ratingForm || !deleteEndpoint) return;
 
-			fetch(deleteForm.action, { method: "POST" }).then(() => {
-				// Find the main rating form, which is the sibling before the delete form
-				const ratingForm = deleteForm.previousElementSibling;
-				if (ratingForm) {
-					const ratingContainer = ratingForm.querySelector(
-						".star-rating-container",
-					);
+			// Special case for the "My Rated Tracks" page: remove the whole row
+			if (window.location.pathname.includes("rated_tracks")) {
+				fetch(deleteEndpoint, { method: "POST" }).then(() => {
+					ratingForm.closest("tr")?.remove();
+				});
+				return;
+			}
+
+			// Logic for the main tracks page
+			fetch(deleteEndpoint, { method: "POST" }).then(() => {
+				// 1. Reset the star UI
+				const ratingContainer = ratingForm.querySelector("[data-star-rating]");
+				if (ratingContainer) {
 					ratingContainer.dataset.rating = "0";
 					ratingContainer.style.setProperty("--rating-width", "0%");
-					ratingForm.querySelectorAll('input[type="radio"]').forEach((r) => {
-						r.checked = false;
-					});
 				}
 
-				// If we are on the rated_tracks page, remove the entire table row
-				if (window.location.pathname.includes("rated_tracks")) {
-					deleteForm.closest("tr").remove();
-				} else {
-					// Otherwise, just remove the delete form/button itself
-					deleteForm.remove();
+				// 2. Clear radio buttons
+				ratingForm
+					.querySelectorAll('input[type="radio"]')
+					.forEach((r) => (r.checked = false));
+
+				// 3. Clear and reset notes
+				const notesInput = ratingForm.querySelector(
+					"textarea[data-notes-input]",
+				);
+				const notesButton = ratingForm.querySelector(
+					"button[data-notes-toggle]",
+				);
+				if (notesInput) notesInput.value = "";
+				if (notesButton) {
+					notesButton.classList.add("text-foreground", "text-foreground");
+					notesButton.textContent = "Add Note";
 				}
+
+				// 4. Remove the clear button itself
+				clearRatingBtn.remove();
 			});
 			return; // Stop processing other click handlers
 		}
 
-		const trackPlayBtn = e.target.closest(".track-play-button");
+		const trackPlayBtn = e.target.closest("button[data-play-button]");
 		if (trackPlayBtn) {
 			e.preventDefault();
 			const trackId = trackPlayBtn.dataset.trackId;
@@ -1112,21 +1173,19 @@ document.addEventListener("DOMContentLoaded", () => {
 			return;
 		}
 
-		const clearBtn = e.target.closest(".clear-input-btn");
-		if (clearBtn) {
-			const wrapper = clearBtn.parentElement;
-			const input = wrapper.querySelector("input");
+		const btn = e.target.closest("[data-clear]");
+		if (btn) {
+			const input = btn.parentElement.querySelector("input");
 			if (input) {
 				input.value = "";
 				input.focus();
 				input.dispatchEvent(new Event("input", { bubbles: true }));
 			}
-			return;
 		}
 
-		const clearAllBtn = e.target.closest("a.clear.button");
+		const clearAllBtn = e.target.closest("#clear-filters-btn");
 		if (clearAllBtn) {
-			e.preventDefault(); // This is the most important line: it stops the link from reloading the page.
+			e.preventDefault();
 
 			// 1. Manually and explicitly clear the form to its default state
 			const filterForm = document.getElementById("filter-form");
@@ -1158,7 +1217,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			return; // Stop processing other click handlers
 		}
 
-		const ratingContainer = e.target.closest(".star-rating-container");
+		const ratingContainer = e.target.closest("div[data-star-rating]");
 		if (ratingContainer) {
 			const rating = updateStarPreview(ratingContainer, e);
 			const form = ratingContainer.closest("form");
@@ -1170,26 +1229,49 @@ document.addEventListener("DOMContentLoaded", () => {
 				fetch(form.action, { method: "POST", body: formData }).then(() => {
 					ratingContainer.dataset.rating = rating;
 					updateStarPreview(ratingContainer, e);
-					if (!form.nextElementSibling?.matches(".delete-rating-form")) {
-						const deleteFormHTML = `<form action="${form.action}/delete" method="post" class="delete-rating-form"><button type="submit" class="clear-rating-btn">X</button></form>`;
-						form.parentElement.insertAdjacentHTML("beforeend", deleteFormHTML);
+					if (!form.querySelector("[data-clear-rating]")) {
+						// Correctly create just the button with the necessary data attribute
+						const deleteButtonHTML = `
+								<button data-clear-rating type="button" data-delete-endpoint="${form.action}/delete"
+									class="shadow-md p-1 rounded border border-red-text text-red-text font-bold cursor-pointer transition-colors duration-200 ease-in-out hover:bg-red-hover">
+									<i class="fa-solid fa-xmark"></i>
+								</button>`;
+
+						// Find the container where the notes button lives
+						const buttonContainer = form.querySelector(
+							"button[data-notes-toggle]",
+						)?.parentElement;
+						if (buttonContainer) {
+							// Insert the new button right into that container
+							buttonContainer.insertAdjacentHTML("beforeend", deleteButtonHTML);
+						}
 					}
 				});
 			}
 			return;
 		}
-
-		const notesBtn = e.target.closest(".notes-toggle-btn");
+		const notesBtn = e.target.closest("button[data-notes-toggle]");
 		if (notesBtn) {
 			e.preventDefault();
-			const textarea = notesBtn.nextElementSibling;
-			const isVisible = textarea.style.display !== "none";
-			textarea.style.display = isVisible ? "none" : "block";
-			notesBtn.textContent =
-				textarea.value.trim().length > 0 ? "Edit Note" : "Add Note";
+			const trackRow = notesBtn.closest("tr[data-track-id]");
+			if (!trackRow) return;
 
-			if (!isVisible) {
-				textarea.focus();
+			const notesContainer = trackRow.querySelector(
+				"div[data-notes-container]",
+			);
+			if (!notesContainer) return;
+
+			// Toggle the 'hidden' class directly. This is the correct way.
+			notesContainer.classList.toggle("hidden");
+
+			// If the container is NO LONGER hidden, focus the textarea.
+			if (!notesContainer.classList.contains("hidden")) {
+				const textarea = notesContainer.querySelector(
+					"textarea[data-notes-input]",
+				);
+				if (textarea) {
+					textarea.focus();
+				}
 			}
 			return;
 		}
@@ -1231,12 +1313,12 @@ document.addEventListener("DOMContentLoaded", () => {
 			return;
 		}
 
-		const clearRatingFilterBtn = e.target.closest(".clear-rating-filter-btn");
-		if (clearRatingFilterBtn) {
+		const clearBtn = e.target.closest("[data-clear-rating-filter]");
+		if (clearBtn) {
 			e.preventDefault();
+
 			const params = new URLSearchParams(window.location.search);
 			params.delete("exact_rating_filter");
-			// When clearing, also remove sort to go back to default view
 			params.delete("sort_by");
 			params.delete("sort_dir");
 
@@ -1246,10 +1328,9 @@ document.addEventListener("DOMContentLoaded", () => {
 				`${window.location.pathname}?${params.toString()}`,
 			);
 			updateTracks();
-			return;
 		}
 
-		const vocadbBtn = e.target.closest(".vocadb-button");
+		const vocadbBtn = e.target.closest("button[data-vocadb-track-button]");
 		if (vocadbBtn) {
 			e.preventDefault();
 			const titleEn = encodeURIComponent(vocadbBtn.dataset.titleEn);
@@ -1275,7 +1356,9 @@ document.addEventListener("DOMContentLoaded", () => {
 			return;
 		}
 
-		const vocadbProducerBtn = e.target.closest(".vocadb-producer-button");
+		const vocadbProducerBtn = e.target.closest(
+			"button[data-vocadb-artist-button]",
+		);
 		if (vocadbProducerBtn) {
 			e.preventDefault();
 			const producer = vocadbProducerBtn.dataset.producer;
@@ -1300,27 +1383,29 @@ document.addEventListener("DOMContentLoaded", () => {
 			return;
 		}
 
-		const embedButton = e.target.closest(".embed-button");
+		const embedButton = e.target.closest("button[data-embed-button]");
 		if (embedButton) {
 			e.preventDefault();
 			const trackRow = embedButton.closest("tr");
 			const trackId = trackRow.dataset.trackId;
 			const parentCell = embedButton.closest("td");
 			const videoContainer = parentCell.querySelector(
-				".youtube-embed-container",
+				"div[data-embed-container]",
 			);
 
 			// Close any other open embeds (except the currently playing one)
-			document.querySelectorAll(".embed-button.is-open").forEach((openBtn) => {
-				const otherRow = openBtn.closest("tr");
-				const otherTrackId = otherRow.dataset.trackId;
-				if (
-					openBtn !== embedButton &&
-					otherTrackId !== playerState.currentTrackId
-				) {
-					openBtn.click();
-				}
-			});
+			document
+				.querySelectorAll("button[data-embed-button].is-open")
+				.forEach((openBtn) => {
+					const otherRow = openBtn.closest("tr");
+					const otherTrackId = otherRow.dataset.trackId;
+					if (
+						openBtn !== embedButton &&
+						otherTrackId !== playerState.currentTrackId
+					) {
+						openBtn.click();
+					}
+				});
 
 			// Build playlist if needed
 			const tableBody = trackRow.closest("tbody");
@@ -1328,9 +1413,11 @@ document.addEventListener("DOMContentLoaded", () => {
 				const allRows = Array.from(tableBody.querySelectorAll("tr"));
 				playerState.playlist = allRows
 					.map((row) => {
-						const titleLink = row.querySelector("td:nth-child(3) a");
-						const producerLink = row.querySelector("td:nth-child(4) a");
-						const playButton = row.querySelector(".track-play-button");
+						const titleLink = row.querySelector('td[data-label="Title"] a');
+						const producerLink = row.querySelector(
+							'td[data-label="Producer"] a',
+						);
+						const playButton = row.querySelector("button[data-play-button]");
 						return {
 							id: playButton ? playButton.dataset.trackId : null,
 							title: titleLink ? titleLink.textContent.trim() : "Unknown",
@@ -1346,7 +1433,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
 
 			// Show the player menu
-			musicPlayerEl.classList.remove("music-player-hidden");
+			musicPlayerEl.classList.replace("hidden", "grid");
 
 			// If this track isn't loaded yet, set it as current
 			if (playerState.currentTrackId !== trackId) {
@@ -1517,14 +1604,22 @@ document.addEventListener("DOMContentLoaded", () => {
 			return;
 		}
 
-		const lyricsButton = e.target.closest(".lyrics-button");
+		const lyricsButton = e.target.closest("button[data-lyrics-button]");
 		if (lyricsButton) {
 			e.preventDefault();
 			const parentCell = lyricsButton.closest("td");
-			const lyricsContainer = parentCell.querySelector(".lyrics-container");
-			const lyricsSelect = lyricsContainer.querySelector(".lyrics-select");
-			const lyricsMetadata = lyricsContainer.querySelector(".lyrics-metadata");
-			const lyricsContent = lyricsContainer.querySelector(".lyrics-content");
+			const lyricsContainer = parentCell.querySelector(
+				"div[data-lyrics-container]",
+			);
+			const lyricsSelect = lyricsContainer.querySelector(
+				"select[data-lyrics-select]",
+			);
+			const lyricsMetadata = lyricsContainer.querySelector(
+				"div[data-lyrics-metadata]",
+			);
+			const lyricsContent = lyricsContainer.querySelector(
+				"div[data-lyrics-content]",
+			);
 			if (lyricsButton.classList.toggle("is-open")) {
 				lyricsButton.textContent = "Close";
 				if (lyricsContainer.dataset.loaded === "true") {
@@ -1545,7 +1640,7 @@ document.addEventListener("DOMContentLoaded", () => {
 						if (selectedLyric.source) {
 							metadataHTML += ` | Source: `;
 							if (selectedLyric.url) {
-								metadataHTML += `<a href="${selectedLyric.url}" target="_blank">${selectedLyric.source}</a>`;
+								metadataHTML += `<a class="hover:underline hover:text-cyan-text font-semibold" href="${selectedLyric.url}" target="_blank">${selectedLyric.source}</a>`;
 							} else {
 								metadataHTML += selectedLyric.source;
 							}
@@ -1619,26 +1714,44 @@ document.addEventListener("DOMContentLoaded", () => {
 	document.body.addEventListener(
 		"blur",
 		(e) => {
-			const notesInput = e.target.closest(".notes-input");
+			const notesInput = e.target.closest("textarea[data-notes-input]");
 			if (notesInput) {
-				const form = notesInput.closest("form");
-				const ratingContainer = form.querySelector(".star-rating-container");
+				const trackRow = notesInput.closest("tr[data-track-id]");
+				if (!trackRow) return;
+
+				const ratingForm = trackRow.querySelector("form[data-rating-form]");
+				const ratingContainer = trackRow.querySelector("div[data-star-rating]");
+				if (!ratingForm || !ratingContainer) return;
+
 				const currentRating = parseFloat(ratingContainer.dataset.rating) || 0;
+
+				// Only save notes if the track has been rated.
 				if (currentRating > 0) {
-					const formData = new FormData(form);
+					const formData = new FormData();
 					formData.set("rating", currentRating);
-					fetch(form.action, { method: "POST", body: formData }).then(() => {
-						const notesBtn = form.querySelector(".notes-toggle-btn");
-						notesBtn.classList.toggle(
-							"has-note",
-							notesInput.value.trim().length > 0,
-						);
-						notesBtn.textContent = "Saved!";
-						setTimeout(() => {
-							notesBtn.textContent =
-								notesInput.value.trim().length > 0 ? "Edit Note" : "Add Note";
-						}, 2000);
-					});
+					formData.set("notes", notesInput.value);
+
+					fetch(ratingForm.action, { method: "POST", body: formData }).then(
+						() => {
+							const notesBtn = ratingForm.querySelector(
+								"button[data-notes-toggle]",
+							);
+							if (notesBtn) {
+								const hasNote = notesInput.value.trim().length > 0;
+								notesBtn.textContent = "Saved!";
+
+								// Update button style based on whether there's a note
+								notesBtn.classList.toggle("border-green-text", hasNote);
+								notesBtn.classList.toggle("text-green-text", hasNote);
+								notesBtn.classList.toggle("border-gray-text", !hasNote);
+								notesBtn.classList.toggle("text-gray-text", !hasNote);
+
+								setTimeout(() => {
+									notesBtn.textContent = hasNote ? "Edit Note" : "Add Note";
+								}, 2000);
+							}
+						},
+					);
 				}
 			}
 		},
@@ -1694,7 +1807,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		);
 		if (!trackRow) return;
 
-		const embedBtn = trackRow.querySelector(".embed-button");
+		const embedBtn = trackRow.querySelector("button[data-embed-button]");
 		if (!embedBtn) return;
 
 		const isCurrentlyEmbedded = embedBtn.classList.contains("is-open");

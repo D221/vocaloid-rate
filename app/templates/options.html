@@ -3,38 +3,50 @@
 {% block title %}Options - Vocaloid Rater{% endblock %}
 
 {% block content %}
-<div class="header-container">
-    <h1>Options</h1>
-    <div class="header-controls">
-        <a href="/" class="header-button">Home</a>
-        <a href="/rated_tracks" class="header-button">View Rated Tracks</a>
+<div class="flex flex-wrap items-center justify-between gap-4 border-b border-border mb-8 pb-4">
+    <h1 class="flex-grow text-center text-4xl font-bold text-cyan-text">Options</h1>
+    <div class="flex flex-shrink-0 items-center gap-4">
+        <a href="/"
+            class="shadow-md p-3 rounded border border-cyan-text text-cyan-text font-bold cursor-pointer transition-colors duration-200 ease-in-out hover:bg-cyan-hover">Home</a>
+        <a href="/rated_tracks"
+            class="shadow-md p-3 rounded border border-cyan-text text-cyan-text font-bold cursor-pointer transition-colors duration-200 ease-in-out hover:bg-cyan-hover">View
+            Rated Tracks</a>
+        <div id="theme-switcher">
+            <span id="theme-icon"><i class="fa-solid fa-moon text-xl text-foreground"></i></span>
+        </div>
     </div>
 </div>
 
-<div class="content-container" style="max-width: 800px; margin: 2rem auto; padding: 1rem;">
-    <h2>Backup & Restore</h2>
+<div class="max-w-3xl my-8 mx-auto p-4">
+    <h2 class="mt-0 border-b border-border pb-1 text-2xl font-semibold">Backup & Restore</h2>
 
-    <div class="backup-section" style="margin-bottom: 2rem; padding: 1rem; border: 1px solid #ccc; border-radius: 5px;">
-        <h3>Backup Rated Tracks</h3>
-        <p>Download a JSON file containing all your rated tracks, including their rating and any notes.</p>
-        <button id="backup-button" class="button">Download Backup</button>
+    <div class="p-4 m-4 rounded shadow-md border border-border bg-card-bg">
+        <h3 class="mt-0 border-b border-border pb-1 text-1xl font-semibold">Backup Rated Tracks</h3>
+        <p class="mb-2">Download a JSON file containing all your rated tracks, including their rating and any notes.</p>
+        <button id="backup-button"
+            class="shadow-md p-2 rounded border border-cyan-text text-cyan-text font-bold cursor-pointer transition-colors duration-200 ease-in-out enabled:hover:bg-cyan-hover disabled:border-gray-text/50 disabled:cursor-not-allowed disabled:text-foreground/50">Download
+            Backup</button>
     </div>
 
-    <div class="restore-section" style="padding: 1rem; border: 1px solid #ccc; border-radius: 5px;">
-        <h3>Restore Ratings</h3>
-        <p>Upload a JSON backup file to restore your ratings. If a track from the backup does not exist in the database,
+    <div class="p-4 m-4 rounded shadow-md border border-border bg-card-bg">
+        <h3 class="mt-0 border-b border-border pb-1 text-1xl font-semibold">Restore Ratings</h3>
+        <p class="mb-2">Upload a JSON backup file to restore your ratings. If a track from the backup does not exist in
+            the database,
             it will be added.</p>
-        <input type="file" id="restore-file-input" accept=".json" style="margin-bottom: 1rem;">
-        <button id="restore-button" class="button" disabled>Upload and Restore</button>
+        <input type="file" id="restore-file-input" accept=".json"
+            class="shadow-md border border-border file:font-bold file:text-cyan-text rounded file:p-2 file:border-r file:border-border file:bg-table-header duration-200 ease-in-out hover:file:cursor-pointer hover:file:bg-border">
+        <button id="restore-button"
+            class="shadow-md p-2 rounded border border-cyan-text text-cyan-text font-bold cursor-pointer transition-colors duration-200 ease-in-out enabled:hover:bg-cyan-hover disabled:border-gray-text/50 disabled:cursor-not-allowed disabled:text-gray-text/50"
+            disabled>Upload and Restore</button>
         <div class="spinner" id="restore-spinner"></div>
         <p id="restore-status" style="margin-top: 1rem; font-weight: bold;"></p>
     </div>
 
-    <div class="pagination-settings-section"
-        style="margin-top: 2rem; padding: 1rem; border: 1px solid #ccc; border-radius: 5px;">
-        <h3>Default Page Size</h3>
-        <p>Set the default number of tracks to display per page on the main list.</p>
-        <select id="default-page-size-select">
+    <div class="p-4 m-4 rounded shadow-md border border-border bg-card-bg">
+        <h3 class="mt-0 border-b border-border pb-1 text-1xl font-semibold">Default Page Size</h3>
+        <p class="mb-2">Set the default number of tracks to display per page on the main list.</p>
+        <select id="default-page-size-select"
+            class="shadow-md border border-border rounded p-2 bg-card-bg text-foreground">
             <option value="all">All</option>
             <option value="25">25</option>
             <option value="50">50</option>

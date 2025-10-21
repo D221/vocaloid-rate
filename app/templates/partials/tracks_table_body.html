@@ -1,92 +1,135 @@
 {% for track in tracks %}
-<tr data-track-id="{{ track.id }}">
-    <!-- Added data-label="Image" -->
-    <td data-label="Image">
+<tr data-track-id="{{ track.id }}"
+    class="block text-center md:text-left mb-6 overflow-hidden border rounded-md shadow-md border-border bg-card-bg md:bg-background md:table-row md:mb-0 md:border-none md:shadow-none">
+
+    <!-- Image -->
+    <td data-label="Image" class="p-0 border-b border-border md:table-cell md:border md:p-2 md:whitespace-nowrap">
         <a href="{{ track.link }}" target="_blank">
-            <img src="{{ track.image_url }}" alt="{{ track.title }}" class="track-thumbnail">
+            <img src="{{ track.image_url }}" alt="{{ track.title }}"
+                class="block w-full rounded-t-md md:track-thumbnail md:rounded-md">
         </a>
     </td>
-    <!-- Added data-label="Rank" -->
-    <td data-label="Rank">{{ track.rank if track.rank is not none else '—' }}</td>
-    <!-- This one was already correct -->
-    <td data-label="Title" class="truncate-cell">
-        <a href="{{ track.link }}" target="_blank">{{ track.title }}</a>
+
+    <!-- Rank -->
+    <td data-label="Rank"
+        class="block p-3 text-center border-b border-border last:border-b-0 md:table-cell md:text-left md:border md:py-2 md:px-3 md:whitespace-nowrap md:min-w-0 md:w-1">
+        {{ track.rank if track.rank is not none else '—' }}
+    </td>
+
+    <!-- Title -->
+    <td data-label="Title"
+        class="block p-3 text-center border-b border-border last:border-b-0 md:table-cell md:text-left md:border md:py-2 md:px-3 md:w-1/3 md:truncate">
+
+        <a data-js-truncate href="{{ track.link }}" target="_blank"
+            class="hover:underline hover:text-cyan-text font-semibold">{{
+            track.title }}</a>
         {% if track.title_jp %}<br>({{ track.title_jp }}){% endif %}
 
-        <!-- Action Buttons -->
-        <div class="action-buttons">
-            <button class="track-play-button" data-track-id="{{ track.id }}" title="Play this track">
+        <div class="mt-2 flex justify-center gap-2 md:justify-start">
+            <button data-play-button
+                class="py-1 px-2 cursor-pointer rounded border border-gray-text text-gray-text hover:bg-gray-hover transition-colors duration-200 ease-in-out"
+                data-track-id="{{ track.id }}" title="Play this track">
                 <i class="fa-solid fa-play"></i>
             </button>
-            <button class="embed-button" data-youtube-url="{{ track.link }}">
+            <button data-embed-button
+                class="py-1 px-2 cursor-pointer rounded border border-cyan-text text-cyan-text hover:bg-cyan-hover transition-colors duration-200 ease-in-out"
+                data-youtube-url="{{ track.link }}">
                 <i class="fa-solid fa-tv"></i>
             </button>
-            <button class="vocadb-button" data-title-en="{{ track.title }}"
-                data-producer="{{ track.producer.split(',')[0].strip() }}" {% if track.title_jp
-                %}data-title-jp="{{ track.title_jp }}" {% endif %}>VocaDB</button>
-            <button class="lyrics-button" data-title-en="{{ track.title }}"
-                data-producer="{{ track.producer.split(',')[0].strip() }}" {% if track.title_jp
-                %}data-title-jp="{{ track.title_jp }}" {% endif %}>Lyrics</button>
+            <button data-vocadb-track-button
+                class="py-1 px-2 cursor-pointer rounded font-semibold border border-purple-text text-purple-text hover:bg-purple-hover transition-colors duration-200 ease-in-out"
+                data-title-en="{{ track.title }}" data-producer="{{ track.producer.split(',')[0].strip() }}" {% if
+                track.title_jp %}data-title-jp="{{ track.title_jp }}" {% endif %}>VocaDB</button>
+            <button data-lyrics-button
+                class="py-1 px-2 cursor-pointer rounded font-semibold border border-green-text text-green-text hover:bg-green-hover transition-colors duration-200 ease-in-out"
+                data-title-en="{{ track.title }}" data-producer="{{ track.producer.split(',')[0].strip() }}" {% if
+                track.title_jp %}data-title-jp="{{ track.title_jp }}" {% endif %}>Lyrics</button>
         </div>
 
+        <div data-notes-container class="hidden mt-2">
+            <textarea data-notes-input name="notes" rows="4"
+                class="w-full rounded border border-border p-2">{{ track.ratings[0].notes if track.ratings and track.ratings[0].notes }}</textarea>
+        </div>
 
-        <!-- Media Containers -->
-        <div class="youtube-embed-container" style="display: none;"></div>
-        <div class="lyrics-container" style="display: none;">
-            <div class="lyrics-controls">
-                <select class="lyrics-select" data-track-id="{{ track.id }}"></select>
+        <div data-embed-container class="justify-center hidden"></div>
+        <div data-lyrics-container class="max-h-96 overflow-y-auto leading-[1.6] py-3 px-5 hidden">
+            <div data-lyrics-controls class="mb-4 flex items-center gap-2">
+                <select data-lyrics-select class="p-2 rounded border border-border"
+                    data-track-id="{{ track.id }}"></select>
             </div>
-            <div class="lyrics-metadata"></div>
-            <div class="lyrics-content"></div>
+            <div data-lyrics-metadata class="text-[0.8em] mb-4 pb-3 border-b border-border"></div>
+            <div data-lyrics-content class="whitespace-pre-wrap leading-[1.6]"></div>
         </div>
     </td>
-    <!-- Added data-label="Producer" -->
-    <td data-label="Producer" class="truncate-cell">
-        {% for producer in track.producer.split(',') %}
-        <a href="#" class="filter-link" data-filter-type="producer_filter" data-filter-value="{{ producer.strip() }}">{{
-            producer.strip() }}</a>
-        <button class="vocadb-producer-button" data-producer="{{ track.producer.split(',')[0].strip() }}"
-            title="Search producer on VocaDB">
-            VocaDB
-        </button>{% if not loop.last %},{% endif %}
-        {% endfor %}
+
+    <!-- Producer -->
+    <td data-label="Producer"
+        class="block p-3 text-left border-b border-border last:border-b-0 md:table-cell md:text-left md:border md:py-2 md:px-3 md:truncate">
+        <div>
+            {% for producer in track.producer.split(',') %}
+            <a data-js-truncate href="#" class="filter-link hover:underline hover:text-cyan-text font-semibold"
+                data-filter-type="producer_filter" data-filter-value="{{ producer.strip() }}">{{
+                producer.strip() }}</a>
+            <button data-vocadb-artist-button
+                class="py-1 px-2 cursor-pointer rounded font-semibold text-purple-text border border-purple-text hover:bg-purple-hover transition-colors duration-200 ease-in-out"
+                data-producer="{{ track.producer.split(',')[0].strip() }}" title="Search producer on VocaDB">
+                VocaDB
+            </button>{% if not loop.last %},{% endif %}
+            {% endfor %}
+        </div>
     </td>
-    <!-- Added data-label="Voicebank" -->
-    <td data-label="Voicebank" class="truncate-cell">
+
+    <!-- Voicebank -->
+    <td data-label="Voicebank"
+        class="block p-3 text-left border-b border-border last:border-b-0 md:table-cell md:text-left md:border md:py-2 md:px-3 md:truncate">
         {% for voicebank in track.voicebank.split(',') %}
-        <a href="#" class="filter-link" data-filter-type="voicebank_filter"
-            data-filter-value="{{ voicebank.strip() }}">{{ voicebank.strip() }}</a>{% if not loop.last %},{% endif %}
+        <a data-js-truncate data-js-truncate href="#"
+            class="filter-link hover:underline hover:text-cyan-text font-semibold" data-filter-type="voicebank_filter"
+            data-filter-value="{{ voicebank.strip() }}">{{ voicebank.strip()
+            }}</a>{% if not loop.last %},{% endif %}
         {% endfor %}
     </td>
-    <!-- Added data-label="Published" -->
-    <td data-label="Published" class="published-date" data-date="{{ track.published_date.isoformat() }}"
-        title="{{ track.published_date.strftime('%Y-%m-%d') }}">
+
+    <!-- Published -->
+    <td data-label="Published"
+        class="block p-3 text-left border-b border-border last:border-b-0 md:table-cell md:text-left md:border md:py-2 md:px-3 md:whitespace-nowrap md:min-w-0 md:w-1"
+        data-date="{{ track.published_date.isoformat() }}" title="{{ track.published_date.strftime('%Y-%m-%d') }}">
+        <span class="inline-block w-24 font-bold text-header md:hidden">Published</span>
     </td>
-    <!-- Added data-label="My Rating" -->
-    <td data-label="My Rating" class="rating-cell">
+
+    <!-- My Rating -->
+    <td data-label="My Rating"
+        class="block p-3 text-left border-b border-border last:border-b-0 md:table-cell md:text-left md:border md:py-2 md:px-3 md:whitespace-nowrap md:min-w-0 md:w-1">
         {% set current_rating = track.ratings[0].rating if track.ratings else 0 %}
-        <form action="/rate/{{ track.id }}" method="post" class="rating-form">
-            <div class="star-rating-container" data-rating="{{ current_rating }}"
-                style="--rating-width: {{ (current_rating / 10.0) * 100 }}%;">
+        <form data-rating-form action="/rate/{{ track.id }}" method="post"
+            class="flex items-center gap-2.5 justify-center md:justify-between">
+
+            <div data-star-rating class="relative inline-block text-2xl cursor-pointer"
+                data-rating="{{ current_rating }}" style="--rating-width: {{ (current_rating / 10.0) * 100 }}%;">
+                <div class="text-gray-400 select-none">★★★★★★★★★★</div>
+                <div class="absolute top-0 left-0 overflow-hidden text-yellow-400 pointer-events-none select-none"
+                    style="width: var(--rating-width, 0%);">★★★★★★★★★★</div>
                 {% for i in range(1, 11) %}
-                <input type="radio" name="rating" value="{{ i }}" id="star-{{ track.id }}-{{ i }}" {% if
+                <input class="hidden" type="radio" name="rating" value="{{ i }}" id="star-{{ track.id }}-{{ i }}" {% if
                     current_rating==i %}checked{% endif %}>
                 {% endfor %}
             </div>
-            <div class="notes-container">
+
+            <div class="flex items-center gap-2">
                 {% set has_note = track.ratings and track.ratings[0].notes %}
-                <button type="button" class="notes-toggle-btn {% if has_note %}has-note{% endif %}">
+                <button type="button" data-notes-toggle
+                    class="shadow-md py-1 px-2 rounded border font-bold cursor-pointer transition-colors duration-200 ease-in-out
+                {% if has_note %} border-green-text text-green-text hover:bg-green-hover {% else %} text-gray-text hover:bg-gray-hover {% endif %}">
                     {{ 'Edit Note' if has_note else 'Add Note' }}
                 </button>
-                <textarea name="notes" class="notes-input"
-                    style="display: none;">{{ track.ratings[0].notes if has_note }}</textarea>
+                {% if track.ratings %}
+                <button data-clear-rating type="button" data-delete-endpoint="/rate/{{ track.id }}/delete"
+                    class="shadow-md p-1 rounded border border-red-text text-red-text font-bold cursor-pointer transition-colors duration-200 ease-in-out hover:bg-red-hover">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                {% endif %}
             </div>
         </form>
-        {% if track.ratings %}
-        <form action="/rate/{{ track.id }}/delete" method="post" class="delete-rating-form">
-            <button type="submit" class="clear-rating-btn">X</button>
-        </form>
-        {% endif %}
     </td>
 </tr>
 {% endfor %}
