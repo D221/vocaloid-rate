@@ -127,6 +127,33 @@ const truncateTextByWords = (selector, maxLength) => {
 	});
 };
 
+const upgradeThumbnailsToHD = () => {
+    // We only run this on smaller screens where the card layout is active.
+    if (window.innerWidth >= 768) {
+        return; // Don't do anything on desktop
+    }
+
+    document.querySelectorAll('img.track-thumbnail').forEach(img => {
+        const currentSrc = img.src;
+        // Check if it's a YouTube thumbnail that can be upgraded.
+        if (currentSrc.includes('i.ytimg.com')) {
+            let newSrc = currentSrc;
+            if (currentSrc.includes('mqdefault.jpg')) {
+                newSrc = currentSrc.replace('mqdefault.jpg', 'maxresdefault.jpg');
+            } else if (currentSrc.includes('default.jpg') && !currentSrc.includes('maxresdefault.jpg')) {
+                // This 'else if' is key. It only runs if mqdefault wasn't found.
+                // The extra check prevents hqdefault from matching.
+                newSrc = currentSrc.replace('default.jpg', 'hqdefault.jpg');
+            }
+            
+            // Only update the src if it has actually changed.
+            if (newSrc !== currentSrc) {
+                img.src = newSrc;
+            }
+        }
+    });
+};
+
 let ytPlayer;
 let progressUpdateInterval;
 const playerState = {
@@ -768,6 +795,7 @@ const updateTracks = async () => {
 
 			updatePaginationUI(data.pagination);
 			truncateTextByWords("[data-js-truncate]", 35);
+			upgradeThumbnailsToHD();
 		} catch (error) {
 			clearTimeout(skeletonTimer);
 			console.error("Failed to update tracks:", error);
@@ -922,6 +950,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	updateThemeUI();
 	updateActiveFilterDisplay();
 	truncateTextByWords("[data-js-truncate]", 35);
+	upgradeThumbnailsToHD();
 
 	const limitFilter = document.getElementById("limit_filter");
 	if (limitFilter) {
