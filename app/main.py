@@ -231,6 +231,7 @@ def get_rated_tracks_table_body(
     db: Session = Depends(get_db),
     page: int = 1,
     limit: str = "all",
+    title_filter: Optional[str] = None,
     producer_filter: Optional[str] = None,
     voicebank_filter: Optional[str] = None,
     sort_by: Optional[str] = None,
@@ -244,6 +245,7 @@ def get_rated_tracks_table_body(
     total_tracks = crud.get_tracks_count(
         db,
         rated_filter="rated",
+        title_filter=title_filter,
         producer_filter=producer_filter,
         voicebank_filter=voicebank_filter,
         exact_rating_filter=exact_rating_filter,
@@ -264,6 +266,7 @@ def get_rated_tracks_table_body(
         skip=skip,
         limit=limit_val,
         rated_filter="rated",
+        title_filter=title_filter,
         producer_filter=producer_filter,
         voicebank_filter=voicebank_filter,
         sort_by=sort_by,
