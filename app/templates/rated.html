@@ -151,8 +151,9 @@
                         href="{{ request.url.path }}?sort_by=voicebank" data-sort="voicebank">Voicebank</a></th>
                 <th class="min-w-0 w-1 border border-border px-3 py-2 text-left"><a
                         href="{{ request.url.path }}?sort_by=published_date" data-sort="published_date">Published</a>
-                </th class="min-w-0 w-1 border border-border px-3 py-2 text-left">
-                <th><a href="{{ request.url.path }}?sort_by=rating" data-sort="rating">My Rating</a></th>
+                </th>
+                <th class="min-w-0 w-1 border border-border px-3 py-2 text-left"><a
+                        href="{{ request.url.path }}?sort_by=rating" data-sort="rating">My Rating</a></th>
             </tr>
         </thead>
         <tbody id="tracks-table-body" class="tracks-table-body" data-update-url="/_/rated_tracks_table_body">
