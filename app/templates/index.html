@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Vocaloid Tracks - Vocaloid Rater{% endblock %}
+{% block title %}Vocaloid Rate{% endblock %}
 
 {% block content %}
   <div
     class="mb-8 flex flex-col items-center justify-between gap-4 border-b border-border pb-4 md:flex-row"
   >
     <div class="text-center md:text-left">
-      <h1 class="text-4xl font-bold text-cyan-text">Vocaloid Tracks</h1>
+      <h1 class="text-4xl font-bold text-cyan-text">Vocaloid Rate</h1>
       <span id="last-updated" class="text-sm text-gray-500 dark:text-gray-400">
         {% if last_update %}
           Last updated: {{ last_update.updated_at.strftime('%Y-%m-%d %H:%M') }}
