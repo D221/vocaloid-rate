@@ -3,7 +3,9 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "tailwind:watch": "npx @tailwindcss/cli -i ./app/static/css/input.css -o ./app/static/css/app.css --watch",
+    "dev": "uvicorn app.main:app --reload"
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
