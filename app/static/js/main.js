@@ -1053,14 +1053,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Initial Page Load Logic ---
-  // 1. Set state from URL or localStorage
-  const urlParams = new URLSearchParams(window.location.search);
-  currentPage = parseInt(urlParams.get("page"), 10) || 1;
-  currentLimit =
-    urlParams.get("limit") || localStorage.getItem("defaultPageSize") || "all";
-  if (limitFilter) limitFilter.value = currentLimit;
-  // 2. Fetch the initial view based on the resolved state
-  updateTracks();
+  // This should only run on the main index page, not the rated tracks page.
+  if (document.getElementById("scrape-button")) {
+    const urlParams = new URLSearchParams(window.location.search);
+    currentPage = parseInt(urlParams.get("page"), 10) || 1;
+    currentLimit =
+      urlParams.get("limit") ||
+      localStorage.getItem("defaultPageSize") ||
+      "all";
+    if (limitFilter) limitFilter.value = currentLimit;
+    // 2. Fetch the initial view based on the resolved state
+    updateTracks();
+  }
 
   document.getElementById("theme-switcher")?.addEventListener("click", () => {
     const doc = document.documentElement;
@@ -1142,9 +1146,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     "An error occurred. Check server logs.";
                   scrapeButton.disabled = false;
                   scrapeButton.textContent = "Update Tracks";
-                } else if (statusData.status === "in_progress") {
+                } else if (statusData.status.startsWith("in_progress")) {
                   scrapeButton.textContent = "Scraping...";
-                  scrapeStatus.textContent = "Changes found, updating...";
+                  const progress = statusData.status.split(":")[1];
+                  if (progress) {
+                    scrapeStatus.textContent = `Scraping page ${progress}...`;
+                  } else {
+                    scrapeStatus.textContent = "Changes found, updating...";
+                  }
                 }
               });
           }, 2000);

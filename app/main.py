@@ -109,14 +109,17 @@ def scrape_and_populate_task():
 
         # If we reach here, it means changes were found. Proceed with the full scrape.
         logging.info("Smart Scrape: Changes detected! Proceeding with full scrape.")
+        # We already have page 1 data in scraped_page_1
         with open(SCRAPE_STATUS_FILE, "w") as f:
-            f.write("in_progress")
+            f.write("in_progress:1/6")  # Page 1 is done
 
         final_status = "completed"
         try:
             # We already have page 1, now scrape the rest.
             remaining_pages_tracks = []
             for page in range(2, 7):
+                with open(SCRAPE_STATUS_FILE, "w") as f:
+                    f.write(f"in_progress:{page}/6")
                 remaining_pages_tracks.extend(scraper._scrape_single_page(page))
 
             all_scraped_tracks = scraped_page_1 + remaining_pages_tracks
@@ -526,6 +529,14 @@ def read_root(
     all_voicebanks = sorted(list(set(voicebanks_flat)))
 
     last_update = crud.get_last_update_time(db)
+    update_age_days = None
+    is_db_outdated = False
+    if last_update:
+        # Assuming updated_at is a naive datetime stored in UTC
+        update_age = datetime.utcnow() - last_update.updated_at
+        update_age_days = update_age.days
+        if update_age.total_seconds() > 24 * 3600:
+            is_db_outdated = True
 
     return templates.TemplateResponse(
         "index.html",
@@ -535,6 +546,8 @@ def read_root(
             "all_producers": all_producers,
             "all_voicebanks": all_voicebanks,
             "last_update": last_update,
+            "is_db_outdated": is_db_outdated,
+            "update_age_days": update_age_days,
             "filters": filters,
             "pagination": {
                 "page": page,
