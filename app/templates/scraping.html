@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Scraping Tracks - Vocaloid Rater{% endblock %}
+
+{% block content %}
+  <div class="text-center">
+    <h1 class="mb-4 text-4xl font-bold text-cyan-text">
+      Initial Data Scrape in Progress
+    </h1>
+    <p class="mb-8 text-xl text-foreground">
+      The database is being populated with the latest Vocaloid track rankings
+      for the first time.
+      <br />
+      Please wait, this page will automatically reload once the process is
+      complete. This can take a few minutes.
+    </p>
+    <div id="scrape-status-indicator">
+      <p>Status: <span id="scrape-status-text">Scraping...</span></p>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const scrapeStatusText = document.getElementById("scrape-status-text");
+      const interval = setInterval(() => {
+        fetch("/api/scrape-status")
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.status === "completed" || data.status === "no_changes") {
+              clearInterval(interval);
+              scrapeStatusText.textContent = "Completed! Reloading...";
+              window.location.reload();
+            } else if (data.status === "error") {
+              clearInterval(interval);
+              scrapeStatusText.textContent =
+                "An error occurred. Please check the server logs and restart the application.";
+            } else {
+              scrapeStatusText.textContent = "Scraping... please wait.";
+            }
+          });
+      }, 2000);
+    });
+  </script>
+{% endblock %}

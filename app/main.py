@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import threading
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -41,6 +42,31 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 DATA_DIR = "data"
 SCRAPE_STATUS_FILE = os.path.join(DATA_DIR, "scrape_status.txt")
+
+initial_scrape_in_progress = False
+
+
+@app.on_event("startup")
+def startup_event():
+    global initial_scrape_in_progress
+    # Check if the database has any tracks. A new DB will be empty.
+    db = SessionLocal()
+    track_count = db.query(models.Track).count()
+    db.close()
+
+    if track_count == 0:
+        logging.info("Database is empty. Starting initial scrape.")
+        initial_scrape_in_progress = True
+
+        if not os.path.exists(DATA_DIR):
+            os.makedirs(DATA_DIR)
+
+        with open(SCRAPE_STATUS_FILE, "w") as f:
+            f.write("in_progress")
+
+        # Run scrape in a background thread to not block the server
+        scrape_thread = threading.Thread(target=scrape_and_populate_task)
+        scrape_thread.start()
 
 
 # Dependency
@@ -438,6 +464,17 @@ def read_root(
     sort_dir: str = "asc",
     rank_filter: str = "ranked",
 ):
+    global initial_scrape_in_progress
+    if initial_scrape_in_progress:
+        if os.path.exists(SCRAPE_STATUS_FILE):
+            with open(SCRAPE_STATUS_FILE, "r") as f:
+                status = f.read().strip()
+                if status in ["completed", "no_changes"]:
+                    initial_scrape_in_progress = False
+
+    if initial_scrape_in_progress:
+        return templates.TemplateResponse("scraping.html", {"request": request})
+
     filters = {
         "rated_filter": rated_filter,
         "title_filter": title_filter,
