@@ -83,39 +83,39 @@ def scrape_and_populate_task():
     try:
         # 1. Scrape only page 1 to check for changes.
         logging.info("Smart Scrape: Checking page 1 for changes...")
-        scraped_page_1 = scraper._scrape_single_page(1)  # Using the new helper
+        scraped_page_1 = scraper._scrape_single_page(1)
         if not scraped_page_1:
-            raise Exception(
-                "Failed to scrape page 1, cannot determine if an update is needed."
-            )
+            raise Exception("Failed to scrape page 1.")
 
-        # Create a simple representation of the new ranking: {rank: link}
-        scraped_ranks = {track["rank"]: track["link"] for track in scraped_page_1}
+        # Change the data structure from a dictionary to a sorted list of tuples.
+        # This correctly preserves duplicate ranks.
+        scraped_ranks_list = sorted(
+            [(track["rank"], track["link"]) for track in scraped_page_1]
+        )
 
-        # 2. Get the current top 50 tracks from our database.
         db_top_50 = (
             db.query(models.Track).filter(models.Track.rank.between(1, 50)).all()
         )
-        db_ranks = {track.rank: track.link for track in db_top_50}
+        # Create the same structure for the database data.
+        db_ranks_list = sorted([(track.rank, track.link) for track in db_top_50])
 
-        # 3. Compare them. If they are identical, stop the process.
-        if scraped_ranks == db_ranks:
+        # The comparison is now a simple, direct comparison of the two lists.
+        # This will correctly handle cases with duplicate ranks.
+        if scraped_ranks_list == db_ranks_list:
             logging.info(
                 "Smart Scrape: No changes found on page 1. The ranking is already up-to-date."
             )
             with open(SCRAPE_STATUS_FILE, "w") as f:
-                f.write("no_changes")  # Write the new status for the frontend
-            return  # Exit the task early
+                f.write("no_changes")
+            return
 
-        # If we reach here, it means changes were found. Proceed with the full scrape.
+        # If we reach here, it means changes were found.
         logging.info("Smart Scrape: Changes detected! Proceeding with full scrape.")
-        # We already have page 1 data in scraped_page_1
         with open(SCRAPE_STATUS_FILE, "w") as f:
-            f.write("in_progress:1/6")  # Page 1 is done
+            f.write("in_progress:1/6")
 
         final_status = "completed"
         try:
-            # We already have page 1, now scrape the rest.
             remaining_pages_tracks = []
             for page in range(2, 7):
                 with open(SCRAPE_STATUS_FILE, "w") as f:
@@ -127,7 +127,6 @@ def scrape_and_populate_task():
                 f"Full scrape finished. Found {len(all_scraped_tracks)} tracks. Processing database..."
             )
 
-            # The rest of the logic remains the same
             logging.info("Resetting all track ranks to NULL...")
             db.query(models.Track).update({"rank": None})
 
