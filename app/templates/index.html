@@ -4,11 +4,16 @@
 
 {% block content %}
   <div
-    class="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4"
+    class="mb-8 flex flex-col items-center justify-between gap-4 border-b border-border pb-4 md:flex-row"
   >
-    <h1 class="flex-grow text-center text-4xl font-bold text-cyan-text">
-      Vocaloid Tracks
-    </h1>
+    <div class="text-center md:text-left">
+      <h1 class="text-4xl font-bold text-cyan-text">Vocaloid Tracks</h1>
+      <span id="last-updated" class="text-sm text-gray-500 dark:text-gray-400">
+        {% if last_update %}
+          Last updated: {{ last_update.updated_at.strftime('%Y-%m-%d %H:%M') }}
+        {% endif %}
+      </span>
+    </div>
     <div class="flex flex-shrink-0 items-center gap-4">
       <a
         href="/rated_tracks"
@@ -36,7 +41,7 @@
       class="flex flex-col items-stretch gap-5 md:flex-row md:flex-wrap md:items-center"
     >
       <div class="flex items-center gap-2 rounded border border-border p-3">
-        <label class="font-bold">Chart Status:</label>
+        <label class="font-bold">Status:</label>
         <input
           type="radio"
           id="rank_ranked"
@@ -63,7 +68,7 @@
             checked
           {% endif %}
         />
-        <label for="rank_unranked">Expired (Archive)</label>
+        <label for="rank_unranked">Archived</label>
 
         <input
           type="radio"
@@ -74,7 +79,7 @@
             checked
           {% endif %}
         />
-        <label for="rank_all">Show All</label>
+        <label for="rank_all">All</label>
       </div>
 
       <div class="relative w-full md:flex md:w-50 md:items-center md:gap-2">
@@ -109,18 +114,13 @@
         </select>
       </div>
 
-      <div class="relative w-full md:flex md:w-70 md:items-center md:gap-2">
-        <label
-          for="title_filter"
-          class="mb-1 block font-bold md:mb-0 md:text-right"
-          >Title:</label
-        >
+      <div class="relative w-full md:w-52">
         <input
           type="text"
           name="title_filter"
           id="title_filter"
           autocomplete="off"
-          placeholder="Search..."
+          placeholder="Search by title..."
           class="w-full rounded border border-border bg-background px-3 py-2 pr-10 leading-normal text-foreground shadow-md"
           value="{{ filters.title_filter or '' }}"
         />
@@ -134,19 +134,14 @@
         </button>
       </div>
 
-      <div class="relative w-full md:flex md:w-70 md:items-center md:gap-2">
-        <label
-          for="producer_filter"
-          class="mb-1 block font-bold md:mb-0 md:text-right"
-          >Producer:</label
-        >
+      <div class="relative w-full md:w-52">
         <input
           type="text"
           name="producer_filter"
           id="producer_filter"
           list="producers-list"
           autocomplete="off"
-          placeholder="Filter..."
+          placeholder="Filter by producer..."
           value="{{ filters.producer_filter or '' }}"
           class="w-full rounded border border-border bg-background px-3 py-2 pr-10 leading-normal text-foreground shadow-md"
           value="{{ filters.producer_filter or '' }}"
@@ -166,19 +161,14 @@
         </datalist>
       </div>
 
-      <div class="relative w-full md:flex md:w-70 md:items-center md:gap-2">
-        <label
-          for="voicebank_filter"
-          class="mb-1 block font-bold md:mb-0 md:text-right"
-          >Voicebank:</label
-        >
+      <div class="relative w-full md:flex md:w-52 md:items-center md:gap-2">
         <input
           type="text"
           name="voicebank_filter"
           id="voicebank_filter"
           list="voicebanks-list"
           autocomplete="off"
-          placeholder="Filter..."
+          placeholder="Filter by voicebank..."
           value="{{ filters.voicebank_filter or '' }}"
           class="w-full rounded border border-border bg-background px-3 py-2 pr-10 leading-normal text-foreground shadow-md"
         />
@@ -245,11 +235,6 @@
         Update Tracks
       </button>
 
-      <span id="last-updated">
-        {% if last_update %}
-          Last updated: {{ last_update.updated_at.strftime('%Y-%m-%d %H:%M') }}
-        {% endif %}
-      </span>
       <span id="scrape-status"></span>
     </form>
   </div>
@@ -271,9 +256,7 @@
           <th
             class="w-1 min-w-0 border border-border p-0 px-3 py-2 text-left whitespace-nowrap"
           >
-            <a href="{{ request.url.path }}?sort_by=rank" data-sort="rank"
-              >Rank</a
-            >
+            <a href="{{ request.url.path }}?sort_by=rank" data-sort="rank">#</a>
           </th>
           <th
             class="w-1/3 max-w-64 overflow-hidden border border-border px-3 py-2 text-left text-ellipsis whitespace-nowrap"

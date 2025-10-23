@@ -833,7 +833,7 @@ const updateTracks = async () => {
       }
 
       updatePaginationUI(data.pagination);
-      truncateTextByWords("[data-js-truncate]", 35);
+      truncateTextByWords("[data-js-truncate]", 25);
       upgradeThumbnails();
     } catch (error) {
       clearTimeout(skeletonTimer);
@@ -988,7 +988,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateSortIndicators();
   updateThemeUI();
   updateActiveFilterDisplay();
-  truncateTextByWords("[data-js-truncate]", 35);
+  truncateTextByWords("[data-js-truncate]", 25);
   upgradeThumbnails();
 
   const limitFilter = document.getElementById("limit_filter");
