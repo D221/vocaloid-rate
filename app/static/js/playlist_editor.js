@@ -7,6 +7,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const playlistId =
     document.querySelector("[data-playlist-id]").dataset.playlistId;
 
+  const showToast = (message, type = "success") => {
+    const toast = document.createElement("div");
+    const bgColor = type === "error" ? "bg-red-text" : "bg-green-text";
+    const textColor = "text-white"; // Or a theme color for light text
+
+    toast.className = `fixed bottom-24 right-5 z-[2000] rounded-md px-4 py-3 font-semibold shadow-lg ${bgColor} ${textColor}`;
+    toast.textContent = message;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.transition = "opacity 0.5s ease";
+      toast.style.opacity = "0";
+      setTimeout(() => toast.remove(), 500);
+    }, 2500); // Toast visible for 2.5 seconds
+  };
   // --- API HELPER FUNCTIONS ---
   const saveOrder = async (trackIds) => {
     try {
@@ -18,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // You can add a "Saved!" notification here
     } catch (error) {
       console.error("Failed to save order:", error);
-      alert("Failed to save order.");
+      showToast("Failed to save order.", "error");
     }
   };
 
@@ -29,7 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     } catch (error) {
       console.error("Failed to add track:", error);
-      alert("Failed to add track.");
+      showToast("Failed to add track.", "error");
     }
   };
 
@@ -40,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     } catch (error) {
       console.error("Failed to remove track:", error);
-      alert("Failed to remove track.");
+      showToast("Failed to remove track.", "error");
     }
   };
 
@@ -61,7 +77,6 @@ document.addEventListener("DOMContentLoaded", () => {
   new Sortable(playlistTracksList, {
     group: "shared", // Items can be dropped here
     animation: 150,
-    handle: ".fa-grip-vertical", // Use a handle for reordering
     onAdd: function (evt) {
       // A new track was dropped from the left list
       const trackId = evt.item.dataset.trackId;
@@ -70,7 +85,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const clonedItem = evt.item.cloneNode(true);
       const originalItemHTML = `
                 <div class="flex items-center gap-3 overflow-hidden">
-                    <i class="fa-solid fa-grip-vertical text-gray-text"></i>
                     ${clonedItem.innerHTML}
                 </div>
                 <button data-remove-track class="text-red-text hover:text-red-500 p-2"><i class="fa-solid fa-trash"></i></button>
@@ -106,6 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const trackId = trackItem.dataset.trackId;
       removeTrack(trackId);
       trackItem.remove();
+      showToast("Track removed.");
     }
   });
 });

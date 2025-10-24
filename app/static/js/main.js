@@ -252,6 +252,23 @@ const upgradeThumbnails = () => {
   });
 };
 
+const showToast = (message, type = "success") => {
+  const toast = document.createElement("div");
+  const bgColor = type === "error" ? "bg-red-text" : "bg-green-text";
+  const textColor = "text-white"; // Or a theme color for light text
+
+  toast.className = `fixed bottom-24 right-5 z-[2000] rounded-md px-4 py-3 font-semibold shadow-lg ${bgColor} ${textColor}`;
+  toast.textContent = message;
+
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.transition = "opacity 0.5s ease";
+    toast.style.opacity = "0";
+    setTimeout(() => toast.remove(), 500);
+  }, 2500); // Toast visible for 2.5 seconds
+};
+
 let ytPlayer;
 let progressUpdateInterval;
 const playerState = {
@@ -1839,7 +1856,7 @@ document.addEventListener("DOMContentLoaded", () => {
             alert("Track added!"); // Replace with a nicer notification later
             closePlaylistModals();
           })
-          .catch((err) => alert(err.message));
+          .catch((err) => showToast(err.message, "error"));
       }
 
       // Handle CREATING a new playlist
@@ -1867,7 +1884,7 @@ document.addEventListener("DOMContentLoaded", () => {
               alert(`Track added to new playlist: ${playlistName}!`);
               closePlaylistModals();
             })
-            .catch((err) => alert(err.message));
+            .catch((err) => showToast(err.message, "error"));
         }
       }
       return; // Stop processing other clicks if inside modal
