@@ -128,7 +128,7 @@ const openPlaylistModal = async (trackId, buttonElement) => {
     modal.style.left = `${left}px`;
   } catch (error) {
     console.error(error);
-    alert(error.message);
+    showToast(error.message, "error");
   }
 };
 
@@ -297,8 +297,9 @@ const durationEl = document.getElementById("player-duration");
 
 function onPlayerError(event) {
   console.error("YouTube Player Error:", event.data);
-  alert(
+  showToast(
     `Could not play this video.\n\nThis might be because the uploader has disabled embedding, or the video is private/deleted.\n(Error code: ${event.data})`,
+    "error",
   );
   playNextTrack(); // Attempt to play the next track
 }
@@ -392,7 +393,7 @@ function loadAndPlayTrack(trackId) {
   const videoId = getYouTubeVideoId(track.link);
 
   if (!videoId) {
-    alert("Could not find a valid YouTube video ID.");
+    showToast("Could not find a valid YouTube video ID.", "error");
     return;
   }
 
@@ -1512,9 +1513,9 @@ document.addEventListener("DOMContentLoaded", () => {
         .then((res) => (res.ok ? res.json() : Promise.reject("Search failed")))
         .then((data) => {
           if (data.url) window.open(data.url, "_blank");
-          else alert("Track not found on VocaDB.");
+          else showToast("Track not found on VocaDB.", "error");
         })
-        .catch(() => alert("Could not search VocaDB."))
+        .catch(() => showToast("Could not search VocaDB.", "error"))
         .finally(() => {
           vocadbBtn.disabled = false;
           vocadbBtn.textContent = "VocaDB";
@@ -1538,10 +1539,12 @@ document.addEventListener("DOMContentLoaded", () => {
           if (data.url) {
             window.open(data.url, "_blank");
           } else {
-            alert("Producer not found on VocaDB.");
+            showToast("Producer not found on VocaDB.", "error");
           }
         })
-        .catch(() => alert("Could not search VocaDB for this producer."))
+        .catch(() =>
+          showToast("Could not search VocaDB for this producer.", "error"),
+        )
         .finally(() => {
           vocadbProducerBtn.disabled = false;
           vocadbProducerBtn.textContent = "VocaDB";
@@ -1853,7 +1856,7 @@ document.addEventListener("DOMContentLoaded", () => {
         })
           .then((res) => {
             if (!res.ok) throw new Error("Failed to add track.");
-            alert("Track added!"); // Replace with a nicer notification later
+            showToast("Track added!");
             closePlaylistModals();
           })
           .catch((err) => showToast(err.message, "error"));
@@ -1881,7 +1884,7 @@ document.addEventListener("DOMContentLoaded", () => {
             .then((res) => {
               if (!res.ok)
                 throw new Error("Failed to add track to new playlist.");
-              alert(`Track added to new playlist: ${playlistName}!`);
+              showToast(`Track added to new playlist: ${playlistName}!`);
               closePlaylistModals();
             })
             .catch((err) => showToast(err.message, "error"));
