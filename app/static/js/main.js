@@ -1920,6 +1920,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  document.body.addEventListener("input", (e) => {
+    const newPlaylistInput = e.target.closest("[data-new-playlist-name]");
+    if (newPlaylistInput) {
+      const modal = newPlaylistInput.closest(".playlist-modal");
+      if (modal) {
+        const createBtn = modal.querySelector("[data-create-playlist]");
+        if (createBtn) {
+          createBtn.disabled = newPlaylistInput.value.trim().length === 0;
+        }
+      }
+    }
+  });
+
   document.body.addEventListener(
     "blur",
     (e) => {
