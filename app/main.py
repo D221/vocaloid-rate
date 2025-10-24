@@ -842,7 +842,7 @@ async def import_single_playlist(
     file: UploadFile = File(...), db: Session = Depends(get_db)
 ):
     """Imports a single playlist from a JSON file."""
-    if not file.filename.lower().endswith(".json"):
+    if not file.filename or not file.filename.lower().endswith(".json"):
         raise HTTPException(status_code=400, detail="Invalid file type. Must be .json")
 
     contents = await file.read()
@@ -874,3 +874,12 @@ def export_single_playlist(playlist_id: int, db: Session = Depends(get_db)):
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
     return playlist
+
+
+@app.delete("/api/playlists/{playlist_id}")
+def delete_a_playlist(playlist_id: int, db: Session = Depends(get_db)):
+    """Deletes a playlist and all its track associations."""
+    success = crud.delete_playlist(db, playlist_id=playlist_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+    return Response(status_code=200, content="Playlist deleted successfully")

@@ -62,7 +62,14 @@
               >
                 <i class="fa-solid fa-download"></i>
               </button>
-              <!-- Delete button can be added here later -->
+              <button
+                data-delete-playlist="{{ playlist.id }}"
+                data-playlist-name="{{ playlist.name }}"
+                class="rounded bg-red-text p-2 px-3 text-white hover:bg-red-hover"
+                title="Delete"
+              >
+                <i class="fa-solid fa-trash"></i>
+              </button>
             </div>
           </div>
         {% endfor %}

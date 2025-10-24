@@ -311,6 +311,16 @@ def create_playlist(db: Session, playlist: schemas.PlaylistCreate) -> models.Pla
     return db_playlist
 
 
+def delete_playlist(db: Session, playlist_id: int) -> bool:
+    """Deletes a playlist by its ID."""
+    db_playlist = db.query(models.Playlist).filter_by(id=playlist_id).first()
+    if db_playlist:
+        db.delete(db_playlist)
+        db.commit()
+        return True
+    return False
+
+
 def update_playlist(
     db: Session, playlist_id: int, name: str, description: Optional[str]
 ) -> Optional[models.Playlist]:

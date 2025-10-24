@@ -30,8 +30,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (playlistsContainer) {
     playlistsContainer.addEventListener("click", async (e) => {
       const exportButton = e.target.closest("[data-export-single-playlist]");
+      const deleteButton = e.target.closest("[data-delete-playlist]");
       if (exportButton) {
-        console.log("Export button clicked!", exportButton);
         const playlistId = exportButton.dataset.exportSinglePlaylist;
         try {
           const response = await fetch(`/api/playlists/${playlistId}/export`);
@@ -50,6 +50,30 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
           alert("Failed to export playlist.");
           console.error(error);
+        }
+      }
+      if (deleteButton) {
+        const playlistId = deleteButton.dataset.deletePlaylist;
+        const playlistName = deleteButton.dataset.playlistName;
+
+        if (
+          confirm(
+            `Are you sure you want to delete the playlist "${playlistName}"? This cannot be undone.`,
+          )
+        ) {
+          try {
+            const response = await fetch(`/api/playlists/${playlistId}`, {
+              method: "DELETE",
+            });
+            if (!response.ok) {
+              throw new Error("Failed to delete playlist.");
+            }
+            // Remove the playlist element from the page on success
+            deleteButton.closest(".flex.items-center.justify-between").remove();
+            // You can add a toast notification here if you like
+          } catch (error) {
+            alert(error.message);
+          }
         }
       }
     });
