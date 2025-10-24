@@ -7,7 +7,20 @@
   {% include "partials/header.html" %}
 
   <div class="mx-auto max-w-4xl">
-    <div class="mb-6 text-right">
+    <div class="mb-6 flex justify-end gap-2">
+      <label
+        for="import-single-playlist-input"
+        class="cursor-pointer rounded bg-green-text p-3 font-semibold text-white shadow-md hover:bg-green-hover"
+      >
+        <i class="fa-solid fa-upload"></i> Import Playlist
+      </label>
+      <input
+        type="file"
+        id="import-single-playlist-input"
+        accept=".json"
+        class="hidden"
+      />
+
       <button
         id="create-new-playlist-btn"
         class="rounded bg-cyan-text p-3 font-bold text-stone-950 shadow-md hover:bg-cyan-hover"
@@ -28,18 +41,28 @@
                 {{ playlist.description or "No description." }}
               </p>
             </div>
-            <div class="flex gap-2">
+            <div class="flex flex-shrink-0 gap-2">
               <a
                 href="/playlist/{{ playlist.id }}"
-                class="rounded bg-gray-text p-2 text-white hover:bg-gray-hover"
-                >View</a
-              >
+                class="rounded bg-gray-text p-2 px-3 text-white hover:bg-gray-hover"
+                title="View"
+                ><i class="fa-solid fa-eye"></i
+              ></a>
               <a
                 href="/playlist/edit/{{ playlist.id }}"
-                class="rounded bg-cyan-text p-2 text-stone-950 hover:bg-cyan-hover"
-                >Edit</a
+                class="rounded bg-amber-text p-2 px-3 text-stone-950 hover:bg-amber-hover"
+                title="Edit"
+                ><i class="fa-solid fa-pencil"></i
+              ></a>
+              <!-- NEW: Export Single Playlist Button -->
+              <button
+                data-export-single-playlist="{{ playlist.id }}"
+                class="rounded bg-cyan-text p-2 px-3 text-stone-950 hover:bg-cyan-hover"
+                title="Export"
               >
-              <!-- Edit and Delete buttons can be added here later -->
+                <i class="fa-solid fa-download"></i>
+              </button>
+              <!-- Delete button can be added here later -->
             </div>
           </div>
         {% endfor %}
@@ -51,27 +74,50 @@
         </div>
       {% endif %}
     </div>
+    <div class="mb-6 rounded border border-border bg-card-bg p-4 shadow-md">
+      <h2
+        class="mb-2 border-b border-border pb-2 text-xl font-semibold text-header"
+      >
+        Manage Playlists
+      </h2>
+      <div class="flex flex-wrap items-start gap-8">
+        <!-- Export -->
+        <div>
+          <h3 class="font-bold">Export All</h3>
+          <p class="text-sm text-gray-text">
+            Download all your playlists as a single JSON file.
+          </p>
+          <button
+            id="export-playlists-btn"
+            class="mt-2 rounded bg-cyan-text p-2 font-semibold text-stone-950 hover:bg-cyan-hover"
+          >
+            Export to File
+          </button>
+        </div>
+        <!-- Import -->
+        <div>
+          <h3 class="font-bold">Import</h3>
+          <p class="text-sm text-gray-text">
+            Upload a JSON file to restore or add playlists.
+          </p>
+          <input
+            type="file"
+            id="import-playlists-input"
+            accept=".json"
+            class="mt-2 block"
+          />
+          <button
+            id="import-playlists-btn"
+            class="mt-2 rounded bg-green-text p-2 font-semibold text-white hover:bg-green-hover disabled:cursor-not-allowed disabled:opacity-50"
+            disabled
+          >
+            Import from File
+          </button>
+          <div id="import-status" class="mt-2 text-sm font-bold"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- Simple script for the "Create New" button -->
-  <script>
-    document
-      .getElementById("create-new-playlist-btn")
-      .addEventListener("click", () => {
-        const name = prompt("Enter a name for your new playlist:");
-        if (name && name.trim()) {
-          fetch("/api/playlists", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: name.trim() }),
-          }).then((res) => {
-            if (res.ok) {
-              window.location.reload(); // Simple reload to show the new playlist
-            } else {
-              alert("Failed to create playlist.");
-            }
-          });
-        }
-      });
-  </script>
+  <script src="{{ url_for('static', path='js/playlists_page.js') }}"></script>
 {% endblock %}

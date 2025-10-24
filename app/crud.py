@@ -379,3 +379,94 @@ def reorder_playlist(db: Session, playlist_id: int, track_ids: list[int]):
             playlist_id=playlist_id, track_id=track_id
         ).update({"position": index})
     db.commit()
+
+
+def export_playlists(db: Session) -> list[dict]:
+    """Fetches all playlists and formats them for JSON export."""
+    playlists_to_export = []
+    all_playlists = (
+        db.query(models.Playlist)
+        .options(
+            joinedload(models.Playlist.playlist_tracks).joinedload(
+                models.PlaylistTrack.track
+            )
+        )
+        .all()
+    )
+
+    for playlist in all_playlists:
+        track_links = [pt.track.link for pt in playlist.playlist_tracks if pt.track]
+        playlists_to_export.append(
+            {
+                "name": playlist.name,
+                "description": playlist.description,
+                "tracks": track_links,
+            }
+        )
+    return playlists_to_export
+
+
+def export_single_playlist(db: Session, playlist_id: int) -> Optional[dict]:
+    """Fetches a single playlist and formats it for JSON export."""
+    playlist = (
+        db.query(models.Playlist)
+        .filter_by(id=playlist_id)
+        .options(
+            joinedload(models.Playlist.playlist_tracks).joinedload(
+                models.PlaylistTrack.track
+            )
+        )
+        .first()
+    )
+
+    if not playlist:
+        return None
+
+    track_links = [pt.track.link for pt in playlist.playlist_tracks if pt.track]
+    return {
+        "name": playlist.name,
+        "description": playlist.description,
+        "tracks": track_links,
+    }
+
+
+def import_playlists(db: Session, data: list[dict]) -> tuple[int, int]:
+    """Imports playlists from a list of dictionaries, merging with existing data."""
+    created_count = 0
+    updated_count = 0
+
+    for playlist_data in data:
+        playlist_name = playlist_data.get("name")
+        if not playlist_name:
+            continue
+
+        # Find existing playlist by name or create a new one
+        db_playlist = db.query(models.Playlist).filter_by(name=playlist_name).first()
+        if not db_playlist:
+            db_playlist = models.Playlist(
+                name=playlist_name, description=playlist_data.get("description")
+            )
+            db.add(db_playlist)
+            created_count += 1
+        else:
+            updated_count += 1
+
+        # We need to flush to get the playlist ID if it's new
+        db.flush()
+
+        # Clear existing tracks to ensure order is correct from the import
+        db.query(models.PlaylistTrack).filter_by(playlist_id=db_playlist.id).delete()
+
+        # Add tracks from the import file
+        track_links = playlist_data.get("tracks", [])
+        for index, link in enumerate(track_links):
+            # Find the track in the DB by its unique link
+            track = db.query(models.Track).filter_by(link=link).first()
+            if track:
+                assoc = models.PlaylistTrack(
+                    playlist_id=db_playlist.id, track_id=track.id, position=index
+                )
+                db.add(assoc)
+
+    db.commit()
+    return created_count, updated_count

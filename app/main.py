@@ -51,6 +51,12 @@ class PlaylistUpdate(BaseModel):
     description: Optional[str] = None
 
 
+class SinglePlaylistImport(BaseModel):
+    name: str
+    description: Optional[str] = None
+    tracks: list[str]  # List of track URLs
+
+
 @app.on_event("startup")
 def startup_event():
     global initial_scrape_in_progress
@@ -823,3 +829,48 @@ def update_playlist_details(
     if not db_playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
     return db_playlist
+
+
+@app.get("/api/playlists/export")
+def export_all_playlists(db: Session = Depends(get_db)):
+    """Exports all playlists and their tracks to a JSON format."""
+    return crud.export_playlists(db)
+
+
+@app.post("/api/playlists/import-single")
+async def import_single_playlist(
+    file: UploadFile = File(...), db: Session = Depends(get_db)
+):
+    """Imports a single playlist from a JSON file."""
+    if not file.filename.lower().endswith(".json"):
+        raise HTTPException(status_code=400, detail="Invalid file type. Must be .json")
+
+    contents = await file.read()
+    try:
+        data = json.loads(contents)
+        # Validate that it's a single playlist object, not a list
+        if not isinstance(data, dict) or "name" not in data or "tracks" not in data:
+            raise HTTPException(
+                status_code=400, detail="JSON is not a valid single playlist export."
+            )
+
+        created, updated = crud.import_playlists(
+            db, [data]
+        )  # We can reuse the main import logic by wrapping it in a list
+
+        status = "created" if created > 0 else "updated"
+        return {"status": status, "count": created + updated}
+
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON format.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {e}")
+
+
+@app.get("/api/playlists/{playlist_id}/export")
+def export_single_playlist(playlist_id: int, db: Session = Depends(get_db)):
+    """Exports a single playlist and its tracks to a JSON format."""
+    playlist = crud.export_single_playlist(db, playlist_id)
+    if not playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+    return playlist
