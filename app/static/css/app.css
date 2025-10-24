@@ -1358,13 +1358,6 @@
       gap: calc(var(--spacing) * 2);
     }
   }
-  .md\:truncate {
-    @media (width >= 48rem) {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-  }
   .md\:overflow-x-auto {
     @media (width >= 48rem) {
       overflow-x: auto;

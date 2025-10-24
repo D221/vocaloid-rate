@@ -1,4 +1,4 @@
-/* global Sortable, playerState, loadAndPlayTrack */ // Tells ESLint that "Sortable" is a global variable from the CDN script.
+/* global Sortable, playerState, loadAndPlayTrack */
 
 document.addEventListener("DOMContentLoaded", () => {
   // --- ELEMENT SELECTORS ---

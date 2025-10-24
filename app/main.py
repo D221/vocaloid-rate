@@ -389,9 +389,12 @@ def get_rated_tracks_table_body(
         rank_filter="all",
     )
 
+    tracks_for_json = [track.to_dict() for track in tracks]
+    tracks_json_string = json.dumps(tracks_for_json)
+
     # 4. Render the HTML partial
     table_body_html = templates.get_template("partials/tracks_table_body.html").render(
-        {"request": request, "tracks": tracks}
+        {"request": request, "tracks": tracks, "tracks_json": tracks_json_string}
     )
 
     # 5. Return the JSON structure the JavaScript expects
@@ -454,8 +457,11 @@ def get_tracks_table_body(
         rank_filter=rank_filter,
     )
 
+    tracks_for_json = [track.to_dict() for track in tracks]
+    tracks_json_string = json.dumps(tracks_for_json)
+
     table_body_html = templates.get_template("partials/tracks_table_body.html").render(
-        {"request": request, "tracks": tracks}
+        {"request": request, "tracks": tracks, "tracks_json": tracks_json_string}
     )
 
     return JSONResponse(
@@ -602,6 +608,12 @@ def read_root(
         rank_filter=rank_filter,
     )
 
+    # 1. Create a list of dictionaries by CALLING the to_dict() method
+    tracks_for_json = [track.to_dict() for track in tracks]
+
+    # 2. Convert this list to a JSON string
+    tracks_json_string = json.dumps(tracks_for_json)
+
     all_db_tracks = crud.get_tracks(db, limit=1000)
 
     producers_flat = []
@@ -628,6 +640,7 @@ def read_root(
         {
             "request": request,
             "tracks": tracks,
+            "tracks_json": tracks_json_string,
             "all_producers": all_producers,
             "all_voicebanks": all_voicebanks,
             "last_update": last_update,

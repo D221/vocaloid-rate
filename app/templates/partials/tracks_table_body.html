@@ -1,3 +1,4 @@
+<template id="playlist-data"> {{ tracks_json | safe }} </template>
 {% for track in tracks %}
   <tr
     data-track-id="{{ track.id }}"
@@ -141,7 +142,7 @@
         {% for producer in track.producer.split(',') %}
           <a
             href="#"
-            class="..."
+            class="filter-link font-semibold hover:text-cyan-text hover:underline"
             data-filter-type="producer_filter"
             data-filter-value="{{ producer.strip() }}"
             title="{{ producer.strip() }}"
@@ -170,7 +171,7 @@
       {% for voicebank in track.voicebank.split(',') %}
         <a
           href="#"
-          class="..."
+          class="filter-link font-semibold hover:text-cyan-text hover:underline"
           data-filter-type="voicebank_filter"
           data-filter-value="{{ voicebank.strip() }}"
           title="{{ voicebank.strip() }}"

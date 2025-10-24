@@ -161,45 +161,21 @@ const openPlaylistModal = async (trackId, buttonElement) => {
 let currentPage = 1;
 let currentLimit = localStorage.getItem("defaultPageSize") || "all";
 
-const buildPlaylistFromDOM = () => {
-  const tableBody = document.getElementById("tracks-table-body");
-  if (!tableBody) return;
-
-  const allRows = Array.from(tableBody.querySelectorAll("tr[data-track-id]"));
-  playerState.playlist = allRows
-    .map((row) => {
-      // Image
-      const imageEl = row.querySelector('td[data-label="Image"] img');
-      const imageUrl = imageEl?.src;
-      if (!imageUrl) return null;
-
-      // Title link
-      const titleLink = row.querySelector('td[data-label="Title"] a[href]');
-      const title = titleLink ? titleLink.textContent.trim() : "Unknown";
-      const link = titleLink ? titleLink.href : "";
-
-      // Producer
-      const producerLink = row.querySelector('td[data-label="Producer"] a');
-      const producer = producerLink
-        ? producerLink.textContent.trim()
-        : "Unknown";
-
-      // Play button (first button inside Title column)
-      const playButton = row.querySelector('td[data-label="Title"] button');
-      if (!playButton) return null;
-
-      return {
-        id: playButton.dataset.trackId,
-        title,
-        producer,
-        link,
-        imageUrl,
-      };
-    })
-    .filter((t) => t?.id); // Filter out any nulls
-
-  if (playerState.isShuffle) {
-    generateShuffledPlaylist();
+const loadPlaylistFromTemplate = () => {
+  const playlistDataTemplate = document.getElementById("playlist-data");
+  if (playlistDataTemplate) {
+    try {
+      const data = JSON.parse(playlistDataTemplate.innerHTML);
+      if (Array.isArray(data)) {
+        playerState.playlist = data;
+        console.log(
+          "Playlist successfully loaded/updated from <template>.",
+          playerState.playlist,
+        );
+      }
+    } catch (e) {
+      console.error("Failed to parse playlist data from <template> tag:", e);
+    }
   }
 };
 
@@ -906,7 +882,7 @@ const updateTracks = async () => {
       const data = await response.json();
       tableBody.innerHTML = data.table_body_html;
 
-      buildPlaylistFromDOM();
+      loadPlaylistFromTemplate();
 
       if (currentTrackIdBeforeUpdate) {
         const isTrackStillVisible = playerState.playlist.some(
@@ -1340,10 +1316,12 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       const trackId = trackPlayBtn.dataset.trackId;
 
-      // The playlist is now built/rebuilt by updateTracks,
-      // so we just check if it's empty on the very first play action of a page load.
       if (playerState.playlist.length === 0) {
-        buildPlaylistFromDOM();
+        loadPlaylistFromTemplate();
+        if (playerState.playlist.length === 0) {
+          showToast("Could not find playlist data to play track.", "error");
+          return;
+        }
       }
 
       // If the clicked track is the one already playing, just toggle play/pause

@@ -21,6 +21,18 @@ class Track(Base):
 
     ratings: Mapped[list["Rating"]] = relationship("Rating", back_populates="track")
 
+    def to_dict(self):
+        """Returns a dictionary representation of the track for JSON serialization."""
+        return {
+            "id": str(self.id),  # Ensure ID is a string for JS consistency
+            "title": self.title,
+            "producer": self.producer,
+            "voicebank": self.voicebank,
+            "link": self.link,
+            "title_jp": self.title_jp,
+            "imageUrl": self.image_url,
+        }
+
 
 class Rating(Base):
     __tablename__ = "ratings"
