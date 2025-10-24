@@ -22,13 +22,13 @@ from fastapi import (
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas, scraper
 from app.database import SessionLocal, engine
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
-
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -44,6 +44,11 @@ DATA_DIR = "data"
 SCRAPE_STATUS_FILE = os.path.join(DATA_DIR, "scrape_status.txt")
 
 initial_scrape_in_progress = False
+
+
+class PlaylistUpdate(BaseModel):
+    name: str
+    description: Optional[str] = None
 
 
 @app.on_event("startup")
@@ -802,3 +807,19 @@ def reorder_a_playlist(
     """Update the order of all tracks in a playlist."""
     crud.reorder_playlist(db, playlist_id=playlist_id, track_ids=track_ids)
     return Response(status_code=200, content="Playlist reordered successfully")
+
+
+@app.put("/api/playlists/{playlist_id}", response_model=schemas.PlaylistSimple)
+def update_playlist_details(
+    playlist_id: int, playlist_update: PlaylistUpdate, db: Session = Depends(get_db)
+):
+    """Update a playlist's name and description."""
+    db_playlist = crud.update_playlist(
+        db,
+        playlist_id=playlist_id,
+        name=playlist_update.name,
+        description=playlist_update.description,
+    )
+    if not db_playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+    return db_playlist

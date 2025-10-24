@@ -2,11 +2,53 @@
   class="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4"
 >
   <!-- The Title Block -->
-  <div class="flex-grow text-center md:text-left">
-    <h1 class="text-4xl font-bold text-cyan-text">{{ title }}</h1>
+  <div
+    class="flex-grow text-center md:text-left"
+    data-playlist-id="{{ playlist.id if playlist else '' }}"
+  >
+    <!-- View Mode for Title -->
+    <h1 class="group text-4xl font-bold text-cyan-text">
+      <span class="view-mode">{{ title }}</span>
+      <input
+        type="text"
+        value="{{ title }}"
+        class="edit-mode hidden w-full rounded border border-border bg-background p-1 text-4xl font-bold text-foreground"
+      />
+
+      {# Show edit icon only on the edit page #}
+      {% if request.url.path.startswith('/playlist/edit/') %}
+        <button
+          data-edit-field="name"
+          class="ml-2 text-gray-text opacity-0 transition-opacity group-hover:opacity-100"
+        >
+          <i class="fa-solid fa-pencil"></i>
+        </button>
+      {% endif %}
+    </h1>
+
+    <!-- View Mode for Subtitle/Description -->
     {% if subtitle %}
-      <p class="text-gray-text">{{ subtitle }}</p>
+      <p class="group text-gray-text">
+        <span class="view-mode">{{ subtitle }}</span>
+        <textarea
+          rows="2"
+          class="edit-mode hidden w-full rounded border border-border bg-background p-1 text-foreground"
+        >
+{{ subtitle.replace('No description.', '') }}</textarea
+        >
+
+        {# Show edit icon only on the edit page #}
+        {% if request.url.path.startswith('/playlist/edit/') %}
+          <button
+            data-edit-field="description"
+            class="ml-2 text-gray-text opacity-0 transition-opacity group-hover:opacity-100"
+          >
+            <i class="fa-solid fa-pencil"></i>
+          </button>
+        {% endif %}
+      </p>
     {% endif %}
+
     {% if request.url.path == '/' %}
       <span
         id="last-updated"
@@ -71,6 +113,7 @@
       {% else %}
         <a
           href="/playlist/edit/{{ playlist_id }}"
+          id="toggle-edit-playlist"
           class="cursor-pointer rounded border border-amber-text p-3 font-bold text-amber-text shadow-md transition-colors duration-200 ease-in-out hover:bg-amber-hover"
         >
           Edit Details

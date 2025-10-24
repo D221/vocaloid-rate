@@ -311,6 +311,19 @@ def create_playlist(db: Session, playlist: schemas.PlaylistCreate) -> models.Pla
     return db_playlist
 
 
+def update_playlist(
+    db: Session, playlist_id: int, name: str, description: Optional[str]
+) -> Optional[models.Playlist]:
+    """Updates a playlist's name and description."""
+    db_playlist = get_playlist(db, playlist_id)
+    if db_playlist:
+        db_playlist.name = name
+        db_playlist.description = description
+        db.commit()
+        db.refresh(db_playlist)
+    return db_playlist
+
+
 def add_track_to_playlist(
     db: Session, playlist_id: int, track_id: int
 ) -> Optional[models.Playlist]:

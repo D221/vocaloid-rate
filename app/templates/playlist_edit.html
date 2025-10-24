@@ -3,7 +3,7 @@
 {% block title %}Edit: {{ playlist.name }}{% endblock %}
 
 {% block content %}
-  {% set title = "Edit: " + playlist.name %}
+  {% set title = playlist.name %}
   {% set subtitle = playlist.description or "No description." %}
   {% include "partials/header.html" %}
 
