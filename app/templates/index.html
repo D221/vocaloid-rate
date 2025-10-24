@@ -3,56 +3,8 @@
 {% block title %}Vocaloid Rate{% endblock %}
 
 {% block content %}
-  <div
-    class="mb-8 flex flex-col items-center justify-between gap-4 border-b border-border pb-4 md:flex-row"
-  >
-    <div class="text-center md:text-left">
-      <h1 class="text-4xl font-bold text-cyan-text">Vocaloid Rate</h1>
-      <span
-        id="last-updated"
-        class="{% if is_db_outdated %}
-          text-red-500
-        {% else %}
-          text-gray-500 dark:text-gray-400
-        {% endif %} text-sm"
-      >
-        {% if last_update %}
-          Last updated: {{ last_update.updated_at.strftime('%Y-%m-%d %H:%M') }}
-          {% if is_db_outdated and update_age_days is not none %}
-            <br />Your database is {{ update_age_days }}
-            day{{ 's' if update_age_days > 1 else '' }} old, please update.
-          {% endif %}
-        {% else %}
-          Database not updated yet. Please update.
-        {% endif %}
-      </span>
-    </div>
-    <div class="flex flex-shrink-0 items-center gap-4">
-      <a
-        href="/playlists"
-        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
-      >
-        Playlists
-      </a>
-      <a
-        href="/rated_tracks"
-        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
-      >
-        View Rated Tracks
-      </a>
-      <a
-        href="/options"
-        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
-      >
-        Options
-      </a>
-      <div id="theme-switcher">
-        <span id="theme-icon"
-          ><i class="fa-solid fa-moon text-xl text-foreground"></i
-        ></span>
-      </div>
-    </div>
-  </div>
+  {% set title = "Vocaloid Rate" %}
+  {% include "partials/header.html" %}
 
   <div class="mb-8 rounded-md bg-card-bg p-5 shadow-md">
     <form

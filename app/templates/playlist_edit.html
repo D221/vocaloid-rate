@@ -3,28 +3,9 @@
 {% block title %}Edit: {{ playlist.name }}{% endblock %}
 
 {% block content %}
-  <div
-    class="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4"
-  >
-    <div>
-      <h1 class="text-4xl font-bold text-cyan-text">Edit Playlist</h1>
-      <p class="text-gray-text">{{ playlist.name }}</p>
-    </div>
-    <div class="flex flex-shrink-0 items-center gap-4">
-      <a
-        href="/playlist/{{ playlist.id }}"
-        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
-      >
-        View Playlist
-      </a>
-      <a
-        href="/playlists"
-        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
-      >
-        All Playlists
-      </a>
-    </div>
-  </div>
+  {% set title = "Edit: " + playlist.name %}
+  {% set subtitle = playlist.description or "No description." %}
+  {% include "partials/header.html" %}
 
   <!-- Main Editor Layout -->
   <div

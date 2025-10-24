@@ -1,0 +1,107 @@
+<div
+  class="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4"
+>
+  <!-- The Title Block -->
+  <div class="flex-grow text-center md:text-left">
+    <h1 class="text-4xl font-bold text-cyan-text">{{ title }}</h1>
+    {% if subtitle %}
+      <p class="text-gray-text">{{ subtitle }}</p>
+    {% endif %}
+    {% if request.url.path == '/' %}
+      <span
+        id="last-updated"
+        class="{% if is_db_outdated %}
+          text-red-500
+        {% else %}
+          text-gray-500 dark:text-gray-400
+        {% endif %} text-sm"
+      >
+        {% if last_update %}
+          Last updated: {{ last_update.updated_at.strftime('%Y-%m-%d %H:%M') }}
+          {% if is_db_outdated and update_age_days is not none %}
+            <br />Your database is {{ update_age_days }}
+            day{{ 's' if update_age_days > 1 else '' }} old, please update.
+          {% endif %}
+        {% else %}
+          Database not updated yet. Please update.
+        {% endif %}
+      </span>
+    {% endif %}
+  </div>
+
+  <!-- The Navigation Buttons Block -->
+  <div
+    class="flex w-full flex-shrink-0 items-center justify-center gap-4 md:w-auto"
+  >
+    {# Show "Back to Main Chart" if we are NOT on the main page #}
+    {% if request.url.path != '/' %}
+      <a
+        href="/"
+        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
+      >
+        Main Chart
+      </a>
+    {% endif %}
+
+    {# Show "Playlists" if we are NOT on the playlists page #}
+    {% if request.url.path != '/playlists' %}
+      <a
+        href="/playlists"
+        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
+      >
+        Playlists
+      </a>
+    {% endif %}
+
+    {% if request.url.path.startswith('/playlist/') %}
+
+      {# Extract the playlist ID. This works for both /view/ and /edit/ URLs #}
+      {% set playlist_id = request.url.path.split('/')[-1] %}
+
+      {# CASE 1: We are on the EDIT page, so show a "View" button #}
+      {% if request.url.path.startswith('/playlist/edit/') %}
+        <a
+          href="/playlist/{{ playlist_id }}"
+          class="cursor-pointer rounded border border-amber-text p-3 font-bold text-amber-text shadow-md transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
+        >
+          View Playlist
+        </a>
+
+        {# CASE 2: We are on the VIEW page, so show an "Edit" button #}
+      {% else %}
+        <a
+          href="/playlist/edit/{{ playlist_id }}"
+          class="cursor-pointer rounded border border-amber-text p-3 font-bold text-amber-text shadow-md transition-colors duration-200 ease-in-out hover:bg-amber-hover"
+        >
+          Edit Details
+        </a>
+      {% endif %}
+    {% endif %}
+
+    {# Show "View Rated" if we are NOT on the rated tracks page #}
+    {% if request.url.path != '/rated_tracks' %}
+      <a
+        href="/rated_tracks"
+        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
+      >
+        Rated Tracks
+      </a>
+    {% endif %}
+
+    {# Show "Options" if we are NOT on the rated tracks page #}
+    {% if request.url.path != '/options' %}
+      <a
+        href="/options"
+        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
+      >
+        Options
+      </a>
+    {% endif %}
+
+    <div id="theme-switcher">
+      <span id="theme-icon"
+        ><i class="fa-solid fa-moon text-xl text-foreground"></i
+      ></span>
+    </div>
+  </div>
+</div>
