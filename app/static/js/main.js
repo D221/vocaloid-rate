@@ -223,25 +223,6 @@ const buildPlaylistFromDOM = () => {
   }
 };
 
-const truncateTextByWords = (selector, maxLength) => {
-  document.querySelectorAll(selector).forEach((el) => {
-    // Store the original text if it's not already stored
-    if (!el.dataset.originalText) {
-      el.dataset.originalText = el.textContent.trim();
-    }
-
-    const originalText = el.dataset.originalText;
-
-    if (originalText.length > maxLength) {
-      // Hard cut, no word boundary check
-      el.textContent = `${originalText.substring(0, maxLength)}...`;
-    } else {
-      // If it's shorter, ensure it's the full original text
-      el.textContent = originalText;
-    }
-  });
-};
-
 const upgradeThumbnails = () => {
   document.querySelectorAll("img.track-thumbnail").forEach((img) => {
     // --- Desktop Logic (Corrected) ---
@@ -960,7 +941,6 @@ const updateTracks = async () => {
       }
 
       updatePaginationUI(data.pagination);
-      truncateTextByWords("[data-js-truncate]", 25);
       upgradeThumbnails();
     } catch (error) {
       hideSkeleton();
@@ -1116,7 +1096,6 @@ document.addEventListener("DOMContentLoaded", () => {
   updateSortIndicators();
   updateThemeUI();
   updateActiveFilterDisplay();
-  truncateTextByWords("[data-js-truncate]", 25);
   upgradeThumbnails();
 
   const limitFilter = document.getElementById("limit_filter");

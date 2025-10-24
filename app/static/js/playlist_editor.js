@@ -232,8 +232,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 <a href="${trackLink}" target="_blank" class="flex items-center gap-3">
                     <img src="${imageSrc}" alt="${title}" class="h-10 w-10 rounded object-cover">
                     <div>
-                        <div class="font-semibold truncate">${title}</div>
-                        <div class="text-sm text-gray-text truncate">${producer}</div>
+                        <div class="font-semibold">${title}</div>
+                        <div class="text-sm text-gray-text">${producer}</div>
                     </div>
                 </a>
             </div>
