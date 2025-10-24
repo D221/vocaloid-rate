@@ -70,6 +70,14 @@
   tr.is-playing > td {
     background-color: var(--color-cyan-hover);
   }
+
+  .skeleton-row {
+    @apply h-16;
+  }
+
+  .skeleton-bar {
+    @apply h-4 w-full animate-pulse rounded bg-gray-hover;
+  }
 }
 
 @layer base {

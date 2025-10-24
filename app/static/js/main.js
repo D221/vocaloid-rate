@@ -73,6 +73,23 @@ const updateSortIndicators = () => {
   });
 };
 
+let skeletonTimer;
+const showSkeleton = () => {
+  const tableBody = document.getElementById("tracks-table-body");
+  if (tableBody) {
+    clearTimeout(skeletonTimer);
+
+    skeletonTimer = setTimeout(() => {
+      const skeletonRowHTML = `<tr class="skeleton-row"><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td></tr>`;
+      tableBody.innerHTML = skeletonRowHTML.repeat(10);
+    }, 200);
+  }
+};
+
+const hideSkeleton = () => {
+  clearTimeout(skeletonTimer);
+};
+
 const closePlaylistModals = () => {
   document
     .querySelectorAll(".playlist-modal")
@@ -879,13 +896,6 @@ const updateTracks = async () => {
 
   const currentTrackIdBeforeUpdate = playerState.currentTrackId;
 
-  let skeletonTimer;
-  const showSkeleton = () => {
-    const skeletonRowHTML = `<tr class="skeleton-row"><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td></tr>`;
-    tableBody.innerHTML = skeletonRowHTML.repeat(10);
-  };
-  skeletonTimer = setTimeout(showSkeleton, 250);
-
   if (filterForm) {
     // Start with the current URL's params to preserve sorting state.
     const paramsForFetch = new URLSearchParams(window.location.search);
@@ -931,7 +941,7 @@ const updateTracks = async () => {
 
     try {
       const response = await fetch(fetchUrl);
-      clearTimeout(skeletonTimer);
+      hideSkeleton();
       const data = await response.json();
       tableBody.innerHTML = data.table_body_html;
 
@@ -953,7 +963,7 @@ const updateTracks = async () => {
       truncateTextByWords("[data-js-truncate]", 25);
       upgradeThumbnails();
     } catch (error) {
-      clearTimeout(skeletonTimer);
+      hideSkeleton();
       console.error("Failed to update tracks:", error);
       tableBody.innerHTML =
         '<tr><td colspan="7">Error loading tracks. Please try again.</td></tr>';
@@ -1052,6 +1062,7 @@ const renderRatingChart = () => {
           "",
           `${window.location.pathname}?${params.toString()}`,
         );
+        showSkeleton();
         updateTracks();
       }
     };
@@ -1114,6 +1125,7 @@ document.addEventListener("DOMContentLoaded", () => {
     limitFilter.addEventListener("change", (e) => {
       currentLimit = e.target.value;
       currentPage = 1;
+      showSkeleton();
       updateTracks();
     });
   }
@@ -1143,6 +1155,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       // If any page change happened, update the tracks
       if (pageChanged) {
+        showSkeleton();
         updateTracks();
       }
     });
@@ -1157,10 +1170,12 @@ document.addEventListener("DOMContentLoaded", () => {
       currentPage = 1; // Reset page on filter change
       if (e.target.matches('input[type="text"], input[type="search"]')) {
         toggleClearButton(e.target);
+        showSkeleton();
         debouncedUpdateTracks();
       } else if (e.target.id !== "limit_filter") {
         // Any other form input (radios, selects) triggers an immediate update
         currentPage = 1; // Reset page on filter change
+        showSkeleton();
         updateTracks();
       }
     });
@@ -1180,6 +1195,7 @@ document.addEventListener("DOMContentLoaded", () => {
       "all";
     if (limitFilter) limitFilter.value = currentLimit;
     // 2. Fetch the initial view based on the resolved state
+    showSkeleton();
     updateTracks();
   }
 
@@ -1424,6 +1440,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // 3. Reset pagination and fetch the default track list without a page reload
       currentPage = 1;
+      showSkeleton();
       updateTracks(); // This re-uses your existing logic and preserves player state
       return; // Stop processing other click handlers
     }
@@ -1507,6 +1524,7 @@ document.addEventListener("DOMContentLoaded", () => {
         "",
         `${window.location.pathname}?${params.toString()}`,
       );
+      showSkeleton();
       updateTracks();
       return;
     }
@@ -1538,6 +1556,7 @@ document.addEventListener("DOMContentLoaded", () => {
         "",
         `${window.location.pathname}?${params.toString()}`,
       );
+      showSkeleton();
       updateTracks();
     }
 
@@ -1909,6 +1928,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!res.ok) throw new Error("Failed to add track.");
             showToast("Track added!");
             closePlaylistModals();
+            showSkeleton();
             updateTracks(); // This will handle the button color change
           })
           .catch((err) => showToast(err.message, "error"));
@@ -1925,6 +1945,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!res.ok) throw new Error("Failed to remove track.");
             showToast("Track removed.");
             closePlaylistModals();
+            showSkeleton();
             updateTracks(); // This will handle the button color change
           })
           .catch((err) => showToast(err.message, "error"));
@@ -1952,6 +1973,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error("Failed to add track to new playlist.");
               showToast(`Track added to new playlist: ${playlistName}!`);
               closePlaylistModals();
+              showSkeleton();
               updateTracks(); // This will handle the button color change
             })
             .catch((err) => showToast(err.message, "error"));

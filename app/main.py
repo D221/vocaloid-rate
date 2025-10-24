@@ -295,7 +295,7 @@ def edit_playlist_page(
 
     # Get all tracks to populate the left-hand side
     all_tracks = crud.get_tracks(
-        db, limit=10000, sort_by="title"
+        db, limit=10000, sort_by="title", rank_filter="all"
     )  # Fetch all, sorted by title
 
     return templates.TemplateResponse(
