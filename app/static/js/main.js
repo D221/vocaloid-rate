@@ -1,4 +1,32 @@
-// --- HELPER FUNCTIONS ---
+// ===================================================================
+// GLOBAL STATE & CONFIGURATION
+// ===================================================================
+
+let ytPlayer;
+let progressUpdateInterval;
+let ratingChart = null;
+let skeletonTimer;
+
+let currentPage = 1;
+let currentLimit = localStorage.getItem("defaultPageSize") || "all";
+
+const playerState = {
+  isPlaying: false,
+  currentTrackId: null,
+  playlist: [],
+  shuffledPlaylist: [],
+  volume: localStorage.getItem("playerVolume") || 100,
+  isMuted: localStorage.getItem("playerMuted") === "true",
+  isEmbedded: false,
+  isShuffle: false,
+  isRepeat: false,
+  embeddedPlayers: {}, // Track embedded players by track ID
+};
+
+// ===================================================================
+// PURE HELPER FUNCTIONS
+// ===================================================================
+
 const debounce = (func, delay) => {
   let timeoutId;
   return (...args) => {
@@ -14,169 +42,27 @@ const getYouTubeVideoId = (url) => {
   return url.match(regex)?.[1] || null;
 };
 
-const getActivePlayer = () => {
-  if (
-    playerState.isEmbedded &&
-    playerState.embeddedPlayers[playerState.currentTrackId]
-  ) {
-    return playerState.embeddedPlayers[playerState.currentTrackId];
-  }
-  return ytPlayer;
-};
-
 const formatTime = (seconds) => {
   const minutes = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${minutes}:${secs.toString().padStart(2, "0")}`;
 };
 
-const updateSortIndicators = () => {
-  const params = new URLSearchParams(window.location.search);
-  let sortBy = params.get("sort_by");
-  let sortDir = params.get("sort_dir");
-  if (!sortBy) {
-    if (window.location.pathname.includes("rated_tracks")) {
-      sortBy = "rating";
-      sortDir = "desc";
-    } else {
-      sortBy = "rank";
-      sortDir = "asc";
-    }
-  }
-  document.querySelectorAll("th a[data-sort]").forEach((a) => {
-    a.classList.remove("active", "font-bold", "text-sky-text");
-    a.textContent = a.textContent.replace(/ [▲▼]/, "");
-    if (a.dataset.sort === sortBy) {
-      a.classList.add("active", "font-bold", "text-sky-text");
-      a.textContent += sortDir === "desc" ? " ▼" : " ▲";
-    }
-  });
-};
+const showToast = (message, type = "success") => {
+  const toast = document.createElement("div");
+  const bgColor = type === "error" ? "bg-red-text" : "bg-green-text";
+  const textColor = "text-white"; // Or a theme color for light text
 
-let skeletonTimer;
-const showSkeleton = () => {
-  const tableBody = document.getElementById("tracks-table-body");
-  if (tableBody) {
-    clearTimeout(skeletonTimer);
+  toast.className = `fixed bottom-24 right-5 z-[2000] rounded-md px-4 py-3 font-semibold shadow-lg ${bgColor} ${textColor}`;
+  toast.textContent = message;
 
-    skeletonTimer = setTimeout(() => {
-      const skeletonRowHTML = `<tr class="skeleton-row"><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td></tr>`;
-      tableBody.innerHTML = skeletonRowHTML.repeat(10);
-    }, 200);
-  }
-};
+  document.body.appendChild(toast);
 
-const hideSkeleton = () => {
-  clearTimeout(skeletonTimer);
-};
-
-const closePlaylistModals = () => {
-  document
-    .querySelectorAll(".playlist-modal")
-    .forEach((modal) => modal.remove());
-};
-
-const openPlaylistModal = async (trackId, buttonElement) => {
-  closePlaylistModals();
-
-  try {
-    const response = await fetch(`/api/tracks/${trackId}/playlist-status`);
-    if (!response.ok) throw new Error("Failed to fetch playlist status.");
-    const { member_of, not_member_of } = await response.json();
-
-    const modal = document.createElement("div");
-    modal.className =
-      "playlist-modal fixed z-20 mt-2 w-72 rounded-md border border-border bg-card-bg p-2 shadow-lg";
-    modal.dataset.trackId = trackId;
-
-    let memberHTML = "";
-    if (member_of.length > 0) {
-      memberHTML = `
-                <div class="px-2 pt-2 text-sm font-bold text-header">In Playlists</div>
-                <div class="space-y-1 p-1">
-                    ${member_of
-                      .map(
-                        (p) => `
-                        <div class="flex items-center justify-between rounded hover:bg-gray-hover">
-                            <a href="/playlist/${p.id}" class="flex-grow p-2 text-left text-foreground">${p.name}</a>
-                            <button data-remove-from-playlist="${p.id}" class="p-2 text-red-text hover:text-red-500">
-                                <i class="fa-solid fa-minus pointer-events-none"></i>
-                            </button>
-                        </div>
-                    `,
-                      )
-                      .join("")}
-                </div>
-            `;
-    }
-
-    // "Not Member Of" section
-    let notMemberHTML = "";
-    if (not_member_of.length > 0) {
-      notMemberHTML = `
-                <div class="px-2 pt-2 text-sm font-bold text-header">Add to...</div>
-                <div class="space-y-1 p-1">
-                     ${not_member_of
-                       .map(
-                         (p) => `
-                        <div class="flex items-center justify-between rounded hover:bg-gray-hover">
-                             <span class="flex-grow p-2 text-left text-foreground">${p.name}</span>
-                             <button data-add-to-existing-playlist="${p.id}" class="p-2 text-green-text hover:text-green-500">
-                                <i class="fa-solid fa-plus pointer-events-none"></i>
-                            </button>
-                        </div>
-                    `,
-                       )
-                       .join("")}
-                </div>
-            `;
-    }
-
-    // Final Modal HTML
-    modal.innerHTML = `
-            <div class="max-h-80 overflow-y-auto">
-                ${memberHTML}
-                ${notMemberHTML}
-            </div>
-            <div class="mt-2 border-t border-border pt-2">
-                <input type="text" data-new-playlist-name placeholder="Or create new..." class="w-full rounded border border-border bg-background p-2 text-foreground placeholder:text-gray-text">
-                <button data-create-playlist class="mt-2 w-full cursor-pointer rounded border border-cyan-text px-2 py-1 text-cyan-text transition-colors duration-200 ease-in-out hover:bg-cyan-hover disabled:opacity-50" disabled>Create & Add</button>
-            </div>
-        `;
-
-    document.body.appendChild(modal);
-    const btnRect = buttonElement.getBoundingClientRect();
-    let top = window.scrollY + btnRect.bottom;
-    let left = window.scrollX + btnRect.left;
-    if (left + 288 > window.innerWidth) {
-      left = window.innerWidth - 298;
-    }
-    modal.style.top = `${top}px`;
-    modal.style.left = `${left}px`;
-  } catch (error) {
-    showToast(error.message, "error");
-  }
-};
-
-let currentPage = 1;
-let currentLimit = localStorage.getItem("defaultPageSize") || "all";
-
-const loadPlaylistFromTemplate = () => {
-  const playlistDataTemplate = document.getElementById("playlist-data");
-  if (playlistDataTemplate) {
-    try {
-      const data = JSON.parse(playlistDataTemplate.innerHTML);
-      if (Array.isArray(data)) {
-        playerState.playlist = data;
-        console.log(
-          "Playlist successfully loaded/updated from <template>.",
-          playerState.playlist,
-        );
-      }
-    } catch (e) {
-      console.error("Failed to parse playlist data from <template> tag:", e);
-    }
-  }
+  setTimeout(() => {
+    toast.style.transition = "opacity 0.5s ease";
+    toast.style.opacity = "0";
+    setTimeout(() => toast.remove(), 500);
+  }, 2500); // Toast visible for 2.5 seconds
 };
 
 const upgradeThumbnails = () => {
@@ -235,373 +121,52 @@ const upgradeThumbnails = () => {
   });
 };
 
-const showToast = (message, type = "success") => {
-  const toast = document.createElement("div");
-  const bgColor = type === "error" ? "bg-red-text" : "bg-green-text";
-  const textColor = "text-white"; // Or a theme color for light text
+// ===================================================================
+// CORE APPLICATION LOGIC & STATE MANAGEMENT
+// ===================================================================
 
-  toast.className = `fixed bottom-24 right-5 z-[2000] rounded-md px-4 py-3 font-semibold shadow-lg ${bgColor} ${textColor}`;
-  toast.textContent = message;
-
-  document.body.appendChild(toast);
-
-  setTimeout(() => {
-    toast.style.transition = "opacity 0.5s ease";
-    toast.style.opacity = "0";
-    setTimeout(() => toast.remove(), 500);
-  }, 2500); // Toast visible for 2.5 seconds
-};
-
-let ytPlayer;
-let progressUpdateInterval;
-const playerState = {
-  isPlaying: false,
-  currentTrackId: null,
-  playlist: [],
-  shuffledPlaylist: [],
-  volume: localStorage.getItem("playerVolume") || 100,
-  isMuted: localStorage.getItem("playerMuted") === "true",
-  isEmbedded: false,
-  isShuffle: false,
-  isRepeat: false,
-  embeddedPlayers: {}, // Track embedded players by track ID
-};
-
-const musicPlayerEl = document.getElementById("music-player");
-const playPauseBtn = document.getElementById("player-play-pause-btn");
-const nextBtn = document.getElementById("player-next-btn");
-const prevBtn = document.getElementById("player-prev-btn");
-const stopBtn = document.getElementById("player-stop-btn");
-const volumeSlider = document.getElementById("player-volume-slider");
-const muteBtn = document.getElementById("player-mute-btn");
-const progressBar = document.getElementById("player-progress-bar");
-const currentTimeEl = document.getElementById("player-current-time");
-const durationEl = document.getElementById("player-duration");
-
-function onPlayerError(event) {
-  console.error("YouTube Player Error:", event.data);
-  showToast(
-    `Could not play this video.\n\nThis might be because the uploader has disabled embedding, or the video is private/deleted.\n(Error code: ${event.data})`,
-    "error",
-  );
-  playNextTrack(); // Attempt to play the next track
-}
-
-function onPlayerStateChange(event) {
-  if (event.data === YT.PlayerState.PLAYING) {
-    playerState.isPlaying = true;
-    startProgressUpdater();
-    updatePlayerUI();
-  } else if (event.data === YT.PlayerState.PAUSED) {
-    playerState.isPlaying = false;
-    stopProgressUpdater();
-    updatePlayerUI();
-  } else if (event.data === YT.PlayerState.ENDED) {
-    if (playerState.isRepeat) {
-      // If repeat is on, just seek to the beginning and play again
-      const activePlayer =
-        playerState.embeddedPlayers[playerState.currentTrackId] || ytPlayer;
-      if (activePlayer) {
-        activePlayer.seekTo(0, true);
-        activePlayer.playVideo();
+// --- Playlist Management ---
+const loadPlaylistFromTemplate = () => {
+  const playlistDataTemplate = document.getElementById("playlist-data");
+  if (playlistDataTemplate) {
+    try {
+      const data = JSON.parse(playlistDataTemplate.innerHTML);
+      if (Array.isArray(data)) {
+        playerState.playlist = data;
+        console.log(
+          "Playlist successfully loaded/updated from <template>.",
+          playerState.playlist,
+        );
       }
-    } else {
-      // Otherwise, play the next track
-      playNextTrack();
+    } catch (e) {
+      console.error("Failed to parse playlist data from <template> tag:", e);
     }
+  }
+};
+
+function generateShuffledPlaylist() {
+  // Create a shuffled copy of the main playlist
+  playerState.shuffledPlaylist = [...playerState.playlist];
+  // Fisher-Yates shuffle algorithm
+  for (let i = playerState.shuffledPlaylist.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [playerState.shuffledPlaylist[i], playerState.shuffledPlaylist[j]] = [
+      playerState.shuffledPlaylist[j],
+      playerState.shuffledPlaylist[i],
+    ];
   }
 }
 
-function startProgressUpdater() {
-  stopProgressUpdater();
-  progressUpdateInterval = setInterval(() => {
-    let activePlayer;
-
-    // Use embedded player if in embed mode
-    if (
-      playerState.isEmbedded &&
-      playerState.embeddedPlayers[playerState.currentTrackId]
-    ) {
-      activePlayer = playerState.embeddedPlayers[playerState.currentTrackId];
-    } else {
-      activePlayer = ytPlayer;
-    }
-
-    if (activePlayer && playerState.isPlaying) {
-      const currentTime = activePlayer.getCurrentTime();
-      const duration = activePlayer.getDuration();
-      if (duration > 0) {
-        progressBar.value = (currentTime / duration) * 100;
-        currentTimeEl.textContent = formatTime(currentTime);
-        durationEl.textContent = formatTime(duration);
-      }
-    }
-  }, 250);
-}
-
-function stopProgressUpdater() {
-  clearInterval(progressUpdateInterval);
-}
-
-function seekVideo() {
-  let activePlayer;
-
+// --- Player Controls ---
+const getActivePlayer = () => {
   if (
     playerState.isEmbedded &&
     playerState.embeddedPlayers[playerState.currentTrackId]
   ) {
-    activePlayer = playerState.embeddedPlayers[playerState.currentTrackId];
-  } else {
-    activePlayer = ytPlayer;
+    return playerState.embeddedPlayers[playerState.currentTrackId];
   }
-
-  if (activePlayer) {
-    const duration = activePlayer.getDuration();
-    if (duration > 0) {
-      const seekToTime = (progressBar.value / 100) * duration;
-      activePlayer.seekTo(seekToTime, true);
-    }
-  }
-}
-
-function loadAndPlayTrack(trackId) {
-  const trackIndex = playerState.playlist.findIndex((t) => t.id === trackId);
-  if (trackIndex === -1) return;
-
-  // Always ensure we are in audio mode when this is called directly
-  playerState.isEmbedded = false;
-  playerState.currentTrackId = trackId;
-
-  const track = playerState.playlist[trackIndex];
-  const videoId = getYouTubeVideoId(track.link);
-
-  if (!videoId) {
-    showToast("Could not find a valid YouTube video ID.", "error");
-    return;
-  }
-
-  // Immediately reset the progress bar and timers to zero
-  progressBar.value = 0;
-  currentTimeEl.textContent = "0:00";
-  durationEl.textContent = "0:00";
-
-  // Show the player UI immediately
-  musicPlayerEl.classList.replace("hidden", "grid");
-  updatePlayerUI();
-
-  // If player exists, just load the video.
-  if (ytPlayer) {
-    ytPlayer.loadVideoById(videoId);
-  } else {
-    // If the main player doesn't exist yet, create it now.
-    ytPlayer = new YT.Player("youtube-player-container", {
-      height: "180",
-      width: "320",
-      videoId: videoId,
-      playerVars: {
-        playsinline: 1,
-        autoplay: 1,
-      },
-      events: {
-        onReady: (event) => {
-          event.target.setVolume(playerState.volume);
-          if (playerState.isMuted) {
-            event.target.mute();
-          } else {
-            event.target.unMute();
-          }
-        },
-        onStateChange: onPlayerStateChange,
-        onError: onPlayerError,
-      },
-    });
-  }
-}
-
-function _cleanupPreviousEmbed(trackId) {
-  if (!trackId) return;
-  const prevRow = document.querySelector(`tr[data-track-id="${trackId}"]`);
-  if (!prevRow) return;
-
-  const prevEmbedBtn = prevRow.querySelector(
-    "button[data-embed-button].is-open",
-  );
-  if (prevEmbedBtn) {
-    if (playerState.embeddedPlayers[trackId]) {
-      playerState.embeddedPlayers[trackId].destroy();
-      delete playerState.embeddedPlayers[trackId];
-    }
-    const container = prevRow.querySelector("div[data-embed-container]");
-    if (container) {
-      container.innerHTML = "";
-      container.style.display = "none";
-    }
-    prevEmbedBtn.classList.remove("is-open");
-  }
-}
-
-function playNextTrack() {
-  const activePlaylist = playerState.isShuffle
-    ? playerState.shuffledPlaylist
-    : playerState.playlist;
-
-  const wasInEmbedMode = playerState.isEmbedded;
-  const previousTrackId = playerState.currentTrackId;
-
-  const currentIndex = activePlaylist.findIndex(
-    (t) => t.id === playerState.currentTrackId,
-  );
-  if (currentIndex === -1) return;
-
-  const nextIndex = (currentIndex + 1) % activePlaylist.length;
-  const nextTrack = activePlaylist[nextIndex];
-
-  // Close previous embed if in embed mode
-  if (wasInEmbedMode) {
-    _cleanupPreviousEmbed(previousTrackId);
-  }
-
-  // Update current track
-  playerState.currentTrackId = nextTrack.id;
-  playerState.isEmbedded = false;
-
-  // Immediately reset the progress bar and timers to zero
-  progressBar.value = 0;
-  currentTimeEl.textContent = "0:00";
-  durationEl.textContent = "0:00";
-
-  // Update UI
-  document.getElementById("player-thumbnail").src = nextTrack.imageUrl;
-  document.getElementById("player-title").textContent = nextTrack.title;
-  document.getElementById("player-producer").textContent = nextTrack.producer;
-  updatePlayerUI();
-
-  // If was in embed mode, open embed for new track
-  if (wasInEmbedMode) {
-    setTimeout(() => {
-      const nextRow = document.querySelector(
-        `tr[data-track-id="${nextTrack.id}"]`,
-      );
-      if (nextRow) {
-        const nextEmbedBtn = nextRow.querySelector("button[data-embed-button]");
-        if (nextEmbedBtn && !nextEmbedBtn.classList.contains("is-open")) {
-          nextEmbedBtn.click();
-        }
-      }
-    }, 300);
-  } else {
-    // Audio mode - load the track in hidden player
-    const videoId = getYouTubeVideoId(nextTrack.link);
-    if (ytPlayer && videoId) {
-      ytPlayer.loadVideoById(videoId);
-    } else if (videoId) {
-      // Create player if it doesn't exist
-      ytPlayer = new YT.Player("youtube-player-container", {
-        height: "180",
-        width: "320",
-        videoId: videoId,
-        playerVars: {
-          playsinline: 1,
-          autoplay: 1,
-        },
-        events: {
-          onReady: (event) => {
-            event.target.setVolume(playerState.volume);
-            if (playerState.isMuted) {
-              event.target.mute();
-            } else {
-              event.target.unMute();
-            }
-          },
-          onStateChange: onPlayerStateChange,
-          onError: onPlayerError,
-        },
-      });
-    }
-  }
-}
-
-function playPrevTrack() {
-  const activePlaylist = playerState.isShuffle
-    ? playerState.shuffledPlaylist
-    : playerState.playlist;
-
-  const wasInEmbedMode = playerState.isEmbedded;
-  const previousTrackId = playerState.currentTrackId;
-
-  const currentIndex = activePlaylist.findIndex(
-    (t) => t.id === playerState.currentTrackId,
-  );
-  if (currentIndex === -1) return;
-
-  const prevIndex =
-    (currentIndex - 1 + activePlaylist.length) % activePlaylist.length;
-  const prevTrack = activePlaylist[prevIndex];
-
-  // Close previous embed if in embed mode
-  if (wasInEmbedMode) {
-    _cleanupPreviousEmbed(previousTrackId);
-  }
-
-  // Update current track
-  playerState.currentTrackId = prevTrack.id;
-  playerState.isEmbedded = false;
-
-  // Immediately reset the progress bar and timers to zero
-  progressBar.value = 0;
-  currentTimeEl.textContent = "0:00";
-  durationEl.textContent = "0:00";
-
-  // Update UI
-  document.getElementById("player-thumbnail").src = prevTrack.imageUrl;
-  document.getElementById("player-title").textContent = prevTrack.title;
-  document.getElementById("player-producer").textContent = prevTrack.producer;
-  updatePlayerUI();
-
-  // If was in embed mode, open embed for new track
-  if (wasInEmbedMode) {
-    setTimeout(() => {
-      const prevRow = document.querySelector(
-        `tr[data-track-id="${prevTrack.id}"]`,
-      );
-      if (prevRow) {
-        const prevEmbedBtn = prevRow.querySelector("button[data-embed-button]");
-        if (prevEmbedBtn && !prevEmbedBtn.classList.contains("is-open")) {
-          prevEmbedBtn.click();
-        }
-      }
-    }, 300);
-  } else {
-    // Audio mode - load the track in hidden player
-    const videoId = getYouTubeVideoId(prevTrack.link);
-    if (ytPlayer && videoId) {
-      ytPlayer.loadVideoById(videoId);
-    } else if (videoId) {
-      // Create player if it doesn't exist
-      ytPlayer = new YT.Player("youtube-player-container", {
-        height: "180",
-        width: "320",
-        videoId: videoId,
-        playerVars: {
-          playsinline: 1,
-          autoplay: 1,
-        },
-        events: {
-          onReady: (event) => {
-            event.target.setVolume(playerState.volume);
-            if (playerState.isMuted) {
-              event.target.mute();
-            } else {
-              event.target.unMute();
-            }
-          },
-          onStateChange: onPlayerStateChange,
-          onError: onPlayerError,
-        },
-      });
-    }
-  }
-}
+  return ytPlayer;
+};
 
 function togglePlayPause() {
   const currentTrackId = playerState.currentTrackId;
@@ -623,109 +188,52 @@ function togglePlayPause() {
   }
 }
 
-function stopPlayer() {
-  if (ytPlayer) {
-    ytPlayer.stopVideo();
-  }
+// --- Player Events & Updaters ---
+function stopProgressUpdater() {
+  clearInterval(progressUpdateInterval);
+}
 
-  // Close all embeds
-  for (const trackId in playerState.embeddedPlayers) {
+function cleanupPreviousEmbed(trackId) {
+  if (!trackId) return;
+  const prevRow = document.querySelector(`tr[data-track-id="${trackId}"]`);
+  if (!prevRow) return;
+
+  const prevEmbedBtn = prevRow.querySelector(
+    "button[data-embed-button].is-open",
+  );
+  if (prevEmbedBtn) {
     if (playerState.embeddedPlayers[trackId]) {
       playerState.embeddedPlayers[trackId].destroy();
       delete playerState.embeddedPlayers[trackId];
     }
-  }
-
-  document
-    .querySelectorAll("button[data-embed-button].is-open")
-    .forEach((btn) => {
-      btn.classList.remove("is-open");
-      const container = btn
-        .closest("td")
-        .querySelector("div[data-embed-container]");
-      if (container) {
-        container.innerHTML = "";
-        container.style.display = "none";
-      }
-    });
-
-  playerState.isPlaying = false;
-  playerState.currentTrackId = null;
-  playerState.isEmbedded = false;
-  stopProgressUpdater();
-  musicPlayerEl.classList.replace("grid", "hidden");
-  progressBar.value = 0;
-  currentTimeEl.textContent = "0:00";
-  durationEl.textContent = "0:00";
-  updatePlayerUI();
-}
-
-function generateShuffledPlaylist() {
-  // Create a shuffled copy of the main playlist
-  playerState.shuffledPlaylist = [...playerState.playlist];
-  // Fisher-Yates shuffle algorithm
-  for (let i = playerState.shuffledPlaylist.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [playerState.shuffledPlaylist[i], playerState.shuffledPlaylist[j]] = [
-      playerState.shuffledPlaylist[j],
-      playerState.shuffledPlaylist[i],
-    ];
-  }
-}
-
-function updatePlayerUI() {
-  playPauseBtn.innerHTML = playerState.isPlaying
-    ? '<i class="fa-solid fa-pause"></i>'
-    : '<i class="fa-solid fa-play"></i>';
-
-  // Clear previous highlights and icons
-  document.querySelectorAll("tr.is-playing").forEach((row) => {
-    row.classList.remove("is-playing");
-  });
-  document
-    .querySelectorAll("button[data-play-button].is-playing")
-    .forEach((btn) => {
-      btn.innerHTML = '<i class="fa-solid fa-play"></i>'; // Reset to play icon
-      btn.classList.remove("is-playing");
-    });
-
-  if (playerState.currentTrackId !== null) {
-    const track = playerState.playlist.find(
-      (t) => t.id === playerState.currentTrackId,
-    );
-    if (track) {
-      // Update player info
-      document.getElementById("player-thumbnail").src = track.imageUrl;
-      document.getElementById("player-title").textContent = track.title;
-      document.getElementById("player-producer").textContent = track.producer;
-
-      // Find the corresponding row and play button in the table
-      const trackRow = document.querySelector(
-        `tr[data-track-id="${track.id}"]`,
-      );
-      if (trackRow) {
-        // Highlight the row
-        trackRow.classList.add("is-playing");
-
-        // Update the play/pause icon in the table
-        const playButtonInRow = trackRow.querySelector(
-          "button[data-play-button]",
-        );
-        if (playButtonInRow) {
-          playButtonInRow.innerHTML = playerState.isPlaying
-            ? '<i class="fa-solid fa-pause"></i>'
-            : '<i class="fa-solid fa-play"></i>';
-          playButtonInRow.classList.add("is-playing");
-        }
-      }
+    const container = prevRow.querySelector("div[data-embed-container]");
+    if (container) {
+      container.innerHTML = "";
+      container.style.display = "none";
     }
+    prevEmbedBtn.classList.remove("is-open");
   }
-
-  volumeSlider.value = playerState.isMuted ? 0 : playerState.volume;
-  muteBtn.innerHTML = playerState.isMuted
-    ? '<i class="fa-solid fa-volume-xmark"></i>'
-    : '<i class="fa-solid fa-volume-high"></i>';
 }
+
+// ===================================================================
+// UI & DOM MANIPULATION FUNCTIONS
+// ===================================================================
+
+const showSkeleton = () => {
+  const tableBody = document.getElementById("tracks-table-body");
+  if (tableBody) {
+    clearTimeout(skeletonTimer);
+
+    skeletonTimer = setTimeout(() => {
+      const skeletonRowHTML = `<tr class="skeleton-row"><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td><td><div class="skeleton-bar"></div></td></tr>`;
+      tableBody.innerHTML = skeletonRowHTML.repeat(10);
+    }, 200);
+  }
+};
+
+const hideSkeleton = () => {
+  clearTimeout(skeletonTimer);
+};
 
 const updatePaginationUI = (pagination) => {
   const pageLinks = document.getElementById("page-links");
@@ -821,88 +329,37 @@ const updatePaginationUI = (pagination) => {
   limitFilter.value = pagination.limit;
 };
 
-const updateTracks = async () => {
-  const tableBody = document.getElementById("tracks-table-body");
-  const filterForm = document.getElementById("filter-form");
-  const baseUrl = tableBody.dataset.updateUrl;
-  if (!baseUrl) return;
-
-  const currentTrackIdBeforeUpdate = playerState.currentTrackId;
-
-  if (filterForm) {
-    // Start with the current URL's params to preserve sorting state.
-    const paramsForFetch = new URLSearchParams(window.location.search);
-
-    const formData = new FormData(filterForm);
-
-    // Step 1: Update the fetch parameters with the latest form data.
-    // .set() will overwrite existing keys, which is what we want.
-    formData.forEach((value, key) => {
-      if (value) {
-        paramsForFetch.set(key, value);
-      } else {
-        // If a form field is cleared, remove it from the params.
-        paramsForFetch.delete(key);
-      }
-    });
-    paramsForFetch.set("page", currentPage);
-    if (!paramsForFetch.has("limit")) {
-      paramsForFetch.set("limit", currentLimit);
+const updateSortIndicators = () => {
+  const params = new URLSearchParams(window.location.search);
+  let sortBy = params.get("sort_by");
+  let sortDir = params.get("sort_dir");
+  if (!sortBy) {
+    if (window.location.pathname.includes("rated_tracks")) {
+      sortBy = "rating";
+      sortDir = "desc";
+    } else {
+      sortBy = "rank";
+      sortDir = "asc";
     }
-
-    // Step 2: Create a separate parameter list for the browser URL bar, removing defaults.
-    const paramsForBrowser = new URLSearchParams(paramsForFetch.toString());
-
-    // Remove default filters
-    if (paramsForBrowser.get("rank_filter") === "ranked")
-      paramsForBrowser.delete("rank_filter");
-    if (paramsForBrowser.get("rated_filter") === "all")
-      paramsForBrowser.delete("rated_filter");
-
-    // Remove default pagination, correctly checking against localStorage
-    const defaultPageSize = localStorage.getItem("defaultPageSize") || "all";
-    if (paramsForBrowser.get("limit") === defaultPageSize)
-      paramsForBrowser.delete("limit");
-    if (paramsForBrowser.get("page") === "1") paramsForBrowser.delete("page");
-
-    // Step 3: Construct the final URLs
-    const fetchUrl = `${baseUrl}?${paramsForFetch.toString()}`;
-    const browserQueryString = paramsForBrowser.toString();
-    const browserUrl = browserQueryString
-      ? `${window.location.pathname}?${browserQueryString}`
-      : window.location.pathname;
-
-    try {
-      const response = await fetch(fetchUrl);
-      hideSkeleton();
-      const data = await response.json();
-      tableBody.innerHTML = data.table_body_html;
-
-      loadPlaylistFromTemplate();
-
-      if (currentTrackIdBeforeUpdate) {
-        const isTrackStillVisible = playerState.playlist.some(
-          (t) => t.id === currentTrackIdBeforeUpdate,
-        );
-
-        if (isTrackStillVisible) {
-          updatePlayerUI();
-        } else {
-          stopPlayer();
-        }
-      }
-
-      updatePaginationUI(data.pagination);
-      upgradeThumbnails();
-    } catch (error) {
-      hideSkeleton();
-      console.error("Failed to update tracks:", error);
-      tableBody.innerHTML =
-        '<tr><td colspan="7">Error loading tracks. Please try again.</td></tr>';
+  }
+  document.querySelectorAll("th a[data-sort]").forEach((a) => {
+    a.classList.remove("active", "font-bold", "text-sky-text");
+    a.textContent = a.textContent.replace(/ [▲▼]/, "");
+    if (a.dataset.sort === sortBy) {
+      a.classList.add("active", "font-bold", "text-sky-text");
+      a.textContent += sortDir === "desc" ? " ▼" : " ▲";
     }
-    window.history.pushState({}, "", browserUrl);
-    updateSortIndicators();
-    updateActiveFilterDisplay();
+  });
+};
+
+const updateThemeUI = () => {
+  const themeIcon = document.getElementById("theme-icon");
+  if (!themeIcon) return;
+  const currentTheme = document.documentElement.dataset.theme;
+  if (currentTheme === "dark") {
+    themeIcon.innerHTML = '<i class="fa-solid fa-sun"></i>';
+  } else {
+    themeIcon.innerHTML = '<i class="fa-solid fa-moon"></i>';
   }
 };
 
@@ -931,17 +388,6 @@ const updateActiveFilterDisplay = () => {
   }
 };
 
-const updateThemeUI = () => {
-  const themeIcon = document.getElementById("theme-icon");
-  if (!themeIcon) return;
-  const currentTheme = document.documentElement.dataset.theme;
-  if (currentTheme === "dark") {
-    themeIcon.innerHTML = '<i class="fa-solid fa-sun"></i>';
-  } else {
-    themeIcon.innerHTML = '<i class="fa-solid fa-moon"></i>';
-  }
-};
-
 const toggleClearButton = (input) => {
   const wrapper = input.closest(".relative"); // safer than parentElement
   if (!wrapper) return;
@@ -956,275 +402,593 @@ const toggleClearButton = (input) => {
   btn.classList.toggle("invisible", !visible);
 };
 
-let ratingChart = null; // Variable to hold the chart instance
+// --- Playlist Modal UI ---
+const closePlaylistModals = () => {
+  document
+    .querySelectorAll(".playlist-modal")
+    .forEach((modal) => modal.remove());
+};
 
-const renderRatingChart = () => {
-  const chartCanvas = document.getElementById("ratingDistributionChart");
-  if (!chartCanvas) return;
-  if (ratingChart) {
-    ratingChart.destroy();
-  }
+const openPlaylistModal = async (trackId, buttonElement) => {
+  closePlaylistModals();
+
   try {
-    const ratingsData = JSON.parse(chartCanvas.dataset.ratings);
-    const labels = Object.keys(ratingsData).sort(
-      (a, b) => parseFloat(a) - parseFloat(b),
-    );
-    const data = labels.map((label) => ratingsData[label]);
-    const isDarkMode = document.documentElement.dataset.theme === "dark";
-    const gridColor = isDarkMode
-      ? "rgba(255, 255, 255, 0.1)"
-      : "rgba(0, 0, 0, 0.1)";
-    const ticksColor = isDarkMode ? "#e0e0e0" : "#666";
+    const response = await fetch(`/api/tracks/${trackId}/playlist-status`);
+    if (!response.ok) throw new Error("Failed to fetch playlist status.");
+    const { member_of, not_member_of } = await response.json();
 
-    // --- THIS IS THE FIX ---
-    // We wrap the handler in an anonymous function to pass the 'labels' array.
-    const handleChartClick = (_event, elements) => {
-      if (elements.length > 0) {
-        const clickedElementIndex = elements[0].index;
-        // It now correctly accesses the 'labels' array that was passed in.
-        const ratingToFilter = labels[clickedElementIndex];
+    const modal = document.createElement("div");
+    modal.className =
+      "playlist-modal fixed z-20 mt-2 w-72 rounded-md border border-border bg-card-bg p-2 shadow-lg";
+    modal.dataset.trackId = trackId;
 
-        const params = new URLSearchParams();
-        params.set("sort_by", "rating");
-        params.set("sort_dir", "desc");
-        params.set("exact_rating_filter", ratingToFilter);
-        window.history.pushState(
-          {},
-          "",
-          `${window.location.pathname}?${params.toString()}`,
-        );
-        showSkeleton();
-        updateTracks();
-      }
-    };
-    // --- END OF FIX ---
+    let memberHTML = "";
+    if (member_of.length > 0) {
+      memberHTML = `
+                <div class="px-2 pt-2 text-sm font-bold text-header">In Playlists</div>
+                <div class="space-y-1 p-1">
+                    ${member_of
+                      .map(
+                        (p) => `
+                        <div class="flex items-center justify-between rounded hover:bg-gray-hover">
+                            <a href="/playlist/${p.id}" class="flex-grow p-2 text-left text-foreground">${p.name}</a>
+                            <button data-remove-from-playlist="${p.id}" class="p-2 text-red-text hover:text-red-500">
+                                <i class="fa-solid fa-minus pointer-events-none"></i>
+                            </button>
+                        </div>
+                    `,
+                      )
+                      .join("")}
+                </div>
+            `;
+    }
 
-    ratingChart = new Chart(chartCanvas, {
-      type: "bar",
-      data: {
-        labels: labels.map((l) => `${l} ★`),
-        datasets: [
-          {
-            label: "# of Ratings",
-            data: data,
-            backgroundColor: isDarkMode
-              ? "rgba(144, 186, 255, 0.6)"
-              : "rgba(0, 123, 255, 0.6)",
-            borderColor: isDarkMode
-              ? "rgba(144, 186, 255, 1)"
-              : "rgba(0, 123, 255, 1)",
-            borderWidth: 1,
-          },
-        ],
-      },
-      options: {
-        // The onClick now calls our wrapper function
-        onClick: handleChartClick,
-        onHover: (event, chartElement) => {
-          event.native.target.style.cursor = chartElement[0]
-            ? "pointer"
-            : "default";
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: { stepSize: 1, color: ticksColor },
-            grid: { color: gridColor },
-          },
-          x: { ticks: { color: ticksColor }, grid: { display: false } },
-        },
-        plugins: { legend: { display: false } },
-      },
-    });
-  } catch (e) {
-    console.error("Could not parse or render chart data:", e);
+    // "Not Member Of" section
+    let notMemberHTML = "";
+    if (not_member_of.length > 0) {
+      notMemberHTML = `
+                <div class="px-2 pt-2 text-sm font-bold text-header">Add to...</div>
+                <div class="space-y-1 p-1">
+                     ${not_member_of
+                       .map(
+                         (p) => `
+                        <div class="flex items-center justify-between rounded hover:bg-gray-hover">
+                             <span class="flex-grow p-2 text-left text-foreground">${p.name}</span>
+                             <button data-add-to-existing-playlist="${p.id}" class="p-2 text-green-text hover:text-green-500">
+                                <i class="fa-solid fa-plus pointer-events-none"></i>
+                            </button>
+                        </div>
+                    `,
+                       )
+                       .join("")}
+                </div>
+            `;
+    }
+
+    // Final Modal HTML
+    modal.innerHTML = `
+            <div class="max-h-80 overflow-y-auto">
+                ${memberHTML}
+                ${notMemberHTML}
+            </div>
+            <div class="mt-2 border-t border-border pt-2">
+                <input type="text" data-new-playlist-name placeholder="Or create new..." class="w-full rounded border border-border bg-background p-2 text-foreground placeholder:text-gray-text">
+                <button data-create-playlist class="mt-2 w-full cursor-pointer rounded border border-cyan-text px-2 py-1 text-cyan-text transition-colors duration-200 ease-in-out hover:bg-cyan-hover disabled:opacity-50" disabled>Create & Add</button>
+            </div>
+        `;
+
+    document.body.appendChild(modal);
+    const btnRect = buttonElement.getBoundingClientRect();
+    let top = window.scrollY + btnRect.bottom;
+    let left = window.scrollX + btnRect.left;
+    if (left + 288 > window.innerWidth) {
+      left = window.innerWidth - 298;
+    }
+    modal.style.top = `${top}px`;
+    modal.style.left = `${left}px`;
+  } catch (error) {
+    showToast(error.message, "error");
   }
 };
 
-// --- INITIALIZATION ---
+// ===================================================================
+// INITIALIZATION & EVENT LISTENERS (The "Entry Point")
+// ===================================================================
 document.addEventListener("DOMContentLoaded", () => {
-  updateSortIndicators();
-  updateThemeUI();
-  updateActiveFilterDisplay();
-  upgradeThumbnails();
-
+  const musicPlayerEl = document.getElementById("music-player");
+  const playPauseBtn = document.getElementById("player-play-pause-btn");
+  const nextBtn = document.getElementById("player-next-btn");
+  const prevBtn = document.getElementById("player-prev-btn");
+  const stopBtn = document.getElementById("player-stop-btn");
+  const volumeSlider = document.getElementById("player-volume-slider");
+  const muteBtn = document.getElementById("player-mute-btn");
+  const progressBar = document.getElementById("player-progress-bar");
+  const currentTimeEl = document.getElementById("player-current-time");
+  const durationEl = document.getElementById("player-duration");
   const limitFilter = document.getElementById("limit_filter");
-  if (limitFilter) {
-    limitFilter.value = currentLimit;
-    limitFilter.addEventListener("change", (e) => {
-      currentLimit = e.target.value;
-      currentPage = 1;
-      showSkeleton();
-      updateTracks();
-    });
+  const paginationContainer = document.getElementById("pagination-container");
+  const filterForm = document.getElementById("filter-form");
+  const scrapeButton = document.getElementById("scrape-button");
+
+  function loadAndPlayTrack(trackId) {
+    const trackIndex = playerState.playlist.findIndex((t) => t.id === trackId);
+    if (trackIndex === -1) return;
+
+    // Always ensure we are in audio mode when this is called directly
+    playerState.isEmbedded = false;
+    playerState.currentTrackId = trackId;
+
+    const track = playerState.playlist[trackIndex];
+    const videoId = getYouTubeVideoId(track.link);
+
+    if (!videoId) {
+      showToast("Could not find a valid YouTube video ID.", "error");
+      return;
+    }
+
+    // Immediately reset the progress bar and timers to zero
+    progressBar.value = 0;
+    currentTimeEl.textContent = "0:00";
+    durationEl.textContent = "0:00";
+
+    // Show the player UI immediately
+    musicPlayerEl.classList.replace("hidden", "grid");
+    updatePlayerUI();
+
+    // If player exists, just load the video.
+    if (ytPlayer) {
+      ytPlayer.loadVideoById(videoId);
+    } else {
+      // If the main player doesn't exist yet, create it now.
+      ytPlayer = new YT.Player("youtube-player-container", {
+        height: "180",
+        width: "320",
+        videoId: videoId,
+        playerVars: {
+          playsinline: 1,
+          autoplay: 1,
+        },
+        events: {
+          onReady: (event) => {
+            event.target.setVolume(playerState.volume);
+            if (playerState.isMuted) {
+              event.target.mute();
+            } else {
+              event.target.unMute();
+            }
+          },
+          onStateChange: onPlayerStateChange,
+          onError: onPlayerError,
+        },
+      });
+    }
   }
 
-  const paginationContainer = document.getElementById("pagination-container");
-  if (paginationContainer) {
-    paginationContainer.addEventListener("click", (e) => {
-      let pageChanged = false;
-      // Handle previous button
-      if (e.target.id === "prev-page-btn" && !e.target.disabled) {
-        currentPage--;
-        pageChanged = true;
+  function playNextTrack() {
+    const activePlaylist = playerState.isShuffle
+      ? playerState.shuffledPlaylist
+      : playerState.playlist;
+
+    const wasInEmbedMode = playerState.isEmbedded;
+    const previousTrackId = playerState.currentTrackId;
+
+    const currentIndex = activePlaylist.findIndex(
+      (t) => t.id === playerState.currentTrackId,
+    );
+    if (currentIndex === -1) return;
+
+    const nextIndex = (currentIndex + 1) % activePlaylist.length;
+    const nextTrack = activePlaylist[nextIndex];
+
+    // Close previous embed if in embed mode
+    if (wasInEmbedMode) {
+      cleanupPreviousEmbed(previousTrackId);
+    }
+
+    // Update current track
+    playerState.currentTrackId = nextTrack.id;
+    playerState.isEmbedded = false;
+
+    // Immediately reset the progress bar and timers to zero
+    progressBar.value = 0;
+    currentTimeEl.textContent = "0:00";
+    durationEl.textContent = "0:00";
+
+    // Update UI
+    document.getElementById("player-thumbnail").src = nextTrack.imageUrl;
+    document.getElementById("player-title").textContent = nextTrack.title;
+    document.getElementById("player-producer").textContent = nextTrack.producer;
+    updatePlayerUI();
+
+    // If was in embed mode, open embed for new track
+    if (wasInEmbedMode) {
+      setTimeout(() => {
+        const nextRow = document.querySelector(
+          `tr[data-track-id="${nextTrack.id}"]`,
+        );
+        if (nextRow) {
+          const nextEmbedBtn = nextRow.querySelector(
+            "button[data-embed-button]",
+          );
+          if (nextEmbedBtn && !nextEmbedBtn.classList.contains("is-open")) {
+            nextEmbedBtn.click();
+          }
+        }
+      }, 300);
+    } else {
+      // Audio mode - load the track in hidden player
+      const videoId = getYouTubeVideoId(nextTrack.link);
+      if (ytPlayer && videoId) {
+        ytPlayer.loadVideoById(videoId);
+      } else if (videoId) {
+        // Create player if it doesn't exist
+        ytPlayer = new YT.Player("youtube-player-container", {
+          height: "180",
+          width: "320",
+          videoId: videoId,
+          playerVars: {
+            playsinline: 1,
+            autoplay: 1,
+          },
+          events: {
+            onReady: (event) => {
+              event.target.setVolume(playerState.volume);
+              if (playerState.isMuted) {
+                event.target.mute();
+              } else {
+                event.target.unMute();
+              }
+            },
+            onStateChange: onPlayerStateChange,
+            onError: onPlayerError,
+          },
+        });
       }
-      // Handle next button
-      if (e.target.id === "next-page-btn" && !e.target.disabled) {
-        currentPage++;
-        pageChanged = true;
+    }
+  }
+
+  function playPrevTrack() {
+    const activePlaylist = playerState.isShuffle
+      ? playerState.shuffledPlaylist
+      : playerState.playlist;
+
+    const wasInEmbedMode = playerState.isEmbedded;
+    const previousTrackId = playerState.currentTrackId;
+
+    const currentIndex = activePlaylist.findIndex(
+      (t) => t.id === playerState.currentTrackId,
+    );
+    if (currentIndex === -1) return;
+
+    const prevIndex =
+      (currentIndex - 1 + activePlaylist.length) % activePlaylist.length;
+    const prevTrack = activePlaylist[prevIndex];
+
+    // Close previous embed if in embed mode
+    if (wasInEmbedMode) {
+      cleanupPreviousEmbed(previousTrackId);
+    }
+
+    // Update current track
+    playerState.currentTrackId = prevTrack.id;
+    playerState.isEmbedded = false;
+
+    // Immediately reset the progress bar and timers to zero
+    progressBar.value = 0;
+    currentTimeEl.textContent = "0:00";
+    durationEl.textContent = "0:00";
+
+    // Update UI
+    document.getElementById("player-thumbnail").src = prevTrack.imageUrl;
+    document.getElementById("player-title").textContent = prevTrack.title;
+    document.getElementById("player-producer").textContent = prevTrack.producer;
+    updatePlayerUI();
+
+    // If was in embed mode, open embed for new track
+    if (wasInEmbedMode) {
+      setTimeout(() => {
+        const prevRow = document.querySelector(
+          `tr[data-track-id="${prevTrack.id}"]`,
+        );
+        if (prevRow) {
+          const prevEmbedBtn = prevRow.querySelector(
+            "button[data-embed-button]",
+          );
+          if (prevEmbedBtn && !prevEmbedBtn.classList.contains("is-open")) {
+            prevEmbedBtn.click();
+          }
+        }
+      }, 300);
+    } else {
+      // Audio mode - load the track in hidden player
+      const videoId = getYouTubeVideoId(prevTrack.link);
+      if (ytPlayer && videoId) {
+        ytPlayer.loadVideoById(videoId);
+      } else if (videoId) {
+        // Create player if it doesn't exist
+        ytPlayer = new YT.Player("youtube-player-container", {
+          height: "180",
+          width: "320",
+          videoId: videoId,
+          playerVars: {
+            playsinline: 1,
+            autoplay: 1,
+          },
+          events: {
+            onReady: (event) => {
+              event.target.setVolume(playerState.volume);
+              if (playerState.isMuted) {
+                event.target.mute();
+              } else {
+                event.target.unMute();
+              }
+            },
+            onStateChange: onPlayerStateChange,
+            onError: onPlayerError,
+          },
+        });
       }
-      // Handle specific page number buttons
-      const pageButton = e.target.closest("button[data-page]");
-      if (pageButton && !pageButton.classList.contains("active")) {
-        const page = parseInt(pageButton.dataset.page, 10);
-        if (!Number.isNaN(page)) {
-          currentPage = page;
-          pageChanged = true;
+    }
+  }
+
+  function stopPlayer() {
+    if (ytPlayer) {
+      ytPlayer.stopVideo();
+    }
+
+    // Close all embeds
+    for (const trackId in playerState.embeddedPlayers) {
+      if (playerState.embeddedPlayers[trackId]) {
+        playerState.embeddedPlayers[trackId].destroy();
+        delete playerState.embeddedPlayers[trackId];
+      }
+    }
+
+    document
+      .querySelectorAll("button[data-embed-button].is-open")
+      .forEach((btn) => {
+        btn.classList.remove("is-open");
+        const container = btn
+          .closest("td")
+          .querySelector("div[data-embed-container]");
+        if (container) {
+          container.innerHTML = "";
+          container.style.display = "none";
+        }
+      });
+
+    playerState.isPlaying = false;
+    playerState.currentTrackId = null;
+    playerState.isEmbedded = false;
+    stopProgressUpdater();
+    musicPlayerEl.classList.replace("grid", "hidden");
+    progressBar.value = 0;
+    currentTimeEl.textContent = "0:00";
+    durationEl.textContent = "0:00";
+    updatePlayerUI();
+  }
+
+  function seekVideo() {
+    let activePlayer;
+
+    if (
+      playerState.isEmbedded &&
+      playerState.embeddedPlayers[playerState.currentTrackId]
+    ) {
+      activePlayer = playerState.embeddedPlayers[playerState.currentTrackId];
+    } else {
+      activePlayer = ytPlayer;
+    }
+
+    if (activePlayer) {
+      const duration = activePlayer.getDuration();
+      if (duration > 0) {
+        const seekToTime = (progressBar.value / 100) * duration;
+        activePlayer.seekTo(seekToTime, true);
+      }
+    }
+  }
+
+  const updateTracks = async () => {
+    const tableBody = document.getElementById("tracks-table-body");
+    const filterForm = document.getElementById("filter-form");
+    const baseUrl = tableBody.dataset.updateUrl;
+    if (!baseUrl) return;
+
+    const currentTrackIdBeforeUpdate = playerState.currentTrackId;
+
+    if (filterForm) {
+      // Start with the current URL's params to preserve sorting state.
+      const paramsForFetch = new URLSearchParams(window.location.search);
+
+      const formData = new FormData(filterForm);
+
+      // Step 1: Update the fetch parameters with the latest form data.
+      // .set() will overwrite existing keys, which is what we want.
+      formData.forEach((value, key) => {
+        if (value) {
+          paramsForFetch.set(key, value);
+        } else {
+          // If a form field is cleared, remove it from the params.
+          paramsForFetch.delete(key);
+        }
+      });
+      paramsForFetch.set("page", currentPage);
+      if (!paramsForFetch.has("limit")) {
+        paramsForFetch.set("limit", currentLimit);
+      }
+
+      // Step 2: Create a separate parameter list for the browser URL bar, removing defaults.
+      const paramsForBrowser = new URLSearchParams(paramsForFetch.toString());
+
+      // Remove default filters
+      if (paramsForBrowser.get("rank_filter") === "ranked")
+        paramsForBrowser.delete("rank_filter");
+      if (paramsForBrowser.get("rated_filter") === "all")
+        paramsForBrowser.delete("rated_filter");
+
+      // Remove default pagination, correctly checking against localStorage
+      const defaultPageSize = localStorage.getItem("defaultPageSize") || "all";
+      if (paramsForBrowser.get("limit") === defaultPageSize)
+        paramsForBrowser.delete("limit");
+      if (paramsForBrowser.get("page") === "1") paramsForBrowser.delete("page");
+
+      // Step 3: Construct the final URLs
+      const fetchUrl = `${baseUrl}?${paramsForFetch.toString()}`;
+      const browserQueryString = paramsForBrowser.toString();
+      const browserUrl = browserQueryString
+        ? `${window.location.pathname}?${browserQueryString}`
+        : window.location.pathname;
+
+      try {
+        const response = await fetch(fetchUrl);
+        hideSkeleton();
+        const data = await response.json();
+        tableBody.innerHTML = data.table_body_html;
+
+        loadPlaylistFromTemplate();
+
+        if (currentTrackIdBeforeUpdate) {
+          const isTrackStillVisible = playerState.playlist.some(
+            (t) => t.id === currentTrackIdBeforeUpdate,
+          );
+
+          if (isTrackStillVisible) {
+            updatePlayerUI();
+          } else {
+            stopPlayer();
+          }
+        }
+
+        updatePaginationUI(data.pagination);
+        upgradeThumbnails();
+      } catch (error) {
+        hideSkeleton();
+        console.error("Failed to update tracks:", error);
+        tableBody.innerHTML =
+          '<tr><td colspan="7">Error loading tracks. Please try again.</td></tr>';
+      }
+      window.history.pushState({}, "", browserUrl);
+      updateSortIndicators();
+      updateActiveFilterDisplay();
+    }
+  };
+
+  function updatePlayerUI() {
+    playPauseBtn.innerHTML = playerState.isPlaying
+      ? '<i class="fa-solid fa-pause"></i>'
+      : '<i class="fa-solid fa-play"></i>';
+
+    // Clear previous highlights and icons
+    document.querySelectorAll("tr.is-playing").forEach((row) => {
+      row.classList.remove("is-playing");
+    });
+    document
+      .querySelectorAll("button[data-play-button].is-playing")
+      .forEach((btn) => {
+        btn.innerHTML = '<i class="fa-solid fa-play"></i>'; // Reset to play icon
+        btn.classList.remove("is-playing");
+      });
+
+    if (playerState.currentTrackId !== null) {
+      const track = playerState.playlist.find(
+        (t) => t.id === playerState.currentTrackId,
+      );
+      if (track) {
+        // Update player info
+        document.getElementById("player-thumbnail").src = track.imageUrl;
+        document.getElementById("player-title").textContent = track.title;
+        document.getElementById("player-producer").textContent = track.producer;
+
+        // Find the corresponding row and play button in the table
+        const trackRow = document.querySelector(
+          `tr[data-track-id="${track.id}"]`,
+        );
+        if (trackRow) {
+          // Highlight the row
+          trackRow.classList.add("is-playing");
+
+          // Update the play/pause icon in the table
+          const playButtonInRow = trackRow.querySelector(
+            "button[data-play-button]",
+          );
+          if (playButtonInRow) {
+            playButtonInRow.innerHTML = playerState.isPlaying
+              ? '<i class="fa-solid fa-pause"></i>'
+              : '<i class="fa-solid fa-play"></i>';
+            playButtonInRow.classList.add("is-playing");
+          }
         }
       }
-      // If any page change happened, update the tracks
-      if (pageChanged) {
-        showSkeleton();
-        updateTracks();
-      }
-    });
+    }
+
+    volumeSlider.value = playerState.isMuted ? 0 : playerState.volume;
+    muteBtn.innerHTML = playerState.isMuted
+      ? '<i class="fa-solid fa-volume-xmark"></i>'
+      : '<i class="fa-solid fa-volume-high"></i>';
   }
 
-  renderRatingChart(); // Initial chart render
+  function onPlayerError(event) {
+    console.error("YouTube Player Error:", event.data);
+    showToast(
+      `Could not play this video.\n\nThis might be because the uploader has disabled embedding, or the video is private/deleted.\n(Error code: ${event.data})`,
+      "error",
+    );
+    playNextTrack(); // Attempt to play the next track
+  }
 
   const debouncedUpdateTracks = debounce(updateTracks, 300);
-  const filterForm = document.getElementById("filter-form");
-  if (filterForm) {
-    filterForm.addEventListener("input", (e) => {
-      currentPage = 1; // Reset page on filter change
-      if (e.target.matches('input[type="text"], input[type="search"]')) {
-        toggleClearButton(e.target);
-        showSkeleton();
-        debouncedUpdateTracks();
-      } else if (e.target.id !== "limit_filter") {
-        // Any other form input (radios, selects) triggers an immediate update
-        currentPage = 1; // Reset page on filter change
-        showSkeleton();
-        updateTracks();
-      }
-    });
-    filterForm
-      .querySelectorAll('input[type="text"], input[type="search"]')
-      .forEach(toggleClearButton);
-  }
 
-  // --- Initial Page Load Logic ---
-  // This should only run on the main index page, not the rated tracks page.
-  if (document.getElementById("scrape-button")) {
-    const urlParams = new URLSearchParams(window.location.search);
-    currentPage = parseInt(urlParams.get("page"), 10) || 1;
-    currentLimit =
-      urlParams.get("limit") ||
-      localStorage.getItem("defaultPageSize") ||
-      "all";
-    if (limitFilter) limitFilter.value = currentLimit;
-    // 2. Fetch the initial view based on the resolved state
-    showSkeleton();
-    updateTracks();
-  }
+  function startProgressUpdater() {
+    stopProgressUpdater();
+    progressUpdateInterval = setInterval(() => {
+      let activePlayer;
 
-  document.getElementById("theme-switcher")?.addEventListener("click", () => {
-    const doc = document.documentElement;
-    const newTheme = doc.dataset.theme === "dark" ? "light" : "dark";
-    doc.dataset.theme = newTheme;
-    localStorage.setItem("theme", newTheme);
-    updateThemeUI();
-    renderRatingChart();
-  });
-
-  playPauseBtn.addEventListener("click", togglePlayPause);
-  nextBtn.addEventListener("click", playNextTrack);
-  prevBtn.addEventListener("click", playPrevTrack);
-  stopBtn.addEventListener("click", stopPlayer);
-  volumeSlider.addEventListener("input", (e) => {
-    const newVolume = e.target.value;
-    playerState.volume = newVolume;
-    playerState.isMuted = newVolume == 0;
-
-    localStorage.setItem("playerVolume", newVolume);
-
-    const activePlayer = getActivePlayer();
-    if (activePlayer) {
-      activePlayer.setVolume(newVolume);
-      if (playerState.isMuted) {
-        activePlayer.mute();
+      // Use embedded player if in embed mode
+      if (
+        playerState.isEmbedded &&
+        playerState.embeddedPlayers[playerState.currentTrackId]
+      ) {
+        activePlayer = playerState.embeddedPlayers[playerState.currentTrackId];
       } else {
-        activePlayer.unMute();
+        activePlayer = ytPlayer;
       }
-    }
-    updatePlayerUI();
-  });
-  muteBtn.addEventListener("click", () => {
-    playerState.isMuted = !playerState.isMuted;
 
-    localStorage.setItem("playerMuted", playerState.isMuted);
-
-    const activePlayer = getActivePlayer();
-    if (activePlayer) {
-      if (playerState.isMuted) {
-        activePlayer.mute();
-      } else {
-        activePlayer.unMute();
-        if (playerState.volume == 0) {
-          playerState.volume = 50;
-          activePlayer.setVolume(playerState.volume);
+      if (activePlayer && playerState.isPlaying) {
+        const currentTime = activePlayer.getCurrentTime();
+        const duration = activePlayer.getDuration();
+        if (duration > 0) {
+          progressBar.value = (currentTime / duration) * 100;
+          currentTimeEl.textContent = formatTime(currentTime);
+          durationEl.textContent = formatTime(duration);
         }
       }
-    }
-    updatePlayerUI();
-  });
+    }, 250);
+  }
 
-  const scrapeButton = document.getElementById("scrape-button");
-  if (scrapeButton) {
-    scrapeButton.addEventListener("click", (e) => {
-      e.preventDefault();
-      const scrapeStatus = document.getElementById("scrape-status");
-      scrapeButton.disabled = true;
-      scrapeButton.textContent = "Checking...";
-      fetch("/scrape", { method: "POST" })
-        .then((res) => res.json())
-        .then((data) => {
-          scrapeStatus.textContent = data.message;
-          const interval = setInterval(() => {
-            fetch("/api/scrape-status")
-              .then((res) => res.json())
-              .then((statusData) => {
-                if (statusData.status === "no_changes") {
-                  clearInterval(interval);
-                  scrapeStatus.textContent = "Ranking is already up-to-date.";
-                  scrapeButton.disabled = false;
-                  scrapeButton.textContent = "Update Tracks";
-                  setTimeout(() => {
-                    scrapeStatus.textContent = "";
-                  }, 4000);
-                } else if (statusData.status === "completed") {
-                  clearInterval(interval);
-                  scrapeStatus.textContent = "Completed! Reloading...";
-                  window.location.reload();
-                } else if (statusData.status === "error") {
-                  clearInterval(interval);
-                  scrapeStatus.textContent =
-                    "An error occurred. Check server logs.";
-                  scrapeButton.disabled = false;
-                  scrapeButton.textContent = "Update Tracks";
-                } else if (statusData.status.startsWith("in_progress")) {
-                  scrapeButton.textContent = "Scraping...";
-                  const progress = statusData.status.split(":")[1];
-                  if (progress) {
-                    scrapeStatus.textContent = `Scraping page ${progress}...`;
-                  } else {
-                    scrapeStatus.textContent = "Changes found, updating...";
-                  }
-                }
-              });
-          }, 2000);
-        });
-    });
+  function onPlayerStateChange(event) {
+    if (event.data === YT.PlayerState.PLAYING) {
+      playerState.isPlaying = true;
+      startProgressUpdater();
+      updatePlayerUI();
+    } else if (event.data === YT.PlayerState.PAUSED) {
+      playerState.isPlaying = false;
+      stopProgressUpdater();
+      updatePlayerUI();
+    } else if (event.data === YT.PlayerState.ENDED) {
+      if (playerState.isRepeat) {
+        // If repeat is on, just seek to the beginning and play again
+        const activePlayer =
+          playerState.embeddedPlayers[playerState.currentTrackId] || ytPlayer;
+        if (activePlayer) {
+          activePlayer.seekTo(0, true);
+          activePlayer.playVideo();
+        }
+      } else {
+        // Otherwise, play the next track
+        playNextTrack();
+      }
+    }
   }
 
   const updateStarPreview = (container, event) => {
@@ -1237,26 +1001,95 @@ document.addEventListener("DOMContentLoaded", () => {
     return clampedRating;
   };
 
-  document.body.addEventListener("mousemove", (e) => {
-    const ratingContainer = e.target.closest("[data-star-rating]");
-    if (ratingContainer) updateStarPreview(ratingContainer, e);
-  });
+  const renderRatingChart = () => {
+    const chartCanvas = document.getElementById("ratingDistributionChart");
+    if (!chartCanvas) return;
+    if (ratingChart) {
+      ratingChart.destroy();
+    }
+    try {
+      const ratingsData = JSON.parse(chartCanvas.dataset.ratings);
+      const labels = Object.keys(ratingsData).sort(
+        (a, b) => parseFloat(a) - parseFloat(b),
+      );
+      const data = labels.map((label) => ratingsData[label]);
+      const isDarkMode = document.documentElement.dataset.theme === "dark";
+      const gridColor = isDarkMode
+        ? "rgba(255, 255, 255, 0.1)"
+        : "rgba(0, 0, 0, 0.1)";
+      const ticksColor = isDarkMode ? "#e0e0e0" : "#666";
 
-  document.body.addEventListener(
-    "mouseleave",
-    (e) => {
-      const ratingContainer = e.target.closest("[data-star-rating]");
-      if (ratingContainer) {
-        const actualRating = parseFloat(ratingContainer.dataset.rating) || 0;
-        const widthPercentage = (actualRating / 10.0) * 100;
-        ratingContainer.style.setProperty(
-          "--rating-width",
-          `${widthPercentage}%`,
-        );
-      }
-    },
-    true,
-  );
+      // --- THIS IS THE FIX ---
+      // We wrap the handler in an anonymous function to pass the 'labels' array.
+      const handleChartClick = (_event, elements) => {
+        if (elements.length > 0) {
+          const clickedElementIndex = elements[0].index;
+          // It now correctly accesses the 'labels' array that was passed in.
+          const ratingToFilter = labels[clickedElementIndex];
+
+          const params = new URLSearchParams();
+          params.set("sort_by", "rating");
+          params.set("sort_dir", "desc");
+          params.set("exact_rating_filter", ratingToFilter);
+          window.history.pushState(
+            {},
+            "",
+            `${window.location.pathname}?${params.toString()}`,
+          );
+          showSkeleton();
+          updateTracks();
+        }
+      };
+
+      ratingChart = new Chart(chartCanvas, {
+        type: "bar",
+        data: {
+          labels: labels.map((l) => `${l} ★`),
+          datasets: [
+            {
+              label: "# of Ratings",
+              data: data,
+              backgroundColor: isDarkMode
+                ? "rgba(144, 186, 255, 0.6)"
+                : "rgba(0, 123, 255, 0.6)",
+              borderColor: isDarkMode
+                ? "rgba(144, 186, 255, 1)"
+                : "rgba(0, 123, 255, 1)",
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          // The onClick now calls our wrapper function
+          onClick: handleChartClick,
+          onHover: (event, chartElement) => {
+            event.native.target.style.cursor = chartElement[0]
+              ? "pointer"
+              : "default";
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 1, color: ticksColor },
+              grid: { color: gridColor },
+            },
+            x: { ticks: { color: ticksColor }, grid: { display: false } },
+          },
+          plugins: { legend: { display: false } },
+        },
+      });
+    } catch (e) {
+      console.error("Could not parse or render chart data:", e);
+    }
+  };
+
+  updateSortIndicators();
+  updateThemeUI();
+  updateActiveFilterDisplay();
+  upgradeThumbnails();
+  renderRatingChart();
+
+  loadPlaylistFromTemplate();
 
   document.body.addEventListener("click", (e) => {
     const clearRatingBtn = e.target.closest("[data-clear-rating]");
@@ -1980,6 +1813,60 @@ document.addEventListener("DOMContentLoaded", () => {
     true,
   );
 
+  document.body.addEventListener("mousemove", (e) => {
+    const ratingContainer = e.target.closest("[data-star-rating]");
+    if (ratingContainer) updateStarPreview(ratingContainer, e);
+  });
+
+  document.body.addEventListener(
+    "mouseleave",
+    (e) => {
+      const ratingContainer = e.target.closest("[data-star-rating]");
+      if (ratingContainer) {
+        const actualRating = parseFloat(ratingContainer.dataset.rating) || 0;
+        const widthPercentage = (actualRating / 10.0) * 100;
+        ratingContainer.style.setProperty(
+          "--rating-width",
+          `${widthPercentage}%`,
+        );
+      }
+    },
+    true,
+  );
+
+  document.getElementById("theme-switcher")?.addEventListener("click", () => {
+    const doc = document.documentElement;
+    const newTheme = doc.dataset.theme === "dark" ? "light" : "dark";
+    doc.dataset.theme = newTheme;
+    localStorage.setItem("theme", newTheme);
+    updateThemeUI();
+    renderRatingChart();
+  });
+
+  document.getElementById("player-embed-btn").addEventListener("click", () => {
+    if (!playerState.currentTrackId) return;
+
+    const trackRow = document.querySelector(
+      `tr[data-track-id="${playerState.currentTrackId}"]`,
+    );
+    if (!trackRow) return;
+
+    const embedBtn = trackRow.querySelector("button[data-embed-button]");
+    if (!embedBtn) return;
+
+    const isCurrentlyEmbedded = embedBtn.classList.contains("is-open");
+
+    if (isCurrentlyEmbedded) {
+      // Close the embed (switch to audio mode)
+      embedBtn.click();
+    } else {
+      // Open the embed (switch to video mode)
+      embedBtn.click();
+      // Scroll to the track
+      trackRow.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  });
+
   document
     .getElementById("player-repeat-btn")
     .addEventListener("click", (e) => {
@@ -2013,6 +1900,47 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
+  playPauseBtn.addEventListener("click", togglePlayPause);
+  nextBtn.addEventListener("click", playNextTrack);
+  prevBtn.addEventListener("click", playPrevTrack);
+  stopBtn.addEventListener("click", stopPlayer);
+  volumeSlider.addEventListener("input", (e) => {
+    const newVolume = e.target.value;
+    playerState.volume = newVolume;
+    playerState.isMuted = newVolume == 0;
+
+    localStorage.setItem("playerVolume", newVolume);
+
+    const activePlayer = getActivePlayer();
+    if (activePlayer) {
+      activePlayer.setVolume(newVolume);
+      if (playerState.isMuted) {
+        activePlayer.mute();
+      } else {
+        activePlayer.unMute();
+      }
+    }
+    updatePlayerUI();
+  });
+  muteBtn.addEventListener("click", () => {
+    playerState.isMuted = !playerState.isMuted;
+
+    localStorage.setItem("playerMuted", playerState.isMuted);
+
+    const activePlayer = getActivePlayer();
+    if (activePlayer) {
+      if (playerState.isMuted) {
+        activePlayer.mute();
+      } else {
+        activePlayer.unMute();
+        if (playerState.volume == 0) {
+          playerState.volume = 50;
+          activePlayer.setVolume(playerState.volume);
+        }
+      }
+    }
+    updatePlayerUI();
+  });
   progressBar.addEventListener("input", () => {
     stopProgressUpdater(); // Pause updates while user is scrubbing
   });
@@ -2021,27 +1949,124 @@ document.addEventListener("DOMContentLoaded", () => {
     startProgressUpdater(); // Resume updates
   });
 
-  document.getElementById("player-embed-btn").addEventListener("click", () => {
-    if (!playerState.currentTrackId) return;
+  if (limitFilter) {
+    limitFilter.value = currentLimit;
+    limitFilter.addEventListener("change", (e) => {
+      currentLimit = e.target.value;
+      currentPage = 1;
+      showSkeleton();
+      updateTracks();
+    });
+  }
 
-    const trackRow = document.querySelector(
-      `tr[data-track-id="${playerState.currentTrackId}"]`,
-    );
-    if (!trackRow) return;
+  if (paginationContainer) {
+    paginationContainer.addEventListener("click", (e) => {
+      let pageChanged = false;
+      // Handle previous button
+      if (e.target.id === "prev-page-btn" && !e.target.disabled) {
+        currentPage--;
+        pageChanged = true;
+      }
+      // Handle next button
+      if (e.target.id === "next-page-btn" && !e.target.disabled) {
+        currentPage++;
+        pageChanged = true;
+      }
+      // Handle specific page number buttons
+      const pageButton = e.target.closest("button[data-page]");
+      if (pageButton && !pageButton.classList.contains("active")) {
+        const page = parseInt(pageButton.dataset.page, 10);
+        if (!Number.isNaN(page)) {
+          currentPage = page;
+          pageChanged = true;
+        }
+      }
+      // If any page change happened, update the tracks
+      if (pageChanged) {
+        showSkeleton();
+        updateTracks();
+      }
+    });
+  }
 
-    const embedBtn = trackRow.querySelector("button[data-embed-button]");
-    if (!embedBtn) return;
+  if (filterForm) {
+    filterForm.addEventListener("input", (e) => {
+      currentPage = 1; // Reset page on filter change
+      if (e.target.matches('input[type="text"], input[type="search"]')) {
+        toggleClearButton(e.target);
+        showSkeleton();
+        debouncedUpdateTracks();
+      } else if (e.target.id !== "limit_filter") {
+        // Any other form input (radios, selects) triggers an immediate update
+        currentPage = 1; // Reset page on filter change
+        showSkeleton();
+        updateTracks();
+      }
+    });
+    filterForm
+      .querySelectorAll('input[type="text"], input[type="search"]')
+      .forEach(toggleClearButton);
+  }
 
-    const isCurrentlyEmbedded = embedBtn.classList.contains("is-open");
+  if (scrapeButton) {
+    scrapeButton.addEventListener("click", (e) => {
+      e.preventDefault();
+      const scrapeStatus = document.getElementById("scrape-status");
+      scrapeButton.disabled = true;
+      scrapeButton.textContent = "Checking...";
+      fetch("/scrape", { method: "POST" })
+        .then((res) => res.json())
+        .then((data) => {
+          scrapeStatus.textContent = data.message;
+          const interval = setInterval(() => {
+            fetch("/api/scrape-status")
+              .then((res) => res.json())
+              .then((statusData) => {
+                if (statusData.status === "no_changes") {
+                  clearInterval(interval);
+                  scrapeStatus.textContent = "Ranking is already up-to-date.";
+                  scrapeButton.disabled = false;
+                  scrapeButton.textContent = "Update Tracks";
+                  setTimeout(() => {
+                    scrapeStatus.textContent = "";
+                  }, 4000);
+                } else if (statusData.status === "completed") {
+                  clearInterval(interval);
+                  scrapeStatus.textContent = "Completed! Reloading...";
+                  window.location.reload();
+                } else if (statusData.status === "error") {
+                  clearInterval(interval);
+                  scrapeStatus.textContent =
+                    "An error occurred. Check server logs.";
+                  scrapeButton.disabled = false;
+                  scrapeButton.textContent = "Update Tracks";
+                } else if (statusData.status.startsWith("in_progress")) {
+                  scrapeButton.textContent = "Scraping...";
+                  const progress = statusData.status.split(":")[1];
+                  if (progress) {
+                    scrapeStatus.textContent = `Scraping page ${progress}...`;
+                  } else {
+                    scrapeStatus.textContent = "Changes found, updating...";
+                  }
+                }
+              });
+          }, 2000);
+        });
+    });
+  }
 
-    if (isCurrentlyEmbedded) {
-      // Close the embed (switch to audio mode)
-      embedBtn.click();
-    } else {
-      // Open the embed (switch to video mode)
-      embedBtn.click();
-      // Scroll to the track
-      trackRow.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  });
+  // --- Initial Page Load Logic ---
+  // This should only run on the main index page, not the rated tracks page.
+  if (document.getElementById("scrape-button")) {
+    const urlParams = new URLSearchParams(window.location.search);
+    currentPage = parseInt(urlParams.get("page"), 10) || 1;
+    currentLimit =
+      urlParams.get("limit") ||
+      localStorage.getItem("defaultPageSize") ||
+      "all";
+    if (limitFilter) limitFilter.value = currentLimit;
+    // 2. Fetch the initial view based on the resolved state
+    showSkeleton();
+    updateTracks();
+  }
 });
