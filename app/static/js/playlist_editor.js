@@ -182,6 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
         (item) => item.dataset.trackId,
       );
       debouncedSaveOrder(trackIds);
+      updateInPlaylistIndicators();
     },
     onEnd: function () {
       const trackIds = Array.from(playlistTracksList.children).map(
@@ -201,6 +202,70 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  allTracksList.addEventListener("click", (e) => {
+    const trackItem = e.target.closest(".track-item");
+    if (!trackItem) return;
+    const trackId = trackItem.dataset.trackId;
+
+    if (trackItem && !trackItem.classList.contains("cursor-not-allowed")) {
+      // Find the track data from the clicked item
+      const trackId = trackItem.dataset.trackId;
+      const trackLink = trackItem.dataset.trackLink;
+      const imageSrc = trackItem.querySelector("img").src;
+      const title = trackItem.querySelector(".font-semibold").textContent;
+      const producer = trackItem.querySelector(".text-sm").textContent;
+
+      // Add to the database
+      addTrack(trackId);
+
+      // Create a new element for the right-hand list
+      const newPlaylistItem = document.createElement("div");
+      newPlaylistItem.className =
+        "track-item flex cursor-grab items-center justify-between gap-3 rounded bg-card-bg p-2 shadow";
+      newPlaylistItem.dataset.trackId = trackId;
+      newPlaylistItem.dataset.trackLink = trackLink;
+      newPlaylistItem.innerHTML = `
+            <div class="flex items-center gap-3 overflow-hidden">
+                <button data-play-button data-track-id="${trackId}" class="p-2 text-gray-text hover:text-cyan-text">
+                    <i class="fa-solid fa-play"></i>
+                </button>
+                <a href="${trackLink}" target="_blank" class="flex items-center gap-3">
+                    <img src="${imageSrc}" alt="${title}" class="h-10 w-10 rounded object-cover">
+                    <div>
+                        <div class="font-semibold truncate">${title}</div>
+                        <div class="text-sm text-gray-text truncate">${producer}</div>
+                    </div>
+                </a>
+            </div>
+            <button data-remove-track class="p-2 text-red-text hover:text-red-500">
+                <i class="fa-solid fa-trash pointer-events-none"></i>
+            </button>
+        `;
+
+      // Add the new element to the DOM
+      playlistTracksList.appendChild(newPlaylistItem);
+    } else {
+      const itemToRemove = playlistTracksList.querySelector(
+        `.track-item[data-track-id="${trackId}"]`,
+      );
+
+      if (itemToRemove) {
+        removeTrack(trackId);
+        itemToRemove.remove();
+        showToast("Track removed from playlist.");
+      }
+    }
+
+    // Update the visual indicators
+    updateInPlaylistIndicators();
+
+    // Save the new order
+    const trackIds = Array.from(playlistTracksList.children).map(
+      (item) => item.dataset.trackId,
+    );
+    debouncedSaveOrder(trackIds);
+  });
+
   playlistTracksList.addEventListener("click", (e) => {
     const removeButton = e.target.closest("[data-remove-track]");
     if (removeButton) {
@@ -214,6 +279,7 @@ document.addEventListener("DOMContentLoaded", () => {
         (item) => item.dataset.trackId,
       );
       debouncedSaveOrder(trackIds);
+      updateInPlaylistIndicators();
       showToast("Track removed.");
     }
   });
@@ -268,4 +334,31 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+  const updateInPlaylistIndicators = () => {
+    // 1. Get a set of all track IDs currently in the playlist for fast lookups
+    const playlistTrackIds = new Set();
+    playlistTracksList.querySelectorAll("[data-track-id]").forEach((item) => {
+      playlistTrackIds.add(item.dataset.trackId);
+    });
+
+    // 2. Loop through all available tracks on the left
+    allTracksList.querySelectorAll(".track-item").forEach((item) => {
+      const trackId = item.dataset.trackId;
+      const addButton = item.querySelector("[data-add-indicator]"); // We will add this element
+
+      if (playlistTrackIds.has(trackId)) {
+        // If the track is already in the playlist:
+        item.classList.add("opacity-50", "cursor-not-allowed"); // Gray it out
+        if (addButton)
+          addButton.innerHTML =
+            '<i class="fa-solid fa-check text-green-text"></i>'; // Show a checkmark
+      } else {
+        // If the track is not in the playlist:
+        item.classList.remove("opacity-50", "cursor-not-allowed"); // Restore normal style
+        if (addButton) addButton.innerHTML = '<i class="fa-solid fa-plus"></i>'; // Show a plus icon
+      }
+    });
+  };
+  updateInPlaylistIndicators();
 });
