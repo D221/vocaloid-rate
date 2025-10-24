@@ -31,3 +31,32 @@ class Track(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class PlaylistBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+
+class PlaylistCreate(PlaylistBase):
+    pass
+
+
+class PlaylistSimple(PlaylistBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+
+class PlaylistTrackDetail(Track):
+    position: int
+
+
+class Playlist(PlaylistBase):
+    id: int
+    created_at: datetime.datetime
+    tracks: List[PlaylistTrackDetail] = []
+
+    class Config:
+        from_attributes = True

@@ -73,6 +73,65 @@ const updateSortIndicators = () => {
   });
 };
 
+const closePlaylistModals = () => {
+  document
+    .querySelectorAll(".playlist-modal")
+    .forEach((modal) => modal.remove());
+};
+
+const openPlaylistModal = async (trackId, buttonElement) => {
+  closePlaylistModals();
+
+  try {
+    const response = await fetch("/api/playlists");
+    if (!response.ok) throw new Error("Failed to fetch playlists.");
+    const playlists = await response.json();
+
+    const modal = document.createElement("div");
+    modal.className =
+      "playlist-modal fixed z-20 mt-2 w-64 rounded-md border border-border bg-card-bg p-2 shadow-lg";
+    modal.dataset.trackId = trackId; // IMPORTANT: Store the trackId on the modal
+
+    let playlistButtonsHTML = playlists
+      .map(
+        (p) => `
+            <button data-playlist-id="${p.id}" class="block w-full rounded p-2 text-left text-foreground hover:bg-gray-hover">
+                ${p.name}
+            </button>
+        `,
+      )
+      .join("");
+
+    modal.innerHTML = `
+            <div class="text-sm font-bold text-header p-2">Add to playlist...</div>
+            <div class="max-h-48 overflow-y-auto border-t border-border mt-1 pt-1">
+                ${playlistButtonsHTML.length > 0 ? playlistButtonsHTML : '<div class="p-2 text-sm text-gray-text">No playlists yet.</div>'}
+            </div>
+            <div class="mt-2 border-t border-border pt-2">
+                <input type="text" data-new-playlist-name placeholder="Or create new..." class="w-full rounded border border-border bg-background p-2 text-foreground placeholder:text-gray-text">
+                <button data-create-playlist class="mt-2 w-full p-2 rounded font-semibold border border-amber-text text-amber-text hover:bg-amber-hover disabled:cursor-not-allowed disabled:opacity-50" disabled>Create & Add</button>
+            </div>
+        `;
+
+    document.body.appendChild(modal);
+    const btnRect = buttonElement.getBoundingClientRect();
+
+    // Position modal below the button, but don't let it go off-screen
+    let top = window.scrollY + btnRect.bottom;
+    let left = window.scrollX + btnRect.left;
+    if (left + 256 > window.innerWidth) {
+      // 256 is modal width (w-64)
+      left = window.innerWidth - 266; // Adjust for width and some padding
+    }
+
+    modal.style.top = `${top}px`;
+    modal.style.left = `${left}px`;
+  } catch (error) {
+    console.error(error);
+    alert(error.message);
+  }
+};
+
 let currentPage = 1;
 let currentLimit = localStorage.getItem("defaultPageSize") || "all";
 
@@ -1754,6 +1813,69 @@ document.addEventListener("DOMContentLoaded", () => {
         lyricsButton.textContent = "Lyrics";
       }
       return;
+    }
+
+    const addToPlaylistBtn = e.target.closest("[data-add-to-playlist-button]");
+    if (addToPlaylistBtn) {
+      e.preventDefault();
+      const trackId = addToPlaylistBtn.dataset.trackId;
+      openPlaylistModal(trackId, addToPlaylistBtn);
+      return; // Stop processing other clicks
+    }
+
+    const playlistModal = e.target.closest(".playlist-modal");
+    if (playlistModal) {
+      const trackId = playlistModal.dataset.trackId;
+
+      // Handle adding to an EXISTING playlist
+      const existingPlaylistBtn = e.target.closest("[data-playlist-id]");
+      if (existingPlaylistBtn) {
+        const playlistId = existingPlaylistBtn.dataset.playlistId;
+        fetch(`/api/playlists/${playlistId}/tracks/${trackId}`, {
+          method: "POST",
+        })
+          .then((res) => {
+            if (!res.ok) throw new Error("Failed to add track.");
+            alert("Track added!"); // Replace with a nicer notification later
+            closePlaylistModals();
+          })
+          .catch((err) => alert(err.message));
+      }
+
+      // Handle CREATING a new playlist
+      const createPlaylistBtn = e.target.closest("[data-create-playlist]");
+      if (createPlaylistBtn && !createPlaylistBtn.disabled) {
+        const input = playlistModal.querySelector("[data-new-playlist-name]");
+        const playlistName = input.value.trim();
+        if (playlistName) {
+          fetch("/api/playlists", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: playlistName }),
+          })
+            .then((res) => res.json())
+            .then((newPlaylist) => {
+              // Now add the track to the newly created playlist
+              return fetch(
+                `/api/playlists/${newPlaylist.id}/tracks/${trackId}`,
+                { method: "POST" },
+              );
+            })
+            .then((res) => {
+              if (!res.ok)
+                throw new Error("Failed to add track to new playlist.");
+              alert(`Track added to new playlist: ${playlistName}!`);
+              closePlaylistModals();
+            })
+            .catch((err) => alert(err.message));
+        }
+      }
+      return; // Stop processing other clicks if inside modal
+    }
+
+    // If a click happens OUTSIDE the modal and not on the trigger button, close it
+    if (!playlistModal && !addToPlaylistBtn) {
+      closePlaylistModals();
     }
   });
 

@@ -22,6 +22,8 @@
   --color-sky-hover: oklch(97.7% 0.013 236.62);
   --color-red-text: oklch(57.7% 0.245 27.325);
   --color-red-hover: oklch(97.1% 0.013 17.38);
+  --color-amber-text: oklch(66.6% 0.179 58.318);
+  --color-amber-hover: oklch(98.7% 0.022 95.277);
 }
 
 @layer theme {
@@ -45,6 +47,8 @@
       --color-sky-hover: oklch(29.3% 0.066 243.157);
       --color-red-text: oklch(70.4% 0.191 22.216);
       --color-red-hover: oklch(25.8% 0.092 26.042);
+      --color-amber-text: oklch(82.8% 0.189 84.429);
+      --color-amber-hover: oklch(27.9% 0.077 45.635);
     }
   }
 }

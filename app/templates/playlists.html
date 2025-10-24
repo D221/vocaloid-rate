@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}My Playlists{% endblock %}
+
+{% block content %}
+  <div
+    class="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4"
+  >
+    <h1 class="flex-grow text-center text-4xl font-bold text-cyan-text">
+      My Playlists
+    </h1>
+    <div class="flex flex-shrink-0 items-center gap-4">
+      <a
+        href="/"
+        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
+      >
+        Back to Main Chart
+      </a>
+      <div id="theme-switcher">
+        <span id="theme-icon"
+          ><i class="fa-solid fa-moon text-xl text-foreground"></i
+        ></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mx-auto max-w-4xl">
+    <div class="mb-6 text-right">
+      <button
+        id="create-new-playlist-btn"
+        class="rounded bg-cyan-text p-3 font-bold text-stone-950 shadow-md hover:bg-cyan-hover"
+      >
+        <i class="fa-solid fa-plus"></i> Create New Playlist
+      </button>
+    </div>
+
+    <div class="space-y-4">
+      {% if playlists %}
+        {% for playlist in playlists %}
+          <div
+            class="flex items-center justify-between rounded border border-border bg-card-bg p-4 shadow-md"
+          >
+            <div>
+              <h2 class="text-xl font-bold text-header">{{ playlist.name }}</h2>
+              <p class="text-gray-text">
+                {{ playlist.description or "No description." }}
+              </p>
+            </div>
+            <div class="flex gap-2">
+              <a
+                href="/playlist/{{ playlist.id }}"
+                class="rounded bg-gray-text p-2 text-white hover:bg-gray-hover"
+                >View</a
+              >
+              <a
+                href="/playlist/edit/{{ playlist.id }}"
+                class="rounded bg-cyan-text p-2 text-stone-950 hover:bg-cyan-hover"
+                >Edit</a
+              >
+              <!-- Edit and Delete buttons can be added here later -->
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div
+          class="rounded border border-border bg-card-bg p-8 text-center text-gray-text shadow-md"
+        >
+          You haven't created any playlists yet.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Simple script for the "Create New" button -->
+  <script>
+    document
+      .getElementById("create-new-playlist-btn")
+      .addEventListener("click", () => {
+        const name = prompt("Enter a name for your new playlist:");
+        if (name && name.trim()) {
+          fetch("/api/playlists", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: name.trim() }),
+          }).then((res) => {
+            if (res.ok) {
+              window.location.reload(); // Simple reload to show the new playlist
+            } else {
+              alert("Failed to create playlist.");
+            }
+          });
+        }
+      });
+  </script>
+{% endblock %}

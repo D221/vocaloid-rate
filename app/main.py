@@ -24,7 +24,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from app import crud, models, scraper
+from app import crud, models, schemas, scraper
 from app.database import SessionLocal, engine
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
@@ -249,6 +249,50 @@ def read_rated_tracks(
             "all_producers": all_producers,
             "all_voicebanks": all_voicebanks,
             "stats": stats,
+        },
+    )
+
+
+@app.get("/playlists")
+def view_playlists_page(request: Request, db: Session = Depends(get_db)):
+    playlists = crud.get_playlists(db)
+    return templates.TemplateResponse(
+        "playlists.html", {"request": request, "playlists": playlists}
+    )
+
+
+@app.get("/playlist/{playlist_id}")
+def view_playlist_detail_page(
+    playlist_id: int, request: Request, db: Session = Depends(get_db)
+):
+    db_playlist = crud.get_playlist(db, playlist_id)
+    if not db_playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+
+    return templates.TemplateResponse(
+        "playlist_view.html", {"request": request, "playlist": db_playlist}
+    )
+
+
+@app.get("/playlist/edit/{playlist_id}")
+def edit_playlist_page(
+    playlist_id: int, request: Request, db: Session = Depends(get_db)
+):
+    db_playlist = crud.get_playlist(db, playlist_id)
+    if not db_playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+
+    # Get all tracks to populate the left-hand side
+    all_tracks = crud.get_tracks(
+        db, limit=10000, sort_by="title"
+    )  # Fetch all, sorted by title
+
+    return templates.TemplateResponse(
+        "playlist_edit.html",
+        {
+            "request": request,
+            "playlist": db_playlist,
+            "all_tracks": all_tracks,
         },
     )
 
@@ -713,3 +757,48 @@ def get_vocadb_lyrics(song_id: int):
             f"An unexpected error occurred during lyrics fetch: {e}", exc_info=True
         )
         raise HTTPException(status_code=500, detail="An internal error occurred.")
+
+
+@app.get("/api/playlists", response_model=list[schemas.PlaylistSimple])
+def get_user_playlists(db: Session = Depends(get_db)):
+    """Get a simple list of all playlists (id and name)."""
+    return crud.get_playlists(db)
+
+
+@app.post("/api/playlists", response_model=schemas.PlaylistSimple)
+def create_new_playlist(
+    playlist: schemas.PlaylistCreate, db: Session = Depends(get_db)
+):
+    """Create a new, empty playlist."""
+    return crud.create_playlist(db, playlist)
+
+
+@app.post("/api/playlists/{playlist_id}/tracks/{track_id}")
+def add_track_to_a_playlist(
+    playlist_id: int, track_id: int, db: Session = Depends(get_db)
+):
+    """Add a single track to a playlist."""
+    db_playlist = crud.add_track_to_playlist(
+        db, playlist_id=playlist_id, track_id=track_id
+    )
+    if not db_playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+    return Response(status_code=200, content="Track added successfully")
+
+
+@app.delete("/api/playlists/{playlist_id}/tracks/{track_id}")
+def remove_track_from_a_playlist(
+    playlist_id: int, track_id: int, db: Session = Depends(get_db)
+):
+    """Remove a single track from a playlist."""
+    crud.remove_track_from_playlist(db, playlist_id=playlist_id, track_id=track_id)
+    return Response(status_code=200, content="Track removed successfully")
+
+
+@app.post("/api/playlists/{playlist_id}/reorder")
+def reorder_a_playlist(
+    playlist_id: int, track_ids: list[int], db: Session = Depends(get_db)
+):
+    """Update the order of all tracks in a playlist."""
+    crud.reorder_playlist(db, playlist_id=playlist_id, track_ids=track_ids)
+    return Response(status_code=200, content="Playlist reordered successfully")

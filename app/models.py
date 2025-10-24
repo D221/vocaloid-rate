@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -45,4 +45,32 @@ class UpdateLog(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     updated_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.now(datetime.timezone.utc)
+    )
+
+
+class PlaylistTrack(Base):
+    __tablename__ = "playlist_track_association"
+
+    playlist_id: Mapped[int] = mapped_column(
+        ForeignKey("playlists.id"), primary_key=True
+    )
+    track_id: Mapped[int] = mapped_column(ForeignKey("tracks.id"), primary_key=True)
+    position: Mapped[int] = mapped_column(Integer)
+
+    track: Mapped["Track"] = relationship()
+
+
+class Playlist(Base):
+    __tablename__ = "playlists"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(100))
+    description: Mapped[str | None] = mapped_column(String(500))
+    is_public: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        default=datetime.datetime.now(datetime.timezone.utc)
+    )
+
+    playlist_tracks: Mapped[list["PlaylistTrack"]] = relationship(
+        order_by=PlaylistTrack.position, cascade="all, delete-orphan"
     )

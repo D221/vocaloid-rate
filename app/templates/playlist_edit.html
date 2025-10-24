@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Edit: {{ playlist.name }}{% endblock %}
+
+{% block content %}
+  <div
+    class="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4"
+  >
+    <div>
+      <h1 class="text-4xl font-bold text-cyan-text">Edit Playlist</h1>
+      <p class="text-gray-text">{{ playlist.name }}</p>
+    </div>
+    <div class="flex flex-shrink-0 items-center gap-4">
+      <a
+        href="/playlist/{{ playlist.id }}"
+        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
+      >
+        View Playlist
+      </a>
+      <a
+        href="/playlists"
+        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
+      >
+        All Playlists
+      </a>
+    </div>
+  </div>
+
+  <!-- Main Editor Layout -->
+  <div
+    class="grid grid-cols-1 gap-8 md:grid-cols-2"
+    data-playlist-id="{{ playlist.id }}"
+  >
+    <!-- Left Column: All Available Tracks -->
+    <div>
+      <h2 class="text-2xl font-bold text-header">Available Tracks</h2>
+      <input
+        type="search"
+        id="track-search"
+        placeholder="Search all tracks..."
+        class="my-4 w-full rounded border border-border bg-background p-2 text-foreground"
+      />
+      <div
+        id="all-tracks-list"
+        class="h-[60vh] space-y-2 overflow-y-auto rounded border border-border bg-background p-2"
+      >
+        <!-- All tracks will be loaded here by JavaScript -->
+        {% for track in all_tracks %}
+          <div
+            class="track-item flex cursor-grab items-center gap-3 rounded p-2 hover:bg-gray-hover"
+            data-track-id="{{ track.id }}"
+          >
+            <img
+              src="{{ track.image_url }}"
+              alt="{{ track.title }}"
+              class="h-10 w-10 rounded object-cover"
+            />
+            <div>
+              <div class="font-semibold">{{ track.title }}</div>
+              <div class="text-sm text-gray-text">{{ track.producer }}</div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Right Column: Current Playlist Tracks -->
+    <div>
+      <h2 class="text-2xl font-bold text-header">Playlist Tracks</h2>
+      <div class="my-4 text-gray-text">
+        Drag to reorder, or drag from the left to add.
+      </div>
+      <div
+        id="playlist-tracks-list"
+        class="h-[60vh] min-h-[100px] space-y-2 overflow-y-auto rounded border-2 border-dashed border-cyan-text bg-background p-2"
+      >
+        <!-- Current playlist tracks will be loaded here -->
+        {% for pt in playlist.playlist_tracks %}
+          {% set track = pt.track %}
+          <div
+            class="track-item flex cursor-grab items-center justify-between gap-3 rounded bg-card-bg p-2 shadow"
+            data-track-id="{{ track.id }}"
+          >
+            <div class="flex items-center gap-3 overflow-hidden">
+              <i class="fa-solid fa-grip-vertical text-gray-text"></i>
+              <img
+                src="{{ track.image_url }}"
+                alt="{{ track.title }}"
+                class="h-10 w-10 rounded object-cover"
+              />
+              <div>
+                <div class="truncate font-semibold">{{ track.title }}</div>
+                <div class="truncate text-sm text-gray-text">
+                  {{ track.producer }}
+                </div>
+              </div>
+            </div>
+            <button
+              data-remove-track
+              class="p-2 text-red-text hover:text-red-500"
+            >
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', path='js/playlist_editor.js') }}"></script>
+{% endblock %}

@@ -3,9 +3,9 @@ from statistics import median
 from typing import Optional
 
 from sqlalchemy import desc, distinct, func, nullslast, or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
-from app import models
+from app import models, schemas
 
 
 def get_track_by_link(db: Session, link: str):
@@ -281,3 +281,88 @@ def get_last_update_time(db: Session):
     return (
         db.query(models.UpdateLog).order_by(models.UpdateLog.updated_at.desc()).first()
     )
+
+
+def get_playlist(db: Session, playlist_id: int) -> Optional[models.Playlist]:
+    """Gets a single playlist by its ID, eagerly loading the tracks in their correct order."""
+    return (
+        db.query(models.Playlist)
+        .filter(models.Playlist.id == playlist_id)
+        .options(
+            joinedload(models.Playlist.playlist_tracks).joinedload(
+                models.PlaylistTrack.track
+            )
+        )
+        .first()
+    )
+
+
+def get_playlists(db: Session) -> list[models.Playlist]:
+    """Gets a list of all playlists."""
+    return db.query(models.Playlist).order_by(models.Playlist.name).all()
+
+
+def create_playlist(db: Session, playlist: schemas.PlaylistCreate) -> models.Playlist:
+    """Creates a new playlist."""
+    db_playlist = models.Playlist(name=playlist.name, description=playlist.description)
+    db.add(db_playlist)
+    db.commit()
+    db.refresh(db_playlist)
+    return db_playlist
+
+
+def add_track_to_playlist(
+    db: Session, playlist_id: int, track_id: int
+) -> Optional[models.Playlist]:
+    """Adds a track to the end of a playlist."""
+    db_playlist = get_playlist(db, playlist_id)
+    if not db_playlist:
+        return None
+
+    # Check if the track is already in the playlist
+    for pt in db_playlist.playlist_tracks:
+        if pt.track_id == track_id:
+            return db_playlist  # Already exists, do nothing
+
+    # Find the next position
+    next_position = len(db_playlist.playlist_tracks)
+
+    # Create the association
+    playlist_track = models.PlaylistTrack(
+        playlist_id=playlist_id, track_id=track_id, position=next_position
+    )
+    db.add(playlist_track)
+    db.commit()
+    db.refresh(db_playlist)
+    return db_playlist
+
+
+def remove_track_from_playlist(db: Session, playlist_id: int, track_id: int):
+    """Removes a track from a playlist and re-orders the remaining tracks."""
+    assoc_to_delete = (
+        db.query(models.PlaylistTrack)
+        .filter_by(playlist_id=playlist_id, track_id=track_id)
+        .first()
+    )
+
+    if assoc_to_delete:
+        deleted_position = assoc_to_delete.position
+        db.delete(assoc_to_delete)
+
+        # Update positions of subsequent tracks
+        db.query(models.PlaylistTrack).filter(
+            models.PlaylistTrack.playlist_id == playlist_id,
+            models.PlaylistTrack.position > deleted_position,
+        ).update({"position": models.PlaylistTrack.position - 1})
+
+        db.commit()
+
+
+def reorder_playlist(db: Session, playlist_id: int, track_ids: list[int]):
+    """Re-orders an entire playlist based on a new list of track IDs."""
+    # This is an efficient way to update all positions at once
+    for index, track_id in enumerate(track_ids):
+        db.query(models.PlaylistTrack).filter_by(
+            playlist_id=playlist_id, track_id=track_id
+        ).update({"position": index})
+    db.commit()

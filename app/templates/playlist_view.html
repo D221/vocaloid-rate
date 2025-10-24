@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}{{ playlist.name }} - Playlist{% endblock %}
+
+{% block content %}
+  <div
+    class="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4"
+  >
+    <div>
+      <h1 class="text-4xl font-bold text-cyan-text">{{ playlist.name }}</h1>
+      <p class="text-gray-text">
+        {{ playlist.description or "No description." }}
+      </p>
+    </div>
+    <div class="flex flex-shrink-0 items-center gap-4">
+      <a
+        href="/playlists"
+        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
+      >
+        All Playlists
+      </a>
+      <div id="theme-switcher">
+        <span id="theme-icon"
+          ><i class="fa-solid fa-moon text-xl text-foreground"></i
+        ></span>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="overflow-x-visible rounded border border-none border-border bg-card-bg shadow-md md:overflow-x-auto"
+  >
+    <table class="w-full border-collapse">
+      <thead
+        id="tracks-table-head"
+        class="hidden bg-table-header md:table-header-group"
+      >
+        <!-- Header without sorting links -->
+        <tr>
+          <th
+            class="w-1 min-w-52 border border-border px-3 py-2 text-left whitespace-nowrap"
+          >
+            Image
+          </th>
+          <th
+            class="w-1 min-w-0 border border-border p-0 px-3 py-2 text-left whitespace-nowrap"
+          >
+            #
+          </th>
+          <th
+            class="w-1/3 max-w-64 overflow-hidden border border-border px-3 py-2 text-left text-ellipsis whitespace-nowrap"
+          >
+            Title
+          </th>
+          <th
+            class="max-w-64 overflow-hidden border border-border px-3 py-2 text-left text-ellipsis"
+          >
+            Producer
+          </th>
+          <th
+            class="max-w-64 overflow-hidden border border-border px-3 py-2 text-left text-ellipsis"
+          >
+            Voicebank
+          </th>
+          <th class="w-1 min-w-0 border border-border px-3 py-2 text-left">
+            Published
+          </th>
+          <th class="w-1 min-w-0 border border-border px-3 py-2 text-left">
+            My Rating
+          </th>
+        </tr>
+      </thead>
+
+      <tbody id="tracks-table-body">
+        {% set tracks = playlist.playlist_tracks | map(attribute='track') | list %}
+        {% include "partials/tracks_table_body.html" %}
+      </tbody>
+    </table>
+  </div>
+
+  {# We need main.js for the player to work #}
+  <script src="{{ url_for('static', path='js/main.js') }}"></script>
+{% endblock %}
