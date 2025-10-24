@@ -44,10 +44,10 @@ const updateSortIndicators = () => {
     }
   }
   document.querySelectorAll("th a[data-sort]").forEach((a) => {
-    a.classList.remove("active", "font-bold", "text-cyan-text");
+    a.classList.remove("active", "font-bold", "text-sky-text");
     a.textContent = a.textContent.replace(/ [▲▼]/, "");
     if (a.dataset.sort === sortBy) {
-      a.classList.add("active", "font-bold", "text-cyan-text");
+      a.classList.add("active", "font-bold", "text-sky-text");
       a.textContent += sortDir === "desc" ? " ▼" : " ▲";
     }
   });
@@ -140,7 +140,7 @@ const openPlaylistModal = async (trackId, buttonElement) => {
             </div>
             <div class="mt-2 border-t border-border pt-2">
                 <input type="text" data-new-playlist-name placeholder="Or create new..." class="w-full rounded border border-border bg-background p-2 text-foreground placeholder:text-gray-text">
-                <button data-create-playlist class="mt-2 w-full rounded bg-cyan-text p-2 font-bold text-stone-950 hover:bg-cyan-hover disabled:opacity-50" disabled>Create & Add</button>
+                <button data-create-playlist class="mt-2 w-full cursor-pointer rounded border border-cyan-text px-2 py-1 text-cyan-text transition-colors duration-200 ease-in-out hover:bg-cyan-hover disabled:opacity-50" disabled>Create & Add</button>
             </div>
         `;
 
@@ -771,15 +771,11 @@ const updatePaginationUI = (pagination) => {
     }
     const button = document.createElement("button");
     button.className =
-      "shadow-md py-2 px-4 rounded border border-cyan-text text-cyan-text font-bold cursor-pointer transition-colors duration-200 ease-in-out enabled:hover:bg-cyan-hover";
+      "shadow-md py-2 px-4 rounded border border-sky-text text-sky-text font-bold cursor-pointer transition-colors duration-200 ease-in-out enabled:hover:bg-sky-hover";
     button.textContent = text;
     button.dataset.page = page;
     if (isCurrent) {
-      button.classList.add(
-        "bg-cyan-text",
-        "text-stone-950",
-        "border-cyan-text",
-      );
+      button.classList.add("bg-sky-text", "text-stone-950", "border-sky-text");
       button.disabled = true;
     }
     return button;
@@ -1767,7 +1763,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (selectedLyric.source) {
               metadataHTML += ` | Source: `;
               if (selectedLyric.url) {
-                metadataHTML += `<a class="hover:underline hover:text-cyan-text font-semibold" href="${selectedLyric.url}" target="_blank">${selectedLyric.source}</a>`;
+                metadataHTML += `<a class="hover:underline hover:text-sky-text font-semibold" href="${selectedLyric.url}" target="_blank">${selectedLyric.source}</a>`;
               } else {
                 metadataHTML += selectedLyric.source;
               }

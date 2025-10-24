@@ -10,7 +10,7 @@
     <div class="mb-6 flex justify-end gap-2">
       <label
         for="import-single-playlist-input"
-        class="cursor-pointer rounded bg-green-text p-3 font-semibold text-white shadow-md hover:bg-green-hover"
+        class="cursor-pointer rounded border border-green-text p-2 font-bold text-green-text shadow-md transition-colors duration-200 ease-in-out hover:bg-green-hover"
       >
         <i class="fa-solid fa-upload"></i> Import Playlist
       </label>
@@ -23,7 +23,7 @@
 
       <button
         id="create-new-playlist-btn"
-        class="rounded bg-cyan-text p-3 font-bold text-stone-950 shadow-md hover:bg-cyan-hover"
+        class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md transition-colors duration-200 ease-in-out hover:bg-sky-hover"
       >
         <i class="fa-solid fa-plus"></i> Create New Playlist
       </button>
@@ -44,20 +44,20 @@
             <div class="flex flex-shrink-0 gap-2">
               <a
                 href="/playlist/{{ playlist.id }}"
-                class="rounded bg-gray-text p-2 px-3 text-white hover:bg-gray-hover"
+                class="cursor-pointer rounded border border-gray-text p-2 font-bold text-gray-text shadow-md transition-colors duration-200 ease-in-out hover:bg-gray-hover"
                 title="View"
                 ><i class="fa-solid fa-eye"></i
               ></a>
               <a
                 href="/playlist/edit/{{ playlist.id }}"
-                class="rounded bg-amber-text p-2 px-3 text-stone-950 hover:bg-amber-hover"
+                class="cursor-pointer rounded border border-amber-text p-2 font-bold text-amber-text shadow-md transition-colors duration-200 ease-in-out hover:bg-amber-hover"
                 title="Edit"
                 ><i class="fa-solid fa-pencil"></i
               ></a>
               <!-- NEW: Export Single Playlist Button -->
               <button
                 data-export-single-playlist="{{ playlist.id }}"
-                class="rounded bg-cyan-text p-2 px-3 text-stone-950 hover:bg-cyan-hover"
+                class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md transition-colors duration-200 ease-in-out hover:bg-sky-hover"
                 title="Export"
               >
                 <i class="fa-solid fa-download"></i>
@@ -65,7 +65,7 @@
               <button
                 data-delete-playlist="{{ playlist.id }}"
                 data-playlist-name="{{ playlist.name }}"
-                class="rounded bg-red-text p-2 px-3 text-white hover:bg-red-hover"
+                class="cursor-pointer rounded border border-red-text p-2 font-bold text-red-text shadow-md transition-colors duration-200 ease-in-out hover:bg-red-hover"
                 title="Delete"
               >
                 <i class="fa-solid fa-trash"></i>
@@ -81,7 +81,9 @@
         </div>
       {% endif %}
     </div>
-    <div class="mb-6 rounded border border-border bg-card-bg p-4 shadow-md">
+    <div
+      class="mt-6 mb-6 rounded border border-border bg-card-bg p-4 shadow-md"
+    >
       <h2
         class="mb-2 border-b border-border pb-2 text-xl font-semibold text-header"
       >
@@ -96,7 +98,7 @@
           </p>
           <button
             id="export-playlists-btn"
-            class="mt-2 rounded bg-cyan-text p-2 font-semibold text-stone-950 hover:bg-cyan-hover"
+            class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md transition-colors duration-200 ease-in-out hover:bg-sky-hover"
           >
             Export to File
           </button>
@@ -111,11 +113,11 @@
             type="file"
             id="import-playlists-input"
             accept=".json"
-            class="mt-2 block"
+            class="rounded border border-sky-text shadow-md duration-200 ease-in-out file:border-r file:border-sky-text file:p-2 file:font-bold file:text-sky-text hover:file:cursor-pointer hover:file:bg-sky-hover"
           />
           <button
             id="import-playlists-btn"
-            class="mt-2 rounded bg-green-text p-2 font-semibold text-white hover:bg-green-hover disabled:cursor-not-allowed disabled:opacity-50"
+            class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md transition-colors duration-200 ease-in-out enabled:hover:bg-sky-hover disabled:cursor-not-allowed disabled:opacity-50"
             disabled
           >
             Import from File
@@ -126,5 +128,6 @@
     </div>
   </div>
 
+  <script src="{{ url_for('static', path='js/main.js') }}"></script>
   <script src="{{ url_for('static', path='js/playlists_page.js') }}"></script>
 {% endblock %}

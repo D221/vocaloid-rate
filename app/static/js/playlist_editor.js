@@ -226,7 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
       newPlaylistItem.dataset.trackLink = trackLink;
       newPlaylistItem.innerHTML = `
             <div class="flex items-center gap-3 overflow-hidden">
-                <button data-play-button data-track-id="${trackId}" class="p-2 text-gray-text hover:text-cyan-text">
+                <button data-play-button data-track-id="${trackId}" class="p-2 text-gray-text hover:text-sky-text">
                     <i class="fa-solid fa-play"></i>
                 </button>
                 <a href="${trackLink}" target="_blank" class="flex items-center gap-3">

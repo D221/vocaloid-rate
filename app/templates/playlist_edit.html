@@ -38,7 +38,7 @@
             <button
               data-play-button
               data-track-id="{{ track.id }}"
-              class="p-2 text-gray-text hover:text-cyan-text"
+              class="p-2 text-gray-text hover:text-sky-text"
             >
               <i class="fa-solid fa-play"></i>
             </button>
@@ -71,7 +71,7 @@
       </div>
       <div
         id="playlist-tracks-list"
-        class="h-[60vh] min-h-[100px] space-y-2 overflow-y-auto rounded border-2 border-dashed border-cyan-text bg-background p-2"
+        class="h-[60vh] min-h-[100px] space-y-2 overflow-y-auto rounded border border-border bg-background p-2"
       >
         <!-- Current playlist tracks will be loaded here -->
         {% for pt in playlist.playlist_tracks %}
@@ -85,7 +85,7 @@
               <button
                 data-play-button
                 data-track-id="{{ track.id }}"
-                class="p-2 text-gray-text hover:text-cyan-text"
+                class="p-2 text-gray-text hover:text-sky-text"
               >
                 <i class="fa-solid fa-play"></i>
               </button>

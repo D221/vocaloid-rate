@@ -11,9 +11,12 @@
       ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
       "Courier New", monospace;
     --color-red-500: oklch(63.7% 0.237 25.331);
+    --color-red-600: oklch(57.7% 0.245 27.325);
     --color-yellow-400: oklch(85.2% 0.199 91.936);
     --color-green-500: oklch(72.3% 0.219 149.579);
+    --color-cyan-600: oklch(60.9% 0.126 221.723);
     --color-cyan-700: oklch(52% 0.105 223.128);
+    --color-sky-700: oklch(50% 0.134 242.749);
     --color-gray-100: oklch(96.7% 0.003 264.542);
     --color-gray-400: oklch(70.7% 0.022 261.325);
     --color-gray-500: oklch(55.1% 0.027 264.364);
@@ -387,6 +390,9 @@
   .mt-2 {
     margin-top: calc(var(--spacing) * 2);
   }
+  .mt-6 {
+    margin-top: calc(var(--spacing) * 6);
+  }
   .mt-8 {
     margin-top: calc(var(--spacing) * 8);
   }
@@ -635,11 +641,6 @@
       );
     }
   }
-  .truncate {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
   .overflow-hidden {
     overflow: hidden;
   }
@@ -715,8 +716,8 @@
   .border-red-text {
     border-color: var(--color-red-text);
   }
-  .bg-amber-text {
-    background-color: var(--color-amber-text);
+  .border-sky-text {
+    border-color: var(--color-sky-text);
   }
   .bg-background {
     background-color: var(--color-background);
@@ -724,20 +725,29 @@
   .bg-card-bg {
     background-color: var(--color-card-bg);
   }
+  .bg-cyan-600 {
+    background-color: var(--color-cyan-600);
+  }
+  .bg-cyan-700 {
+    background-color: var(--color-cyan-700);
+  }
   .bg-cyan-text {
     background-color: var(--color-cyan-text);
   }
   .bg-gray-100 {
     background-color: var(--color-gray-100);
   }
-  .bg-gray-text {
-    background-color: var(--color-gray-text);
-  }
   .bg-green-text {
     background-color: var(--color-green-text);
   }
+  .bg-red-600 {
+    background-color: var(--color-red-600);
+  }
   .bg-red-text {
     background-color: var(--color-red-text);
+  }
+  .bg-sky-text {
+    background-color: var(--color-sky-text);
   }
   .bg-table-header {
     background-color: var(--color-table-header);
@@ -923,6 +933,9 @@
   .text-red-text {
     color: var(--color-red-text);
   }
+  .text-sky-text {
+    color: var(--color-sky-text);
+  }
   .text-stone-950 {
     color: var(--color-stone-950);
   }
@@ -1075,9 +1088,9 @@
       border-color: var(--color-border);
     }
   }
-  .file\:bg-table-header {
+  .file\:border-sky-text {
     &::file-selector-button {
-      background-color: var(--color-table-header);
+      border-color: var(--color-sky-text);
     }
   }
   .file\:p-2 {
@@ -1094,6 +1107,11 @@
   .file\:text-cyan-text {
     &::file-selector-button {
       color: var(--color-cyan-text);
+    }
+  }
+  .file\:text-sky-text {
+    &::file-selector-button {
+      color: var(--color-sky-text);
     }
   }
   .placeholder\:text-gray-text {
@@ -1149,6 +1167,13 @@
       }
     }
   }
+  .hover\:bg-sky-hover {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-sky-hover);
+      }
+    }
+  }
   .hover\:text-cyan-text {
     &:hover {
       @media (hover: hover) {
@@ -1177,6 +1202,13 @@
       }
     }
   }
+  .hover\:text-sky-text {
+    &:hover {
+      @media (hover: hover) {
+        color: var(--color-sky-text);
+      }
+    }
+  }
   .hover\:underline {
     &:hover {
       @media (hover: hover) {
@@ -1198,6 +1230,15 @@
       @media (hover: hover) {
         &::file-selector-button {
           background-color: var(--color-border);
+        }
+      }
+    }
+  }
+  .hover\:file\:bg-sky-hover {
+    &:hover {
+      @media (hover: hover) {
+        &::file-selector-button {
+          background-color: var(--color-sky-hover);
         }
       }
     }
@@ -1234,6 +1275,24 @@
       &:hover {
         @media (hover: hover) {
           background-color: var(--color-green-hover);
+        }
+      }
+    }
+  }
+  .enabled\:hover\:bg-sky-700 {
+    &:enabled {
+      &:hover {
+        @media (hover: hover) {
+          background-color: var(--color-sky-700);
+        }
+      }
+    }
+  }
+  .enabled\:hover\:bg-sky-hover {
+    &:enabled {
+      &:hover {
+        @media (hover: hover) {
+          background-color: var(--color-sky-hover);
         }
       }
     }

@@ -34,7 +34,7 @@
       <a
         href="{{ track.link }}"
         target="_blank"
-        class="font-semibold hover:text-cyan-text hover:underline"
+        class="font-semibold hover:text-sky-text hover:underline"
         title="{{ track.title }}"
       >
         {{ track.title | truncate(35, True, '...') }}
@@ -142,7 +142,7 @@
         {% for producer in track.producer.split(',') %}
           <a
             href="#"
-            class="filter-link font-semibold hover:text-cyan-text hover:underline"
+            class="filter-link font-semibold hover:text-sky-text hover:underline"
             data-filter-type="producer_filter"
             data-filter-value="{{ producer.strip() }}"
             title="{{ producer.strip() }}"
@@ -171,7 +171,7 @@
       {% for voicebank in track.voicebank.split(',') %}
         <a
           href="#"
-          class="filter-link font-semibold hover:text-cyan-text hover:underline"
+          class="filter-link font-semibold hover:text-sky-text hover:underline"
           data-filter-type="voicebank_filter"
           data-filter-value="{{ voicebank.strip() }}"
           title="{{ voicebank.strip() }}"
