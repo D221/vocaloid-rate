@@ -883,3 +883,13 @@ def delete_a_playlist(playlist_id: int, db: Session = Depends(get_db)):
     if not success:
         raise HTTPException(status_code=404, detail="Playlist not found")
     return Response(status_code=200, content="Playlist deleted successfully")
+
+
+@app.get("/api/tracks/{track_id}/playlist-status")
+def get_track_playlist_status(track_id: int, db: Session = Depends(get_db)):
+    """
+    For a given track, returns two lists of playlists:
+    'member_of': playlists the track is already in.
+    'not_member_of': playlists the track is not in.
+    """
+    return crud.get_track_playlist_membership(db, track_id=track_id)

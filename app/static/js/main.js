@@ -83,51 +83,80 @@ const openPlaylistModal = async (trackId, buttonElement) => {
   closePlaylistModals();
 
   try {
-    const response = await fetch("/api/playlists");
-    if (!response.ok) throw new Error("Failed to fetch playlists.");
-    const playlists = await response.json();
+    const response = await fetch(`/api/tracks/${trackId}/playlist-status`);
+    if (!response.ok) throw new Error("Failed to fetch playlist status.");
+    const { member_of, not_member_of } = await response.json();
 
     const modal = document.createElement("div");
     modal.className =
-      "playlist-modal fixed z-20 mt-2 w-64 rounded-md border border-border bg-card-bg p-2 shadow-lg";
-    modal.dataset.trackId = trackId; // IMPORTANT: Store the trackId on the modal
+      "playlist-modal fixed z-20 mt-2 w-72 rounded-md border border-border bg-card-bg p-2 shadow-lg";
+    modal.dataset.trackId = trackId;
 
-    let playlistButtonsHTML = playlists
-      .map(
-        (p) => `
-            <button data-playlist-id="${p.id}" class="block w-full rounded p-2 text-left text-foreground hover:bg-gray-hover">
-                ${p.name}
-            </button>
-        `,
-      )
-      .join("");
+    let memberHTML = "";
+    if (member_of.length > 0) {
+      memberHTML = `
+                <div class="px-2 pt-2 text-sm font-bold text-header">In Playlists</div>
+                <div class="space-y-1 p-1">
+                    ${member_of
+                      .map(
+                        (p) => `
+                        <div class="flex items-center justify-between rounded hover:bg-gray-hover">
+                            <a href="/playlist/${p.id}" class="flex-grow p-2 text-left text-foreground">${p.name}</a>
+                            <button data-remove-from-playlist="${p.id}" class="p-2 text-red-text hover:text-red-500">
+                                <i class="fa-solid fa-minus pointer-events-none"></i>
+                            </button>
+                        </div>
+                    `,
+                      )
+                      .join("")}
+                </div>
+            `;
+    }
 
+    // "Not Member Of" section
+    let notMemberHTML = "";
+    if (not_member_of.length > 0) {
+      notMemberHTML = `
+                <div class="px-2 pt-2 text-sm font-bold text-header">Add to...</div>
+                <div class="space-y-1 p-1">
+                     ${not_member_of
+                       .map(
+                         (p) => `
+                        <div class="flex items-center justify-between rounded hover:bg-gray-hover">
+                             <span class="flex-grow p-2 text-left text-foreground">${p.name}</span>
+                             <button data-add-to-existing-playlist="${p.id}" class="p-2 text-green-text hover:text-green-500">
+                                <i class="fa-solid fa-plus pointer-events-none"></i>
+                            </button>
+                        </div>
+                    `,
+                       )
+                       .join("")}
+                </div>
+            `;
+    }
+
+    // Final Modal HTML
     modal.innerHTML = `
-            <div class="text-sm font-bold text-header p-2">Add to playlist...</div>
-            <div class="max-h-48 overflow-y-auto border-t border-border mt-1 pt-1">
-                ${playlistButtonsHTML.length > 0 ? playlistButtonsHTML : '<div class="p-2 text-sm text-gray-text">No playlists yet.</div>'}
+            <div class="max-h-80 overflow-y-auto">
+                ${memberHTML}
+                ${notMemberHTML}
             </div>
             <div class="mt-2 border-t border-border pt-2">
                 <input type="text" data-new-playlist-name placeholder="Or create new..." class="w-full rounded border border-border bg-background p-2 text-foreground placeholder:text-gray-text">
-                <button data-create-playlist class="mt-2 w-full p-2 rounded font-semibold border border-amber-text text-amber-text hover:bg-amber-hover disabled:cursor-not-allowed disabled:opacity-50" disabled>Create & Add</button>
+                <button data-create-playlist class="mt-2 w-full rounded bg-cyan-text p-2 font-bold text-stone-950 hover:bg-cyan-hover disabled:opacity-50" disabled>Create & Add</button>
             </div>
         `;
 
     document.body.appendChild(modal);
     const btnRect = buttonElement.getBoundingClientRect();
-
-    // Position modal below the button, but don't let it go off-screen
     let top = window.scrollY + btnRect.bottom;
     let left = window.scrollX + btnRect.left;
-    if (left + 256 > window.innerWidth) {
-      // 256 is modal width (w-64)
-      left = window.innerWidth - 266; // Adjust for width and some padding
+    if (left + 288 > window.innerWidth) {
+      left = window.innerWidth - 298;
     }
-
     modal.style.top = `${top}px`;
     modal.style.left = `${left}px`;
   } catch (error) {
-    console.error(error);
     showToast(error.message, "error");
   }
 };
@@ -1855,21 +1884,24 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const addToPlaylistBtn = e.target.closest("[data-add-to-playlist-button]");
+    const playlistModal = e.target.closest(".playlist-modal");
+
+    // 1. Handle opening the modal
     if (addToPlaylistBtn) {
       e.preventDefault();
       const trackId = addToPlaylistBtn.dataset.trackId;
       openPlaylistModal(trackId, addToPlaylistBtn);
-      return; // Stop processing other clicks
+      return;
     }
 
-    const playlistModal = e.target.closest(".playlist-modal");
+    // 2. Handle clicks INSIDE the modal
     if (playlistModal) {
       const trackId = playlistModal.dataset.trackId;
 
-      // Handle adding to an EXISTING playlist
-      const existingPlaylistBtn = e.target.closest("[data-playlist-id]");
-      if (existingPlaylistBtn) {
-        const playlistId = existingPlaylistBtn.dataset.playlistId;
+      // A. Handle ADDING to an existing playlist
+      const addBtn = e.target.closest("[data-add-to-existing-playlist]");
+      if (addBtn) {
+        const playlistId = addBtn.dataset.addToExistingPlaylist;
         fetch(`/api/playlists/${playlistId}/tracks/${trackId}`, {
           method: "POST",
         })
@@ -1877,11 +1909,28 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!res.ok) throw new Error("Failed to add track.");
             showToast("Track added!");
             closePlaylistModals();
+            updateTracks(); // This will handle the button color change
           })
           .catch((err) => showToast(err.message, "error"));
       }
 
-      // Handle CREATING a new playlist
+      // B. Handle REMOVING from a playlist
+      const removeBtn = e.target.closest("[data-remove-from-playlist]");
+      if (removeBtn) {
+        const playlistId = removeBtn.dataset.removeFromPlaylist;
+        fetch(`/api/playlists/${playlistId}/tracks/${trackId}`, {
+          method: "DELETE",
+        })
+          .then((res) => {
+            if (!res.ok) throw new Error("Failed to remove track.");
+            showToast("Track removed.");
+            closePlaylistModals();
+            updateTracks(); // This will handle the button color change
+          })
+          .catch((err) => showToast(err.message, "error"));
+      }
+
+      // C. Handle CREATING a new playlist
       const createPlaylistBtn = e.target.closest("[data-create-playlist]");
       if (createPlaylistBtn && !createPlaylistBtn.disabled) {
         const input = playlistModal.querySelector("[data-new-playlist-name]");
@@ -1893,26 +1942,26 @@ document.addEventListener("DOMContentLoaded", () => {
             body: JSON.stringify({ name: playlistName }),
           })
             .then((res) => res.json())
-            .then((newPlaylist) => {
-              // Now add the track to the newly created playlist
-              return fetch(
-                `/api/playlists/${newPlaylist.id}/tracks/${trackId}`,
-                { method: "POST" },
-              );
-            })
+            .then((newPlaylist) =>
+              fetch(`/api/playlists/${newPlaylist.id}/tracks/${trackId}`, {
+                method: "POST",
+              }),
+            )
             .then((res) => {
               if (!res.ok)
                 throw new Error("Failed to add track to new playlist.");
               showToast(`Track added to new playlist: ${playlistName}!`);
               closePlaylistModals();
+              updateTracks(); // This will handle the button color change
             })
             .catch((err) => showToast(err.message, "error"));
         }
       }
-      return; // Stop processing other clicks if inside modal
+
+      return; // IMPORTANT: Stop processing other clicks if inside a modal
     }
 
-    // If a click happens OUTSIDE the modal and not on the trigger button, close it
+    // 3. Handle closing the modal by clicking outside
     if (!playlistModal && !addToPlaylistBtn) {
       closePlaylistModals();
     }

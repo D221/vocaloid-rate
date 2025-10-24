@@ -4,6 +4,7 @@ from typing import Optional
 
 from sqlalchemy import desc, distinct, func, nullslast, or_
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.sql.expression import exists
 
 from app import models, schemas
 
@@ -41,7 +42,12 @@ def get_tracks(
     rank_filter: str = "ranked",
     exact_rating_filter: Optional[int] = None,
 ):
-    query = db.query(models.Track)
+    query = db.query(
+        models.Track,
+        exists()
+        .where(models.PlaylistTrack.track_id == models.Track.id)
+        .label("is_in_playlist"),
+    )
 
     if rank_filter == "ranked":
         query = query.filter(models.Track.rank.isnot(None))
@@ -107,7 +113,14 @@ def get_tracks(
     if rating_join_applied:
         query = query.distinct()
 
-    return query.offset(skip).limit(limit).all()
+    results = query.offset(skip).limit(limit).all()
+
+    tracks_with_flag = []
+    for track, is_in_playlist in results:
+        track.is_in_playlist = is_in_playlist
+        tracks_with_flag.append(track)
+
+    return tracks_with_flag
 
 
 def get_tracks_count(
@@ -480,3 +493,28 @@ def import_playlists(db: Session, data: list[dict]) -> tuple[int, int]:
 
     db.commit()
     return created_count, updated_count
+
+
+def get_track_playlist_membership(db: Session, track_id: int) -> dict:
+    """Checks which playlists a track belongs to."""
+
+    # 1. Get IDs of playlists the track is in.
+    member_playlist_ids_query = db.query(models.PlaylistTrack.playlist_id).filter_by(
+        track_id=track_id
+    )
+    member_playlist_ids = {id for (id,) in member_playlist_ids_query}
+
+    # 2. Get all playlists.
+    all_playlists = db.query(models.Playlist).all()
+
+    # 3. Separate them into two lists.
+    member_of = []
+    not_member_of = []
+    for p in all_playlists:
+        playlist_info = {"id": p.id, "name": p.name}
+        if p.id in member_playlist_ids:
+            member_of.append(playlist_info)
+        else:
+            not_member_of.append(playlist_info)
+
+    return {"member_of": member_of, "not_member_of": not_member_of}
