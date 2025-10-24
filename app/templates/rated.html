@@ -233,60 +233,7 @@
     class="overflow-x-visible rounded border border-none border-border bg-card-bg shadow-md md:overflow-x-auto"
   >
     <table class="w-full border-collapse">
-      <thead
-        id="tracks-table-head"
-        class="hidden bg-table-header md:table-header-group"
-      >
-        <tr>
-          <th
-            class="w-1 min-w-52 border border-border px-3 py-2 text-left whitespace-nowrap"
-          >
-            Image
-          </th>
-          <th
-            class="w-1 min-w-0 border border-border p-0 px-3 py-2 text-left whitespace-nowrap"
-          >
-            <a href="{{ request.url.path }}?sort_by=rank" data-sort="rank">#</a>
-          </th>
-          <th
-            class="w-1/3 max-w-64 overflow-hidden border border-border px-3 py-2 text-left text-ellipsis whitespace-nowrap"
-          >
-            <a href="{{ request.url.path }}?sort_by=title" data-sort="title"
-              >Title</a
-            >
-          </th>
-          <th
-            class="max-w-64 overflow-hidden border border-border px-3 py-2 text-left text-ellipsis"
-          >
-            <a
-              href="{{ request.url.path }}?sort_by=producer"
-              data-sort="producer"
-              >Producer</a
-            >
-          </th>
-          <th
-            class="max-w-64 overflow-hidden border border-border px-3 py-2 text-left text-ellipsis"
-          >
-            <a
-              href="{{ request.url.path }}?sort_by=voicebank"
-              data-sort="voicebank"
-              >Voicebank</a
-            >
-          </th>
-          <th class="w-1 min-w-0 border border-border px-3 py-2 text-left">
-            <a
-              href="{{ request.url.path }}?sort_by=published_date"
-              data-sort="published_date"
-              >Published</a
-            >
-          </th>
-          <th class="w-1 min-w-0 border border-border px-3 py-2 text-left">
-            <a href="{{ request.url.path }}?sort_by=rating" data-sort="rating"
-              >My Rating</a
-            >
-          </th>
-        </tr>
-      </thead>
+      {% include "partials/tracks_table_head.html" %}
       <tbody
         id="tracks-table-body"
         class="tracks-table-body"
