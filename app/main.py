@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import threading
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 from urllib.parse import quote
@@ -194,6 +194,37 @@ def scrape_and_populate_task():
                 f.write(final_status)
     finally:
         db.close()
+
+
+def time_ago_filter(date: datetime):
+    """Calculates 'time ago' string from a datetime object."""
+    now = datetime.now(timezone.utc)
+    # Ensure the date from DB is timezone-aware
+    if date.tzinfo is None:
+        date = date.replace(tzinfo=timezone.utc)
+
+    diff = now - date
+    seconds = diff.total_seconds()
+
+    if seconds < 60:
+        return f"{int(seconds)} seconds ago"
+    minutes = seconds / 60
+    if minutes < 60:
+        return f"{int(minutes)} minutes ago"
+    hours = minutes / 60
+    if hours < 24:
+        return f"{int(hours)} hours ago"
+    days = hours / 24
+    if days < 30:
+        return f"{int(days)} days ago"
+    months = days / 30
+    if months < 12:
+        return f"{int(months)} months ago"
+    years = days / 365
+    return f"{int(years)} years ago"
+
+
+templates.env.filters["time_ago"] = time_ago_filter
 
 
 @app.post("/scrape")

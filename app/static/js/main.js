@@ -8,20 +8,6 @@ const debounce = (func, delay) => {
     }, delay);
   };
 };
-const timeAgo = (date) => {
-  const seconds = Math.floor((Date.now() - new Date(date)) / 1000);
-  let interval = seconds / 31536000;
-  if (interval > 1) return `${Math.floor(interval)} years ago`;
-  interval = seconds / 2592000;
-  if (interval > 1) return `${Math.floor(interval)} months ago`;
-  interval = seconds / 86400;
-  if (interval > 1) return `${Math.floor(interval)} days ago`;
-  interval = seconds / 3600;
-  if (interval > 1) return `${Math.floor(interval)} hours ago`;
-  interval = seconds / 60;
-  if (interval > 1) return `${Math.floor(interval)} minutes ago`;
-  return `${Math.floor(seconds)} seconds ago`;
-};
 const getYouTubeVideoId = (url) => {
   const regex =
     /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/ ]{11})/;
@@ -36,12 +22,6 @@ const getActivePlayer = () => {
     return playerState.embeddedPlayers[playerState.currentTrackId];
   }
   return ytPlayer;
-};
-
-const formatAllDates = () => {
-  document.querySelectorAll('td[data-label="Published"]').forEach((td) => {
-    if (td.dataset.date) td.textContent = timeAgo(td.dataset.date);
-  });
 };
 
 const formatTime = (seconds) => {
@@ -949,7 +929,6 @@ const updateTracks = async () => {
         '<tr><td colspan="7">Error loading tracks. Please try again.</td></tr>';
     }
     window.history.pushState({}, "", browserUrl);
-    formatAllDates();
     updateSortIndicators();
     updateActiveFilterDisplay();
   }
@@ -1092,7 +1071,6 @@ const renderRatingChart = () => {
 
 // --- INITIALIZATION ---
 document.addEventListener("DOMContentLoaded", () => {
-  formatAllDates();
   updateSortIndicators();
   updateThemeUI();
   updateActiveFilterDisplay();

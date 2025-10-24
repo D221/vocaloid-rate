@@ -184,9 +184,9 @@
     <td
       data-label="Published"
       class="block border-b border-border p-3 text-left last:border-b-0 md:table-cell md:w-1 md:min-w-0 md:border md:px-3 md:py-2 md:text-left md:whitespace-nowrap"
-      data-date="{{ track.published_date.isoformat() }}"
       title="{{ track.published_date.strftime('%Y-%m-%d') }}"
     >
+      {{ track.published_date | time_ago }}
       <span class="inline-block w-24 font-bold text-header md:hidden"
         >Published</span
       >
