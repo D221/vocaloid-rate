@@ -276,8 +276,8 @@ const playerState = {
   currentTrackId: null,
   playlist: [],
   shuffledPlaylist: [],
-  volume: 100,
-  isMuted: false,
+  volume: localStorage.getItem("playerVolume") || 100,
+  isMuted: localStorage.getItem("playerMuted") === "true",
   isEmbedded: false,
   isShuffle: false,
   isRepeat: false,
@@ -410,7 +410,6 @@ function loadAndPlayTrack(trackId) {
   if (ytPlayer) {
     ytPlayer.loadVideoById(videoId);
   } else {
-    // --- THIS IS THE FIX ---
     // If the main player doesn't exist yet, create it now.
     ytPlayer = new YT.Player("youtube-player-container", {
       height: "180",
@@ -423,7 +422,11 @@ function loadAndPlayTrack(trackId) {
       events: {
         onReady: (event) => {
           event.target.setVolume(playerState.volume);
-          if (playerState.isMuted) event.target.mute();
+          if (playerState.isMuted) {
+            event.target.mute();
+          } else {
+            event.target.unMute();
+          }
         },
         onStateChange: onPlayerStateChange,
         onError: onPlayerError,
@@ -521,7 +524,11 @@ function playNextTrack() {
         events: {
           onReady: (event) => {
             event.target.setVolume(playerState.volume);
-            if (playerState.isMuted) event.target.mute();
+            if (playerState.isMuted) {
+              event.target.mute();
+            } else {
+              event.target.unMute();
+            }
           },
           onStateChange: onPlayerStateChange,
           onError: onPlayerError,
@@ -599,7 +606,11 @@ function playPrevTrack() {
         events: {
           onReady: (event) => {
             event.target.setVolume(playerState.volume);
-            if (playerState.isMuted) event.target.mute();
+            if (playerState.isMuted) {
+              event.target.mute();
+            } else {
+              event.target.unMute();
+            }
           },
           onStateChange: onPlayerStateChange,
           onError: onPlayerError,
@@ -1161,6 +1172,8 @@ document.addEventListener("DOMContentLoaded", () => {
     playerState.volume = newVolume;
     playerState.isMuted = newVolume == 0;
 
+    localStorage.setItem("playerVolume", newVolume);
+
     const activePlayer = getActivePlayer();
     if (activePlayer) {
       activePlayer.setVolume(newVolume);
@@ -1174,6 +1187,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   muteBtn.addEventListener("click", () => {
     playerState.isMuted = !playerState.isMuted;
+
+    localStorage.setItem("playerMuted", playerState.isMuted);
 
     const activePlayer = getActivePlayer();
     if (activePlayer) {
@@ -1705,7 +1720,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 events: {
                   onReady: (event) => {
                     event.target.setVolume(playerState.volume);
-                    if (playerState.isMuted) event.target.mute();
+                    if (playerState.isMuted) {
+                      event.target.mute();
+                    } else {
+                      event.target.unMute();
+                    }
                     if (currentTime > 0) {
                       event.target.seekTo(currentTime, true);
                     }
