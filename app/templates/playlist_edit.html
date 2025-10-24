@@ -30,16 +30,31 @@
           <div
             class="track-item flex cursor-grab items-center gap-3 rounded p-2 hover:bg-gray-hover"
             data-track-id="{{ track.id }}"
+            data-track-link="{{ track.link }}"
           >
-            <img
-              src="{{ track.image_url }}"
-              alt="{{ track.title }}"
-              class="h-10 w-10 rounded object-cover"
-            />
-            <div>
-              <div class="font-semibold">{{ track.title }}</div>
-              <div class="text-sm text-gray-text">{{ track.producer }}</div>
-            </div>
+            <button
+              data-play-button
+              data-track-id="{{ track.id }}"
+              class="p-2 text-gray-text hover:text-cyan-text"
+            >
+              <i class="fa-solid fa-play"></i>
+            </button>
+
+            <a
+              href="{{ track.link }}"
+              target="_blank"
+              class="flex items-center gap-3"
+            >
+              <img
+                src="{{ track.image_url }}"
+                alt="{{ track.title }}"
+                class="h-10 w-10 rounded object-cover"
+              />
+              <div>
+                <div class="font-semibold">{{ track.title }}</div>
+                <div class="text-sm text-gray-text">{{ track.producer }}</div>
+              </div>
+            </a>
           </div>
         {% endfor %}
       </div>
@@ -61,20 +76,35 @@
           <div
             class="track-item flex cursor-grab items-center justify-between gap-3 rounded bg-card-bg p-2 shadow"
             data-track-id="{{ track.id }}"
+            data-track-link="{{ track.link }}"
           >
             <div class="flex items-center gap-3 overflow-hidden">
-              <img
-                src="{{ track.image_url }}"
-                alt="{{ track.title }}"
-                class="h-10 w-10 rounded object-cover"
-              />
-              <div>
-                <div class="truncate font-semibold">{{ track.title }}</div>
-                <div class="truncate text-sm text-gray-text">
-                  {{ track.producer }}
+              <button
+                data-play-button
+                data-track-id="{{ track.id }}"
+                class="p-2 text-gray-text hover:text-cyan-text"
+              >
+                <i class="fa-solid fa-play"></i>
+              </button>
+              <a
+                href="{{ track.link }}"
+                target="_blank"
+                class="flex items-center gap-3"
+              >
+                <img
+                  src="{{ track.image_url }}"
+                  alt="{{ track.title }}"
+                  class="h-10 w-10 rounded object-cover"
+                />
+                <div>
+                  <div class="truncate font-semibold">{{ track.title }}</div>
+                  <div class="truncate text-sm text-gray-text">
+                    {{ track.producer }}
+                  </div>
                 </div>
-              </div>
+              </a>
             </div>
+
             <button
               data-remove-track
               class="p-2 text-red-text hover:text-red-500"
@@ -87,5 +117,6 @@
     </div>
   </div>
 
+  <script src="{{ url_for('static', path='js/main.js') }}"></script>
   <script src="{{ url_for('static', path='js/playlist_editor.js') }}"></script>
 {% endblock %}

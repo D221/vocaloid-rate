@@ -1,4 +1,4 @@
-/* global Sortable */ // Tells ESLint that "Sortable" is a global variable from the CDN script.
+/* global Sortable, playerState, loadAndPlayTrack */ // Tells ESLint that "Sortable" is a global variable from the CDN script.
 
 document.addEventListener("DOMContentLoaded", () => {
   // --- ELEMENT SELECTORS ---
@@ -160,6 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // No 'handle' property means the whole item is draggable
     onAdd: function (evt) {
       const trackId = evt.item.dataset.trackId;
+      const trackLink = evt.item.dataset.trackLink;
       addTrack(trackId);
 
       const trackContent = evt.item.innerHTML;
@@ -173,6 +174,9 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
       evt.item.className =
         "track-item flex cursor-grab items-center justify-between gap-3 rounded bg-card-bg p-2 shadow";
+
+      evt.item.dataset.trackLink = trackLink;
+      evt.item.className = "...";
 
       const trackIds = Array.from(playlistTracksList.children).map(
         (item) => item.dataset.trackId,
@@ -213,4 +217,55 @@ document.addEventListener("DOMContentLoaded", () => {
       showToast("Track removed.");
     }
   });
+  const editorContainer = document.querySelector(".grid.grid-cols-1");
+
+  const buildPlaylistFromEditor = () => {
+    const trackItems = document.querySelectorAll(".track-item");
+    const newPlaylist = Array.from(trackItems)
+      .map((item) => {
+        const imageEl = item.querySelector("img");
+        const titleEl = item.querySelector(".font-semibold");
+        const producerEl = item.querySelector(".text-sm");
+
+        return {
+          id: item.dataset.trackId,
+          title: titleEl ? titleEl.textContent : "Unknown Title",
+          producer: producerEl ? producerEl.textContent : "Unknown Producer",
+          imageUrl: imageEl ? imageEl.src : "",
+          // We need the YouTube link. Let's assume we'll add it to the data attribute.
+          link: item.dataset.trackLink || "",
+        };
+      })
+      .filter((track) => track.id && track.link);
+
+    // Update the global player state from main.js
+    playerState.playlist = newPlaylist;
+    console.log("Playlist built from editor:", playerState.playlist);
+  };
+
+  if (editorContainer) {
+    editorContainer.addEventListener("click", (e) => {
+      const playButton = e.target.closest("[data-play-button]");
+      if (playButton) {
+        e.stopPropagation(); // Prevent SortableJS from starting a drag
+
+        const trackId = playButton.dataset.trackId;
+
+        // On the first play click on this page, build the playlist
+        if (
+          playerState.playlist.length === 0 ||
+          !playerState.playlist.some((t) => t.id === trackId)
+        ) {
+          buildPlaylistFromEditor();
+        }
+
+        // Now that the playlist exists, call the global function from main.js
+        if (typeof loadAndPlayTrack === "function") {
+          loadAndPlayTrack(trackId);
+        } else {
+          alert("Player function not found. Make sure main.js is loaded.");
+        }
+      }
+    });
+  }
 });
