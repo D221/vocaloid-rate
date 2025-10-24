@@ -1373,7 +1373,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const newSort = sortLink.dataset.sort;
       const currentSort = params.get("sort_by");
       const currentDir = params.get("sort_dir");
-      let newDir = ["published_date", "rating"].includes(newSort)
+      let newDir = ["published_date", "rating", "rank"].includes(newSort)
         ? "desc"
         : "asc";
       if (newSort === currentSort)
