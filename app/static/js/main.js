@@ -121,6 +121,21 @@ const upgradeThumbnails = () => {
   });
 };
 
+const getIconSVG = (iconName, size = "h-full w-full") => {
+  const icons = {
+    sun: `<svg class="${size}" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M210.2 53.9C217.6 50.8 226 51.7 232.7 56.1L320.5 114.3L408.3 56.1C415 51.7 423.4 50.9 430.8 53.9C438.2 56.9 443.4 63.5 445 71.3L465.9 174.5L569.1 195.4C576.9 197 583.5 202.4 586.5 209.7C589.5 217 588.7 225.5 584.3 232.2L526.1 320L584.3 407.8C588.7 414.5 589.5 422.9 586.5 430.3C583.5 437.7 576.9 443.1 569.1 444.6L465.8 465.4L445 568.7C443.4 576.5 438 583.1 430.7 586.1C423.4 589.1 414.9 588.3 408.2 583.9L320.4 525.7L232.6 583.9C225.9 588.3 217.5 589.1 210.1 586.1C202.7 583.1 197.3 576.5 195.8 568.7L175 465.4L71.7 444.5C63.9 442.9 57.3 437.5 54.3 430.2C51.3 422.9 52.1 414.4 56.5 407.7L114.7 320L56.5 232.2C52.1 225.5 51.3 217.1 54.3 209.7C57.3 202.3 63.9 196.9 71.7 195.4L175 174.6L195.9 71.3C197.5 63.5 202.9 56.9 210.2 53.9zM239.6 320C239.6 275.6 275.6 239.6 320 239.6C364.4 239.6 400.4 275.6 400.4 320C400.4 364.4 364.4 400.4 320 400.4C275.6 400.4 239.6 364.4 239.6 320zM448.4 320C448.4 249.1 390.9 191.6 320 191.6C249.1 191.6 191.6 249.1 191.6 320C191.6 390.9 249.1 448.4 320 448.4C390.9 448.4 448.4 390.9 448.4 320z"/></svg>`,
+    moon: `<svg class="${size}" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M320 64C178.6 64 64 178.6 64 320C64 461.4 178.6 576 320 576C388.8 576 451.3 548.8 497.3 504.6C504.6 497.6 506.7 486.7 502.6 477.5C498.5 468.3 488.9 462.6 478.8 463.4C473.9 463.8 469 464 464 464C362.4 464 280 381.6 280 280C280 207.9 321.5 145.4 382.1 115.2C391.2 110.7 396.4 100.9 395.2 90.8C394 80.7 386.6 72.5 376.7 70.3C358.4 66.2 339.4 64 320 64z"/></svg>`,
+    plus: `<svg class="${size}" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M352 128C352 110.3 337.7 96 320 96C302.3 96 288 110.3 288 128L288 288L128 288C110.3 288 96 302.3 96 320C96 337.7 110.3 352 128 352L288 352L288 512C288 529.7 302.3 544 320 544C337.7 544 352 529.7 352 512L352 352L512 352C529.7 352 544 337.7 544 320C544 302.3 529.7 288 512 288L352 288L352 128z"/></svg>`,
+    minus: `<svg class="${size}" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M96 320C96 302.3 110.3 288 128 288L512 288C529.7 288 544 302.3 544 320C544 337.7 529.7 352 512 352L128 352C110.3 352 96 337.7 96 320z"/></svg>`,
+    play: `<svg class="${size}" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M187.2 100.9C174.8 94.1 159.8 94.4 147.6 101.6C135.4 108.8 128 121.9 128 136L128 504C128 518.1 135.5 531.2 147.6 538.4C159.7 545.6 174.8 545.9 187.2 539.1L523.2 355.1C536 348.1 544 334.6 544 320C544 305.4 536 291.9 523.2 284.9L187.2 100.9z"/></svg>`,
+    pause: `<svg class="${size}" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M176 96C149.5 96 128 117.5 128 144L128 496C128 522.5 149.5 544 176 544L240 544C266.5 544 288 522.5 288 496L288 144C288 117.5 266.5 96 240 96L176 96zM400 96C373.5 96 352 117.5 352 144L352 496C352 522.5 373.5 544 400 544L464 544C490.5 544 512 522.5 512 496L512 144C512 117.5 490.5 96 464 96L400 96z"/></svg>`,
+    volume_xmark: `<svg class="${size}" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M80 416L128 416L262.1 535.2C268.5 540.9 276.7 544 285.2 544C304.4 544 320 528.4 320 509.2L320 130.8C320 111.6 304.4 96 285.2 96C276.7 96 268.5 99.1 262.1 104.8L128 224L80 224C53.5 224 32 245.5 32 272L32 368C32 394.5 53.5 416 80 416zM399 239C389.6 248.4 389.6 263.6 399 272.9L446 319.9L399 366.9C389.6 376.3 389.6 391.5 399 400.8C408.4 410.1 423.6 410.2 432.9 400.8L479.9 353.8L526.9 400.8C536.3 410.2 551.5 410.2 560.8 400.8C570.1 391.4 570.2 376.2 560.8 366.9L513.8 319.9L560.8 272.9C570.2 263.5 570.2 248.3 560.8 239C551.4 229.7 536.2 229.6 526.9 239L479.9 286L432.9 239C423.5 229.6 408.3 229.6 399 239z"/></svg>`,
+    volume_high: `<svg class="${size}" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M533.6 96.5C523.3 88.1 508.2 89.7 499.8 100C491.4 110.3 493 125.4 503.3 133.8C557.5 177.8 592 244.8 592 320C592 395.2 557.5 462.2 503.3 506.3C493 514.7 491.5 529.8 499.8 540.1C508.1 550.4 523.3 551.9 533.6 543.6C598.5 490.7 640 410.2 640 320C640 229.8 598.5 149.2 533.6 96.5zM473.1 171C462.8 162.6 447.7 164.2 439.3 174.5C430.9 184.8 432.5 199.9 442.8 208.3C475.3 234.7 496 274.9 496 320C496 365.1 475.3 405.3 442.8 431.8C432.5 440.2 431 455.3 439.3 465.6C447.6 475.9 462.8 477.4 473.1 469.1C516.3 433.9 544 380.2 544 320.1C544 260 516.3 206.3 473.1 171.1zM412.6 245.5C402.3 237.1 387.2 238.7 378.8 249C370.4 259.3 372 274.4 382.3 282.8C393.1 291.6 400 305 400 320C400 335 393.1 348.4 382.3 357.3C372 365.7 370.5 380.8 378.8 391.1C387.1 401.4 402.3 402.9 412.6 394.6C434.1 376.9 448 350.1 448 320C448 289.9 434.1 263.1 412.6 245.5zM80 416L128 416L262.1 535.2C268.5 540.9 276.7 544 285.2 544C304.4 544 320 528.4 320 509.2L320 130.8C320 111.6 304.4 96 285.2 96C276.7 96 268.5 99.1 262.1 104.8L128 224L80 224C53.5 224 32 245.5 32 272L32 368C32 394.5 53.5 416 80 416z"/></svg>`,
+    xmark: `<svg class="${size}" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M183.1 137.4C170.6 124.9 150.3 124.9 137.8 137.4C125.3 149.9 125.3 170.2 137.8 182.7L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7L320.5 365.3L457.9 502.6C470.4 515.1 490.7 515.1 503.2 502.6C515.7 490.1 515.7 469.8 503.2 457.3L365.8 320L503.1 182.6C515.6 170.1 515.6 149.8 503.1 137.3C490.6 124.8 470.3 124.8 457.8 137.3L320.5 274.7L183.1 137.4z"/></svg>`,
+  };
+  return icons[iconName] || "";
+};
+
 // ===================================================================
 // CORE APPLICATION LOGIC & STATE MANAGEMENT
 // ===================================================================
@@ -357,9 +372,9 @@ const updateThemeUI = () => {
   if (!themeIcon) return;
   const currentTheme = document.documentElement.dataset.theme;
   if (currentTheme === "dark") {
-    themeIcon.innerHTML = '<i class="fa-solid fa-sun"></i>';
+    themeIcon.innerHTML = getIconSVG("sun");
   } else {
-    themeIcon.innerHTML = '<i class="fa-solid fa-moon"></i>';
+    themeIcon.innerHTML = getIconSVG("moon");
   }
 };
 
@@ -431,9 +446,9 @@ const openPlaylistModal = async (trackId, buttonElement) => {
                       .map(
                         (p) => `
                         <div class="flex items-center justify-between rounded hover:bg-gray-hover">
-                            <a href="/playlist/${p.id}" class="flex-grow p-2 text-left text-foreground">${p.name}</a>
+                            <a href="/playlist/${p.id}" class="grow p-2 text-left text-foreground">${p.name}</a>
                             <button data-remove-from-playlist="${p.id}" class="p-2 text-red-text hover:text-red-500">
-                                <i class="fa-solid fa-minus pointer-events-none"></i>
+                                <span class="inline-block h-4 w-4">${getIconSVG("minus")}</span>
                             </button>
                         </div>
                     `,
@@ -453,9 +468,9 @@ const openPlaylistModal = async (trackId, buttonElement) => {
                        .map(
                          (p) => `
                         <div class="flex items-center justify-between rounded hover:bg-gray-hover">
-                             <span class="flex-grow p-2 text-left text-foreground">${p.name}</span>
+                             <span class="grow p-2 text-left text-foreground">${p.name}</span>
                              <button data-add-to-existing-playlist="${p.id}" class="p-2 text-green-text hover:text-green-500">
-                                <i class="fa-solid fa-plus pointer-events-none"></i>
+                                <span class="inline-block h-4 w-4 text-green-text">${getIconSVG("plus")}</span>
                             </button>
                         </div>
                     `,
@@ -876,8 +891,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updatePlayerUI() {
     playPauseBtn.innerHTML = playerState.isPlaying
-      ? '<i class="fa-solid fa-pause"></i>'
-      : '<i class="fa-solid fa-play"></i>';
+      ? getIconSVG("pause", "h-8 w-8")
+      : getIconSVG("play", "h-8 w-8");
 
     // Clear previous highlights and icons
     document.querySelectorAll("tr.is-playing").forEach((row) => {
@@ -886,7 +901,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document
       .querySelectorAll("button[data-play-button].is-playing")
       .forEach((btn) => {
-        btn.innerHTML = '<i class="fa-solid fa-play"></i>'; // Reset to play icon
+        btn.innerHTML = getIconSVG("play", "h-4 w-4");
         btn.classList.remove("is-playing");
       });
 
@@ -914,8 +929,8 @@ document.addEventListener("DOMContentLoaded", () => {
           );
           if (playButtonInRow) {
             playButtonInRow.innerHTML = playerState.isPlaying
-              ? '<i class="fa-solid fa-pause"></i>'
-              : '<i class="fa-solid fa-play"></i>';
+              ? getIconSVG("pause", "h-4 w-4")
+              : getIconSVG("play", "h-4 w-4");
             playButtonInRow.classList.add("is-playing");
           }
         }
@@ -924,8 +939,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     volumeSlider.value = playerState.isMuted ? 0 : playerState.volume;
     muteBtn.innerHTML = playerState.isMuted
-      ? '<i class="fa-solid fa-volume-xmark"></i>'
-      : '<i class="fa-solid fa-volume-high"></i>';
+      ? getIconSVG("volume_xmark", "h-8 w-8")
+      : getIconSVG("volume_high", "h-8 w-8");
   }
 
   function onPlayerError(event) {
@@ -1226,7 +1241,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const deleteButtonHTML = `
 								<button data-clear-rating type="button" data-delete-endpoint="${form.action}/delete"
 									class="shadow-md p-1 rounded border border-red-text text-red-text font-bold cursor-pointer transition-colors duration-200 ease-in-out hover:bg-red-hover">
-									<i class="fa-solid fa-xmark"></i>
+									<span class="inline-block h-6 w-6">${getIconSVG("xmark")}</span>
 								</button>`;
 
             // Find the container where the notes button lives

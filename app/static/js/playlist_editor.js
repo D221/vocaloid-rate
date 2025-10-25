@@ -1,6 +1,16 @@
 /* global Sortable */
 
 document.addEventListener("DOMContentLoaded", () => {
+  const getIconSVG = (iconName, size = "h-full w-full") => {
+    const icons = {
+      plus: `<svg class="${size}" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M352 128C352 110.3 337.7 96 320 96C302.3 96 288 110.3 288 128L288 288L128 288C110.3 288 96 302.3 96 320C96 337.7 110.3 352 128 352L288 352L288 512C288 529.7 302.3 544 320 544C337.7 544 352 529.7 352 512L352 352L512 352C529.7 352 544 337.7 544 320C544 302.3 529.7 288 512 288L352 288L352 128z"/></svg>`,
+      play: `<svg class="${size}" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M187.2 100.9C174.8 94.1 159.8 94.4 147.6 101.6C135.4 108.8 128 121.9 128 136L128 504C128 518.1 135.5 531.2 147.6 538.4C159.7 545.6 174.8 545.9 187.2 539.1L523.2 355.1C536 348.1 544 334.6 544 320C544 305.4 536 291.9 523.2 284.9L187.2 100.9z"/></svg>`,
+      trash: `<svg class="${size}" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M232.7 69.9L224 96L128 96C110.3 96 96 110.3 96 128C96 145.7 110.3 160 128 160L512 160C529.7 160 544 145.7 544 128C544 110.3 529.7 96 512 96L416 96L407.3 69.9C402.9 56.8 390.7 48 376.9 48L263.1 48C249.3 48 237.1 56.8 232.7 69.9zM512 208L128 208L149.1 531.1C150.7 556.4 171.7 576 197 576L443 576C468.3 576 489.3 556.4 490.9 531.1L512 208z"/></svg>`,
+      check: `<svg class="${size}" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z"/></svg>`,
+    };
+    return icons[iconName] || "";
+  };
+
   // --- ELEMENT SELECTORS ---
   const playlistContainer = document.querySelector("[data-playlist-id]");
   if (!playlistContainer) {
@@ -37,6 +47,43 @@ document.addEventListener("DOMContentLoaded", () => {
       clearTimeout(timeout);
       timeout = setTimeout(() => func.apply(this, args), delay);
     };
+  };
+
+  const createPlaylistItemElement = (sourceItem) => {
+    // 1. Get all the necessary data from the source item
+    const trackId = sourceItem.dataset.trackId;
+    const trackLink = sourceItem.dataset.trackLink;
+    const imageSrc = sourceItem.querySelector("img").src;
+    const title = sourceItem.querySelector(".font-semibold").textContent;
+    const producer = sourceItem.querySelector(".text-sm").textContent;
+
+    // 2. Create the new element and set its properties
+    const newPlaylistItem = document.createElement("div");
+    newPlaylistItem.className =
+      "track-item flex cursor-grab items-center justify-between gap-3 rounded bg-card-bg p-2 shadow";
+    newPlaylistItem.dataset.trackId = trackId;
+    newPlaylistItem.dataset.trackLink = trackLink;
+
+    // 3. Set the correct innerHTML, same as your working click handler
+    newPlaylistItem.innerHTML = `
+        <div class="flex items-center gap-3 overflow-hidden">
+            <button data-play-button data-track-id="${trackId}" class="p-2 text-gray-text hover:text-cyan-text">
+                <span class="inline-block h-6 w-6">${getIconSVG("play")}</span>
+            </button>
+            <a href="${trackLink}" target="_blank" class="flex items-center gap-3">
+                <img src="${imageSrc}" alt="${title}" class="h-10 w-10 rounded object-cover">
+                <div>
+                    <div class="font-semibold truncate">${title}</div>
+                    <div class="text-sm text-gray-text truncate">${producer}</div>
+                </div>
+            </a>
+        </div>
+        <button data-remove-track class="p-2 text-red-text hover:text-red-500">
+            <span class="inline-block h-6 w-6">${getIconSVG("trash")}</span>
+        </button>
+    `;
+
+    return newPlaylistItem;
   };
 
   // --- API FUNCTIONS ---
@@ -160,29 +207,20 @@ document.addEventListener("DOMContentLoaded", () => {
     // No 'handle' property means the whole item is draggable
     onAdd: function (evt) {
       const trackId = evt.item.dataset.trackId;
-      const trackLink = evt.item.dataset.trackLink;
-      addTrack(trackId);
+      addTrack(trackId); // API call
 
-      const trackContent = evt.item.innerHTML;
-      evt.item.innerHTML = `
-                <div class="flex items-center gap-3 overflow-hidden">
-                    ${trackContent}
-                </div>
-                <button data-remove-track class="p-2 text-red-text hover:text-red-500">
-                    <i class="fa-solid fa-trash pointer-events-none"></i>
-                </button>
-            `;
-      evt.item.className =
-        "track-item flex cursor-grab items-center justify-between gap-3 rounded bg-card-bg p-2 shadow";
+      // Create the new, correctly styled item using our helper
+      const newPlaylistItem = createPlaylistItemElement(evt.item);
 
-      evt.item.dataset.trackLink = trackLink;
-      evt.item.className = "...";
+      // Replace the badly formatted item that SortableJS created with our perfect one
+      evt.item.replaceWith(newPlaylistItem);
+
+      updateInPlaylistIndicators(); // Update the left side
 
       const trackIds = Array.from(playlistTracksList.children).map(
         (item) => item.dataset.trackId,
       );
       debouncedSaveOrder(trackIds);
-      updateInPlaylistIndicators();
     },
     onEnd: function () {
       const trackIds = Array.from(playlistTracksList.children).map(
@@ -208,41 +246,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const trackId = trackItem.dataset.trackId;
 
     if (trackItem && !trackItem.classList.contains("cursor-not-allowed")) {
-      // Find the track data from the clicked item
       const trackId = trackItem.dataset.trackId;
-      const trackLink = trackItem.dataset.trackLink;
-      const imageSrc = trackItem.querySelector("img").src;
-      const title = trackItem.querySelector(".font-semibold").textContent;
-      const producer = trackItem.querySelector(".text-sm").textContent;
+      addTrack(trackId); // API call
 
-      // Add to the database
-      addTrack(trackId);
+      // Use the new helper function
+      const newPlaylistItem = createPlaylistItemElement(trackItem);
 
-      // Create a new element for the right-hand list
-      const newPlaylistItem = document.createElement("div");
-      newPlaylistItem.className =
-        "track-item flex cursor-grab items-center justify-between gap-3 rounded bg-card-bg p-2 shadow";
-      newPlaylistItem.dataset.trackId = trackId;
-      newPlaylistItem.dataset.trackLink = trackLink;
-      newPlaylistItem.innerHTML = `
-            <div class="flex items-center gap-3 overflow-hidden">
-                <button data-play-button data-track-id="${trackId}" class="p-2 text-gray-text hover:text-sky-text">
-                    <i class="fa-solid fa-play"></i>
-                </button>
-                <a href="${trackLink}" target="_blank" class="flex items-center gap-3">
-                    <img src="${imageSrc}" alt="${title}" class="h-10 w-10 rounded object-cover">
-                    <div>
-                        <div class="font-semibold">${title}</div>
-                        <div class="text-sm text-gray-text">${producer}</div>
-                    </div>
-                </a>
-            </div>
-            <button data-remove-track class="p-2 text-red-text hover:text-red-500">
-                <i class="fa-solid fa-trash pointer-events-none"></i>
-            </button>
-        `;
-
-      // Add the new element to the DOM
       playlistTracksList.appendChild(newPlaylistItem);
     } else {
       const itemToRemove = playlistTracksList.querySelector(
@@ -326,13 +335,15 @@ document.addEventListener("DOMContentLoaded", () => {
       if (playlistTrackIds.has(trackId)) {
         // If the track is already in the playlist:
         item.classList.add("opacity-50", "cursor-not-allowed"); // Gray it out
-        if (addButton)
-          addButton.innerHTML =
-            '<i class="fa-solid fa-check text-green-text"></i>'; // Show a checkmark
+        if (addButton) {
+          addButton.innerHTML = `<span class="inline-block h-6 w-6 text-green-text">${getIconSVG("check")}</span>`;
+        }
       } else {
         // If the track is not in the playlist:
         item.classList.remove("opacity-50", "cursor-not-allowed"); // Restore normal style
-        if (addButton) addButton.innerHTML = '<i class="fa-solid fa-plus"></i>'; // Show a plus icon
+        if (addButton) {
+          addButton.innerHTML = `<span class="inline-block h-6 w-6">${getIconSVG("plus")}</span>`;
+        }
       }
     });
   };

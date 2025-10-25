@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/icons.html" import render as icon %}
 
 {% block title %}Edit: {{ playlist.name }}{% endblock %}
 
@@ -28,19 +29,19 @@
         <!-- All tracks will be loaded here by JavaScript -->
         {% for track in all_tracks %}
           <div
-            class="track-item flex cursor-grab items-center gap-3 rounded p-2 hover:bg-gray-hover"
+            class="track-item flex cursor-grab items-center gap-3 rounded hover:bg-gray-hover"
             data-track-id="{{ track.id }}"
             data-track-link="{{ track.link }}"
           >
             <div data-add-indicator class="p-2 text-gray-text">
-              <i class="fa-solid fa-plus"></i>
+              {{ icon('plus', size="h-6 w-6") }}
             </div>
             <button
               data-play-button
               data-track-id="{{ track.id }}"
               class="p-2 text-gray-text hover:text-sky-text"
             >
-              <i class="fa-solid fa-play"></i>
+              {{ icon('play', size="h-6 w-6") }}
             </button>
 
             <a
@@ -87,7 +88,7 @@
                 data-track-id="{{ track.id }}"
                 class="p-2 text-gray-text hover:text-sky-text"
               >
-                <i class="fa-solid fa-play"></i>
+                {{ icon('play', size="h-6 w-6") }}
               </button>
               <a
                 href="{{ track.link }}"
@@ -110,7 +111,7 @@
               data-remove-track
               class="p-2 text-red-text hover:text-red-500"
             >
-              <i class="fa-solid fa-trash"></i>
+              {{ icon('trash', size="h-6 w-6") }}
             </button>
           </div>
         {% endfor %}

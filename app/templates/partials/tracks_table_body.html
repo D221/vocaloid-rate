@@ -1,3 +1,5 @@
+{% from "macros/icons.html" import render as icon %}
+
 <template id="playlist-data"> {{ tracks_json | safe }} </template>
 {% for track in tracks %}
   <tr
@@ -48,14 +50,14 @@
           data-track-id="{{ track.id }}"
           title="Play this track"
         >
-          <i class="fa-solid fa-play"></i>
+          {{ icon('play', size="h-4 w-4") }}
         </button>
         <button
           data-embed-button
           class="cursor-pointer rounded border border-cyan-text px-2 py-1 text-cyan-text transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
           data-youtube-url="{{ track.link }}"
         >
-          <i class="fa-solid fa-tv"></i>
+          {{ icon('tv', size="h-4 w-4") }}
         </button>
         <button
           data-vocadb-track-button
@@ -95,7 +97,7 @@
           {% endif %} cursor-pointer rounded border px-2 py-1 shadow-md transition-colors duration-200 ease-in-out"
           title="Manage playlists"
         >
-          <i class="fa-solid fa-plus"></i>
+          {{ icon('plus', size="h-4 w-4") }}
         </button>
       </div>
 
@@ -255,7 +257,7 @@
               data-delete-endpoint="/rate/{{ track.id }}/delete"
               class="cursor-pointer rounded border border-red-text p-1 font-bold text-red-text shadow-md transition-colors duration-200 ease-in-out hover:bg-red-hover"
             >
-              <i class="fa-solid fa-xmark"></i>
+              {{ icon('xmark', size="h-6 w-6") }}
             </button>
           {% endif %}
         </div>

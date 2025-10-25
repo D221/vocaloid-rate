@@ -1,3 +1,5 @@
+{% from "macros/icons.html" import render as icon %}
+
 <div
   class="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4"
 >
@@ -21,7 +23,7 @@
           data-edit-field="name"
           class="ml-2 text-gray-text opacity-0 transition-opacity group-hover:opacity-100"
         >
-          <i class="fa-solid fa-pencil"></i>
+          {{ icon('pencil', size="h-4 w-4") }}
         </button>
       {% endif %}
     </h1>
@@ -43,7 +45,7 @@
             data-edit-field="description"
             class="ml-2 text-gray-text opacity-0 transition-opacity group-hover:opacity-100"
           >
-            <i class="fa-solid fa-pencil"></i>
+            {{ icon('pencil', size="h-4 w-4") }}
           </button>
         {% endif %}
       </p>
@@ -140,9 +142,9 @@
     {% endif %}
 
     <div id="theme-switcher">
-      <span id="theme-icon"
-        ><i class="fa-solid fa-moon text-xl text-foreground"></i
-      ></span>
+      <span id="theme-icon" class="inline-block h-6 w-6 text-foreground">
+        {{ icon('moon') }}
+      </span>
     </div>
   </div>
 </div>
