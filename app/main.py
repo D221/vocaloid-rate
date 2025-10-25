@@ -30,9 +30,24 @@ from app.database import SessionLocal, engine
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
 
-models.Base.metadata.create_all(bind=engine)
-
 app = FastAPI()
+
+
+@app.middleware("http")
+async def add_cache_control_header(request: Request, call_next):
+    """
+    Middleware to add Cache-Control headers for static files.
+    """
+    response = await call_next(request)
+    # Check if the request is for a file in your /static/ directory
+    if request.url.path.startswith("/static/"):
+        # Cache for 1 day (in seconds). You can adjust this value.
+        # 86400 seconds = 24 hours
+        response.headers["Cache-Control"] = "public, max-age=86400"
+    return response
+
+
+models.Base.metadata.create_all(bind=engine)
 
 BASE_DIR = Path(__file__).resolve().parent
 
