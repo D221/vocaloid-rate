@@ -46,7 +46,7 @@
       <div class="mt-2 flex justify-center gap-2 md:justify-start">
         <button
           data-play-button
-          class="cursor-pointer rounded border border-gray-text px-2 py-1 text-gray-text transition-colors duration-200 ease-in-out hover:bg-gray-hover"
+          class="cursor-pointer rounded border border-gray-text px-2 py-1 text-gray-text ease-in-out hover:bg-gray-hover hover:transition-colors hover:duration-200"
           data-track-id="{{ track.id }}"
           title="Play this track"
         >
@@ -54,14 +54,14 @@
         </button>
         <button
           data-embed-button
-          class="cursor-pointer rounded border border-cyan-text px-2 py-1 text-cyan-text transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
+          class="cursor-pointer rounded border border-cyan-text px-2 py-1 text-cyan-text ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
           data-youtube-url="{{ track.link }}"
         >
           {{ icon('tv', size="h-4 w-4") }}
         </button>
         <button
           data-vocadb-track-button
-          class="cursor-pointer rounded border border-purple-text px-2 py-1 font-semibold text-purple-text transition-colors duration-200 ease-in-out hover:bg-purple-hover"
+          class="cursor-pointer rounded border border-purple-text px-2 py-1 font-semibold text-purple-text ease-in-out hover:bg-purple-hover hover:transition-colors hover:duration-200"
           data-title-en="{{ track.title }}"
           data-producer="{{ track.producer.split(',')[0].strip() }}"
           {%
@@ -75,7 +75,7 @@
         </button>
         <button
           data-lyrics-button
-          class="cursor-pointer rounded border border-green-text px-2 py-1 font-semibold text-green-text transition-colors duration-200 ease-in-out hover:bg-green-hover"
+          class="cursor-pointer rounded border border-green-text px-2 py-1 font-semibold text-green-text ease-in-out hover:bg-green-hover hover:transition-colors hover:duration-200"
           data-title-en="{{ track.title }}"
           data-producer="{{ track.producer.split(',')[0].strip() }}"
           {%
@@ -94,7 +94,7 @@
             border-green-text text-green-text hover:bg-green-hover
           {% else %}
             border-amber-text text-amber-text hover:bg-amber-hover
-          {% endif %} cursor-pointer rounded border px-2 py-1 shadow-md transition-colors duration-200 ease-in-out"
+          {% endif %} cursor-pointer rounded border px-2 py-1 shadow-md ease-in-out hover:transition-colors hover:duration-200"
           title="Manage playlists"
         >
           {{ icon('plus', size="h-4 w-4") }}
@@ -156,7 +156,7 @@
       <div class="mt-2 flex justify-center gap-2 md:justify-start">
         <button
           data-vocadb-artist-button
-          class="cursor-pointer rounded border border-purple-text px-2 py-1 font-semibold text-purple-text transition-colors duration-200 ease-in-out hover:bg-purple-hover"
+          class="cursor-pointer rounded border border-purple-text px-2 py-1 font-semibold text-purple-text ease-in-out hover:bg-purple-hover hover:transition-colors hover:duration-200"
           data-producer="{{ track.producer.split(',')[0].strip() }}"
           title="Search producer on VocaDB"
         >
@@ -246,7 +246,7 @@
               border-green-text text-green-text hover:bg-green-hover
             {% else %}
               text-gray-text hover:bg-gray-hover
-            {% endif %} cursor-pointer rounded border px-2 py-1 font-bold shadow-md transition-colors duration-200 ease-in-out"
+            {% endif %} cursor-pointer rounded border px-2 py-1 font-bold shadow-md ease-in-out hover:transition-colors hover:duration-200"
           >
             {{ 'Edit Note' if has_note else 'Add Note' }}
           </button>
@@ -255,7 +255,7 @@
               data-clear-rating
               type="button"
               data-delete-endpoint="/rate/{{ track.id }}/delete"
-              class="cursor-pointer rounded border border-red-text p-1 font-bold text-red-text shadow-md transition-colors duration-200 ease-in-out hover:bg-red-hover"
+              class="cursor-pointer rounded border border-red-text p-1 font-bold text-red-text shadow-md ease-in-out hover:bg-red-hover hover:transition-colors hover:duration-200"
             >
               {{ icon('xmark', size="h-6 w-6") }}
             </button>

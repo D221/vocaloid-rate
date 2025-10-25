@@ -54,9 +54,7 @@
     {% block head_extra %}{% endblock %}
   </head>
 
-  <body
-    class="m-4 bg-background font-sans text-foreground transition-colors duration-300"
-  >
+  <body class="m-4 bg-background font-sans text-foreground">
     {% from "macros/icons.html" import render as icon %}
     <div
       id="music-player"
@@ -83,14 +81,14 @@
           </div>
           <button
             id="player-jump-to-btn"
-            class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-xl transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover"
+            class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-xl ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-gray-hover"
             title="Jump to playing track"
           >
             {{ icon('arrow-up', size="h-6 w-6") }}
           </button>
           <button
             id="player-embed-btn"
-            class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-xl transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover"
+            class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-xl ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-gray-hover"
             title="Toggle Video/Audio Mode"
           >
             {{ icon('tv', size="h-6 w-6") }}
@@ -101,7 +99,7 @@
         <div class="hidden items-center gap-4 md:flex">
           <button
             id="player-mute-btn"
-            class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-xl transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover"
+            class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-xl ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-gray-hover"
             title="Mute/Unmute"
           >
             {{ icon('volume-high', size="h-8 w-8") }}
@@ -117,7 +115,7 @@
           />
           <button
             id="player-stop-btn"
-            class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-2xl transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover"
+            class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-2xl ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-gray-hover"
             title="Close Player"
           >
             {{ icon('xmark', size="h-8 w-8") }}
@@ -154,35 +152,35 @@
           <div class="flex items-center justify-center gap-4">
             <button
               id="player-repeat-btn"
-              class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-xl transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover"
+              class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-xl ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-gray-hover"
               title="Repeat"
             >
               {{ icon('repeat', size="h-6 w-6") }}
             </button>
             <button
               id="player-prev-btn"
-              class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-xl transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover"
+              class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-xl ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-gray-hover"
               title="Previous Track"
             >
               {{ icon('backward', size="h-6 w-6") }}
             </button>
             <button
               id="player-play-pause-btn"
-              class="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-cyan-600 p-0 text-2xl text-white transition-colors duration-200 ease-in-out enabled:hover:bg-cyan-700"
+              class="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-cyan-600 p-0 text-2xl text-white ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-cyan-700"
               title="Play/Pause"
             >
               {{ icon('play', size="h-8 w-8") }}
             </button>
             <button
               id="player-next-btn"
-              class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-xl transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover"
+              class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-xl ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-gray-hover"
               title="Next Track"
             >
               {{ icon('forward', size="h-6 w-6") }}
             </button>
             <button
               id="player-shuffle-btn"
-              class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-xl transition-colors duration-200 ease-in-out enabled:hover:bg-gray-hover"
+              class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-xl ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-gray-hover"
               title="Shuffle"
             >
               {{ icon('shuffle', size="h-6 w-6") }}

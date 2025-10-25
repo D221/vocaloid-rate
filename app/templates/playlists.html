@@ -11,7 +11,7 @@
     <div class="mb-6 flex justify-end gap-2">
       <label
         for="import-single-playlist-input"
-        class="flex cursor-pointer items-center gap-2 rounded border border-green-text p-2 font-bold text-green-text shadow-md transition-colors duration-200 ease-in-out hover:bg-green-hover"
+        class="flex cursor-pointer items-center gap-2 rounded border border-green-text p-2 font-bold text-green-text shadow-md ease-in-out hover:bg-green-hover hover:transition-colors hover:duration-200"
       >
         {{ icon('upload', size="h-6 w-6") }} Import Playlist
       </label>
@@ -24,7 +24,7 @@
 
       <button
         id="create-new-playlist-btn"
-        class="flex cursor-pointer items-center gap-2 rounded border border-sky-text p-2 font-bold text-sky-text shadow-md transition-colors duration-200 ease-in-out hover:bg-sky-hover"
+        class="flex cursor-pointer items-center gap-2 rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:bg-sky-hover hover:transition-colors hover:duration-200"
       >
         {{ icon('plus', size="h-6 w-6") }} Create New Playlist
       </button>
@@ -45,20 +45,20 @@
             <div class="flex shrink-0 gap-2">
               <a
                 href="/playlist/{{ playlist.id }}"
-                class="cursor-pointer rounded border border-gray-text p-2 font-bold text-gray-text shadow-md transition-colors duration-200 ease-in-out hover:bg-gray-hover"
+                class="cursor-pointer rounded border border-gray-text p-2 font-bold text-gray-text shadow-md ease-in-out hover:bg-gray-hover hover:transition-colors hover:duration-200"
                 title="View"
                 >{{ icon('eye', size="h-6 w-6") }}</a
               >
               <a
                 href="/playlist/edit/{{ playlist.id }}"
-                class="cursor-pointer rounded border border-amber-text p-2 font-bold text-amber-text shadow-md transition-colors duration-200 ease-in-out hover:bg-amber-hover"
+                class="cursor-pointer rounded border border-amber-text p-2 font-bold text-amber-text shadow-md ease-in-out hover:bg-amber-hover hover:transition-colors hover:duration-200"
                 title="Edit"
                 >{{ icon('pencil', size="h-6 w-6") }}</a
               >
               <!-- NEW: Export Single Playlist Button -->
               <button
                 data-export-single-playlist="{{ playlist.id }}"
-                class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md transition-colors duration-200 ease-in-out hover:bg-sky-hover"
+                class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:bg-sky-hover hover:transition-colors hover:duration-200"
                 title="Export"
               >
                 {{ icon('download', size="h-6 w-6") }}
@@ -66,7 +66,7 @@
               <button
                 data-delete-playlist="{{ playlist.id }}"
                 data-playlist-name="{{ playlist.name }}"
-                class="cursor-pointer rounded border border-red-text p-2 font-bold text-red-text shadow-md transition-colors duration-200 ease-in-out hover:bg-red-hover"
+                class="cursor-pointer rounded border border-red-text p-2 font-bold text-red-text shadow-md ease-in-out hover:bg-red-hover hover:transition-colors hover:duration-200"
                 title="Delete"
               >
                 {{ icon('trash', size="h-6 w-6") }}
@@ -99,7 +99,7 @@
           </p>
           <button
             id="export-playlists-btn"
-            class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md transition-colors duration-200 ease-in-out hover:bg-sky-hover"
+            class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:bg-sky-hover hover:transition-colors hover:duration-200"
           >
             Export to File
           </button>
@@ -114,11 +114,11 @@
             type="file"
             id="import-playlists-input"
             accept=".json"
-            class="rounded border border-sky-text shadow-md duration-200 ease-in-out file:border-r file:border-sky-text file:p-2 file:font-bold file:text-sky-text hover:file:cursor-pointer hover:file:bg-sky-hover"
+            class="rounded border border-sky-text shadow-md ease-in-out file:border-r file:border-sky-text file:p-2 file:font-bold file:text-sky-text hover:transition-colors hover:duration-200 hover:file:cursor-pointer hover:file:bg-sky-hover"
           />
           <button
             id="import-playlists-btn"
-            class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md transition-colors duration-200 ease-in-out enabled:hover:bg-sky-hover disabled:cursor-not-allowed disabled:opacity-50"
+            class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-sky-hover disabled:cursor-not-allowed disabled:opacity-50"
             disabled
           >
             Import from File

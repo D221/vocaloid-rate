@@ -79,7 +79,7 @@
     {% if request.url.path != '/' %}
       <a
         href="/"
-        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
+        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
       >
         Main Chart
       </a>
@@ -89,7 +89,7 @@
     {% if request.url.path != '/playlists' %}
       <a
         href="/playlists"
-        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
+        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
       >
         Playlists
       </a>
@@ -104,7 +104,7 @@
       {% if request.url.path.startswith('/playlist/edit/') %}
         <a
           href="/playlist/{{ playlist_id }}"
-          class="cursor-pointer rounded border border-amber-text p-3 font-bold text-amber-text shadow-md transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
+          class="cursor-pointer rounded border border-amber-text p-3 font-bold text-amber-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
         >
           View Playlist
         </a>
@@ -114,7 +114,7 @@
         <a
           href="/playlist/edit/{{ playlist_id }}"
           id="toggle-edit-playlist"
-          class="cursor-pointer rounded border border-amber-text p-3 font-bold text-amber-text shadow-md transition-colors duration-200 ease-in-out hover:bg-amber-hover"
+          class="cursor-pointer rounded border border-amber-text p-3 font-bold text-amber-text shadow-md ease-in-out hover:bg-amber-hover hover:transition-colors hover:duration-200"
         >
           Edit Details
         </a>
@@ -125,7 +125,7 @@
     {% if request.url.path != '/rated_tracks' %}
       <a
         href="/rated_tracks"
-        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
+        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
       >
         Rated Tracks
       </a>
@@ -135,7 +135,7 @@
     {% if request.url.path != '/options' %}
       <a
         href="/options"
-        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md transition-colors duration-200 ease-in-out hover:bg-cyan-hover"
+        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
       >
         Options
       </a>

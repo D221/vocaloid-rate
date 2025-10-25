@@ -294,7 +294,7 @@ const updatePaginationUI = (pagination) => {
     }
     const button = document.createElement("button");
     button.className =
-      "shadow-md py-2 px-4 rounded border border-sky-text text-sky-text font-bold cursor-pointer transition-colors duration-200 ease-in-out enabled:hover:bg-sky-hover";
+      "shadow-md py-2 px-4 rounded border border-sky-text text-sky-text font-bold cursor-pointer ease-in-out  hover:transition-colors hover:duration-200 enabled:hover:bg-sky-hover";
     button.textContent = text;
     button.dataset.page = page;
     if (isCurrent) {
@@ -488,7 +488,7 @@ const openPlaylistModal = async (trackId, buttonElement) => {
             </div>
             <div class="mt-2 border-t border-border pt-2">
                 <input type="text" data-new-playlist-name placeholder="Or create new..." class="w-full rounded border border-border bg-background p-2 text-foreground placeholder:text-gray-text">
-                <button data-create-playlist class="mt-2 w-full cursor-pointer rounded border border-cyan-text px-2 py-1 text-cyan-text transition-colors duration-200 ease-in-out hover:bg-cyan-hover disabled:opacity-50" disabled>Create & Add</button>
+                <button data-create-playlist class="mt-2 w-full cursor-pointer rounded border border-cyan-text px-2 py-1 text-cyan-text ease-in-out  hover:transition-colors hover:duration-200 hover:bg-cyan-hover disabled:opacity-50" disabled>Create & Add</button>
             </div>
         `;
 
@@ -1240,7 +1240,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Correctly create just the button with the necessary data attribute
             const deleteButtonHTML = `
 								<button data-clear-rating type="button" data-delete-endpoint="${form.action}/delete"
-									class="shadow-md p-1 rounded border border-red-text text-red-text font-bold cursor-pointer transition-colors duration-200 ease-in-out hover:bg-red-hover">
+									class="shadow-md p-1 rounded border border-red-text text-red-text font-bold cursor-pointer ease-in-out  hover:transition-colors hover:duration-200 hover:bg-red-hover">
 									<span class="inline-block h-6 w-6">${getIconSVG("xmark")}</span>
 								</button>`;
 
