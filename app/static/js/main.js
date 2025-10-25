@@ -2069,4 +2069,27 @@ document.addEventListener("DOMContentLoaded", () => {
     showSkeleton();
     updateTracks();
   }
+
+  window.playerAPI = {
+    loadAndPlayTrack: loadAndPlayTrack,
+    playerState: playerState,
+    buildPlaylistFromEditor: (items) => {
+      // A new helper for the editor
+      const newPlaylist = Array.from(items)
+        .map((item) => {
+          const imageEl = item.querySelector("img");
+          const titleEl = item.querySelector(".font-semibold");
+          const producerEl = item.querySelector(".text-sm");
+          return {
+            id: item.dataset.trackId,
+            title: titleEl ? titleEl.textContent : "Unknown",
+            producer: producerEl ? producerEl.textContent : "Unknown",
+            imageUrl: imageEl ? imageEl.src : "",
+            link: item.dataset.trackLink || "",
+          };
+        })
+        .filter((track) => track.id && track.link);
+      playerState.playlist = newPlaylist;
+    },
+  };
 });

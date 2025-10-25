@@ -1,4 +1,4 @@
-/* global Sortable, playerState, loadAndPlayTrack */
+/* global Sortable */
 
 document.addEventListener("DOMContentLoaded", () => {
   // --- ELEMENT SELECTORS ---
@@ -285,51 +285,27 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   const editorContainer = document.querySelector(".grid.grid-cols-1");
 
-  const buildPlaylistFromEditor = () => {
-    const trackItems = document.querySelectorAll(".track-item");
-    const newPlaylist = Array.from(trackItems)
-      .map((item) => {
-        const imageEl = item.querySelector("img");
-        const titleEl = item.querySelector(".font-semibold");
-        const producerEl = item.querySelector(".text-sm");
-
-        return {
-          id: item.dataset.trackId,
-          title: titleEl ? titleEl.textContent : "Unknown Title",
-          producer: producerEl ? producerEl.textContent : "Unknown Producer",
-          imageUrl: imageEl ? imageEl.src : "",
-          // We need the YouTube link. Let's assume we'll add it to the data attribute.
-          link: item.dataset.trackLink || "",
-        };
-      })
-      .filter((track) => track.id && track.link);
-
-    // Update the global player state from main.js
-    playerState.playlist = newPlaylist;
-    console.log("Playlist built from editor:", playerState.playlist);
-  };
-
   if (editorContainer) {
     editorContainer.addEventListener("click", (e) => {
       const playButton = e.target.closest("[data-play-button]");
       if (playButton) {
-        e.stopPropagation(); // Prevent SortableJS from starting a drag
+        e.preventDefault();
+        e.stopPropagation();
 
         const trackId = playButton.dataset.trackId;
 
-        // On the first play click on this page, build the playlist
-        if (
-          playerState.playlist.length === 0 ||
-          !playerState.playlist.some((t) => t.id === trackId)
-        ) {
-          buildPlaylistFromEditor();
-        }
+        // Check if the player API from main.js is available
+        if (window.playerAPI) {
+          const trackItems = document.querySelectorAll(".track-item");
+          // Build the playlist using the new helper on the API
+          window.playerAPI.buildPlaylistFromEditor(trackItems);
 
-        // Now that the playlist exists, call the global function from main.js
-        if (typeof loadAndPlayTrack === "function") {
-          loadAndPlayTrack(trackId);
+          // Call the play function through the API
+          window.playerAPI.loadAndPlayTrack(trackId);
         } else {
-          alert("Player function not found. Make sure main.js is loaded.");
+          alert(
+            "Player API not found. Make sure main.js is loaded before this script.",
+          );
         }
       }
     });
