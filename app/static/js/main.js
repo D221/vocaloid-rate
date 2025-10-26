@@ -385,12 +385,12 @@ const updateActiveFilterDisplay = () => {
 
   if (ratingFilter) {
     container.innerHTML = `
-			<div data-active-rating-filter class="flex items-center justify-between gap-3 bg-gray-100 border border-border rounded px-3 py-2 shadow-sm w-1/6">
-				<span>Filtering by rating: <strong>${ratingFilter} ★</strong></span>
-				<button type="button" data-clear-rating-filter
-					class="text-xl text-gray-500 hover:text-gray-700 leading-none"
-					title="Clear rating filter">&times;</button>
-			</div>
+      <div data-active-rating-filter class="inline-flex items-center justify-between gap-3 rounded-3xl border border-gray-text bg-card-bg px-3 py-2 shadow-sm">
+          <span>Filtering by rating: <strong>${ratingFilter} ★</strong></span>
+          <button type="button" data-clear-rating-filter
+              class="text-xl text-gray-text hover:text-red-text leading-none"
+              title="Clear rating filter">&times;</button>
+      </div>
 		`;
     container.style.display = "block";
   } else {
