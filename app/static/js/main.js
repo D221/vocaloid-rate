@@ -148,7 +148,6 @@ const loadPlaylistFromTemplate = () => {
       const data = JSON.parse(playlistDataTemplate.innerHTML);
       if (Array.isArray(data)) {
         playerState.playlist = data;
-        console.log(playerState.playlist);
       }
     } catch (e) {
       console.error("Failed to parse playlist data from <template> tag:", e);

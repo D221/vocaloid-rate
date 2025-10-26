@@ -139,12 +139,12 @@ docker compose down
 
 ## Development Setup
 
-If you wish to modify the frontend styles or JavaScript, you will need to have Node.js and npm installed. The project uses Tailwind CSS v4 for styling, which requires a build step.
+This project uses a Python/FastAPI backend and a JavaScript frontend with a full build system. To contribute or modify the code, you will need both Python and a Node.js-compatible runtime like Node.js or Bun.
 
 ### Prerequisites
 
-- **Node.js** (LTS version recommended) and **npm**. You can download them from [nodejs.org](https://nodejs.org/).
-- **Python 3.8+** for the backend.
+- **Python 3.8+** and `pip`.
+- **Node.js & npm** or **Bun**.
 
 ### 1. Clone the Repository
 
@@ -155,43 +155,80 @@ cd vocaloid-rate
 
 ### 2. Install Dependencies
 
-First, set up the Python backend environment as described in the "Installation & Setup" section (e.g., by running `run.sh` or `run.bat` once to create the virtual environment).
-
-Next, install the required Node.js packages for the frontend build process:
+First, create a Python virtual environment and install the required packages.
 
 ```bash
-npm install -D @tailwindcss/cli
+# Create and activate a virtual environment (macOS/Linux)
+python3 -m venv venv
+source venv/bin/activate
+
+# Create and activate a virtual environment (Windows)
+python -m venv venv
+.\venv\Scripts\activate
+
+# Install Python packages
+pip install -r requirements.txt
 ```
 
-### 3. Running the Development Servers
-
-You will need to run two processes simultaneously in separate terminal windows.
-
-**Terminal 1: Start the Tailwind CSS Build Process**
-
-This command will watch for any changes in your HTML templates and CSS files and automatically rebuild your stylesheet (`app.css`).
+Next, install the Node.js development dependencies. This will also set up the pre-commit hooks via Husky.
 
 ```bash
-npx @tailwindcss/cli -i ./app/static/css/input.css -o ./app/static/css/app.css --watch
+# Using Bun (recommended)
+bun install
+
+# Or using npm
+npm install
 ```
 
-**Terminal 2: Start the FastAPI Backend Server**
+### 3. Running the Development Environment
 
-Use the provided scripts to run the backend server.
+The development environment requires three processes to run concurrently: the FastAPI server, the Tailwind CSS compiler, and the JavaScript minifier. The project is configured to handle all of this with a single command.
 
-- On Windows:
-  ```bash
-  run.bat
-  ```
-- On macOS / Linux:
-  ```bash
-  bash run.sh
-  ```
+Open your terminal and run:
 
-### 4. Making Changes
+```bash
+bun run dev
+```
 
-- Edit HTML files in the `app/templates/` directory.
-- Edit your theme and custom styles in `app/static/css/input.css`.
-- Edit JavaScript files in the `app/static/js/` directory.
+This command uses `concurrently` to:
 
-The Tailwind CLI will automatically detect your changes and update `app/static/css/app.css`. Your browser should reflect the style changes upon refresh.
+1.  Start the FastAPI backend server with **hot-reloading**.
+2.  Start the Tailwind compiler in **watch mode**, which automatically builds and minifies `app.css` on any change.
+3.  Start a file watcher (`chokidar`) that automatically runs `terser` to build and minify all `*.min.js` files whenever you save a source `.js` file.
+
+Once running, access the application at `http://localhost:8000`. You can now edit your source `.py`, `.js`, and `input.css` files, and all changes will be reflected automatically.
+
+### 4. Code Formatting and Linting
+
+This project uses Prettier, ESLint, and Ruff to ensure a consistent code style. These are configured to run automatically before each commit using Husky and `lint-staged`.
+
+You can also run them manually:
+
+- **Format all files:** `bun run format`
+- **Check for linting errors:** `bun run lint`
+- **Attempt to automatically fix linting errors:** `bun run lint:fix`
+
+## Production and Release
+
+### Building for Production
+
+To create a production-ready build of all static assets (minified CSS and JavaScript), run the following command:
+
+```bash
+bun run build
+```
+
+### Creating a Distributable Release
+
+To bundle the entire application into a simple, self-contained `.zip` file for end-users who do not have Python or Node.js installed, run the release script:
+
+```bash
+bun run release
+```
+
+This fully automated process will:
+
+1.  Run the `build` command to generate production assets.
+2.  Use `PyInstaller` to bundle the FastAPI application and a Python interpreter into a single executable.
+3.  Clean up unnecessary source files (like `input.css` and non-minified `.js` files) from the final package.
+4.  Create a `vocaloid-rate-release.zip` file in dist directory, containing the executable and all necessary files for an end-user to run the application.

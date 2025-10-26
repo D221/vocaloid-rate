@@ -1,4 +1,20 @@
-app/__pycache__/
-data/
-node_modules/
+# Python
+__pycache__/
 venv/
+*.pyc
+*.pyo
+*.pyd
+
+# Database & Data
+data/
+
+# Node / Frontend
+node_modules/
+/app/static/css/app.css
+/app/static/js/*.min.js
+
+# Build artifacts
+dist/
+build/
+*.spec
+*.log

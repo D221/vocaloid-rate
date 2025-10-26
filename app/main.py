@@ -1,7 +1,10 @@
 import json
 import logging
 import os
+import sys
 import threading
+import webbrowser
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -31,7 +34,45 @@ from app.database import SessionLocal, engine
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
 
-app = FastAPI()
+
+def resource_path(relative: str) -> Path:
+    if getattr(sys, "frozen", False):
+        base_path = Path(sys._MEIPASS)  # type: ignore
+    else:
+        base_path = Path(__file__).resolve().parent
+    return base_path / relative
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # --- Code to run on startup ---
+    global initial_scrape_in_progress
+    db = SessionLocal()
+    track_count = db.query(models.Track).count()
+    db.close()
+
+    if track_count == 0:
+        logging.info("Database is empty. Starting initial scrape.")
+        initial_scrape_in_progress = True
+        if not os.path.exists(DATA_DIR):
+            os.makedirs(DATA_DIR)
+        with open(SCRAPE_STATUS_FILE, "w") as f:
+            f.write("in_progress")
+        scrape_thread = threading.Thread(target=scrape_and_populate_task)
+        scrape_thread.start()
+
+    def is_running_in_pyinstaller():
+        return getattr(sys, "frozen", False)
+
+    if is_running_in_pyinstaller():
+        threading.Timer(1.5, lambda: webbrowser.open("http://localhost:8000")).start()
+
+    print("--- Application startup complete. ---")
+    yield
+    print("--- Application shutting down. ---")
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -74,29 +115,6 @@ class SinglePlaylistImport(BaseModel):
     name: str
     description: Optional[str] = None
     tracks: list[str]  # List of track URLs
-
-
-@app.on_event("startup")
-def startup_event():
-    global initial_scrape_in_progress
-    # Check if the database has any tracks. A new DB will be empty.
-    db = SessionLocal()
-    track_count = db.query(models.Track).count()
-    db.close()
-
-    if track_count == 0:
-        logging.info("Database is empty. Starting initial scrape.")
-        initial_scrape_in_progress = True
-
-        if not os.path.exists(DATA_DIR):
-            os.makedirs(DATA_DIR)
-
-        with open(SCRAPE_STATUS_FILE, "w") as f:
-            f.write("in_progress")
-
-        # Run scrape in a background thread to not block the server
-        scrape_thread = threading.Thread(target=scrape_and_populate_task)
-        scrape_thread.start()
 
 
 # Dependency
@@ -960,3 +978,9 @@ def get_track_playlist_status(track_id: int, db: Session = Depends(get_db)):
     'not_member_of': playlists the track is not in.
     """
     return crud.get_track_playlist_membership(db, track_id=track_id)
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)
