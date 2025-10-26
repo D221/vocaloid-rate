@@ -352,8 +352,17 @@ def view_playlist_detail_page(
     if not db_playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
 
+    tracks_in_playlist = [pt.track for pt in db_playlist.playlist_tracks if pt.track]
+    tracks_for_json = [track.to_dict() for track in tracks_in_playlist]
+    tracks_json_string = json.dumps(tracks_for_json)
+
     return templates.TemplateResponse(
-        "playlist_view.html", {"request": request, "playlist": db_playlist}
+        "playlist_view.html",
+        {
+            "request": request,
+            "playlist": db_playlist,
+            "tracks_json": tracks_json_string,
+        },
     )
 
 
@@ -370,12 +379,16 @@ def edit_playlist_page(
         db, limit=10000, sort_by="title", rank_filter="all"
     )  # Fetch all, sorted by title
 
+    tracks_for_json = [track.to_dict() for track in all_tracks]
+    tracks_json_string = json.dumps(tracks_for_json)
+
     return templates.TemplateResponse(
         "playlist_edit.html",
         {
             "request": request,
             "playlist": db_playlist,
             "all_tracks": all_tracks,
+            "tracks_json": tracks_json_string,
         },
     )
 
