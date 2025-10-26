@@ -17,7 +17,7 @@
     "package": "pyinstaller vocaloid-rate.spec --noconfirm",
     "clean:static": "del-cli \"dist/vocaloid-rate/_internal/static/css/input.css\" \"dist/vocaloid-rate/_internal/static/js/*.js\" --ignore \"dist/vocaloid-rate/_internal/static/js/*.min.js\"",
     "release": "rimraf dist vocaloid-rate-release.zip && bun run build && bun run package && bun run clean:static && cd dist && bestzip vocaloid-rate-release.zip vocaloid-rate",
-    "start": "uvicorn app.main:app --host 0.0.0.0 --port 80"
+    "start": "uvicorn app.main:app --host 0.0.0.0 --port 8000"
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
