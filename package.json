@@ -4,6 +4,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "prepare": "husky",
     "// --- DEVELOPMENT ---": "",
     "watch:css": "bunx @tailwindcss/cli -i ./app/static/css/input.css -o ./app/static/css/app.css --minify --watch",

@@ -11,46 +11,31 @@ jobs:
   ci-checks:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Check out the repository code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Set up Python
+      # --- Python Checks ---
       - name: Set up Python
         uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      # Step 3: Install Ruff (a super-fast linter and formatter)
-      - name: Install and run Ruff linter
+        with: { python-version: "3.13" }
+      - name: Install and run Ruff
         run: |
           pip install ruff
           ruff check .
-
-      # Step 4: Check formatting with Ruff
-      - name: Check formatting with Ruff
-        run: |
           ruff format --check .
 
-      # Step 5: Set up Node.js
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      # Step 6: Install npm dependencies
-      - name: Install npm dependencies
-        run: npm ci
-
-      # Step 7: Check formatting with Prettier
+      # --- Frontend Checks ---
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v1
+      - name: Install Bun dependencies
+        run: bun install --frozen-lockfile
       - name: Check formatting with Prettier
-        run: npm run format
-
-      # Step 8: Run ESLint
+        run: bun run format:check
       - name: Run ESLint
-        run: npm run lint
+        run: bun run lint
+      - name: Build frontend assets
+        run: bun run build # Run the build to ensure it succeeds
 
-      # Step 9: A simple check to see if the Docker image can be built
       - name: Docker build check
         run: docker build . --file Dockerfile
 
