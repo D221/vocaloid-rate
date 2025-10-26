@@ -21,6 +21,7 @@
       {% if request.url.path.startswith('/playlist/edit/') %}
         <button
           data-edit-field="name"
+          aria-label="Edit playlist name"
           class="ml-2 text-gray-text opacity-0 transition-opacity group-hover:opacity-100"
         >
           {{ icon('pencil', size="h-4 w-4") }}
@@ -43,6 +44,7 @@
         {% if request.url.path.startswith('/playlist/edit/') %}
           <button
             data-edit-field="description"
+            aria-label="Edit playlist description"
             class="ml-2 text-gray-text opacity-0 transition-opacity group-hover:opacity-100"
           >
             {{ icon('pencil', size="h-4 w-4") }}

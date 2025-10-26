@@ -19,6 +19,7 @@ from fastapi import (
     Response,
     UploadFile,
 )
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -31,6 +32,9 @@ from app.database import SessionLocal, engine
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
 
 app = FastAPI()
+
+
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
 @app.middleware("http")
@@ -298,11 +302,15 @@ def read_rated_tracks(
 
     stats = crud.get_rating_statistics(db)
 
+    tracks_for_json = [track.to_dict() for track in tracks]
+    tracks_json_string = json.dumps(tracks_for_json)
+
     return templates.TemplateResponse(
         "rated.html",
         {
             "request": request,
             "tracks": tracks,
+            "tracks_json": tracks_json_string,
             "all_producers": all_producers,
             "all_voicebanks": all_voicebanks,
             "stats": stats,

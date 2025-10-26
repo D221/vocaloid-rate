@@ -6,7 +6,11 @@
     "prepare": "husky",
     "tailwind:watch": "npx @tailwindcss/cli -i ./app/static/css/input.css -o ./app/static/css/app.css --watch",
     "dev:api": "uvicorn app.main:app --reload",
-    "dev": "concurrently --prefix-colors 'cyan,magenta' --names 'tailwind,uvicorn' 'bun tailwind:watch' 'bun dev:api'"
+    "dev": "concurrently --prefix-colors 'cyan,magenta' --names 'tailwind,uvicorn' 'bun tailwind:watch' 'bun dev:api'",
+    "build:css": "npx @tailwindcss/cli -i ./app/static/css/input.css -o ./app/static/css/app.css --minify",
+    "build:js": "terser ./app/static/js/main.js -o ./app/static/js/main.min.js -c -m && terser ./app/static/js/options.js -o ./app/static/js/options.min.js -c -m && terser ./app/static/js/playlist_editor.js -o ./app/static/js/playlist_editor.min.js -c -m",
+    "build:all": "bun build:css && bun build:js",
+    "start": "uvicorn app.main:app --host 0.0.0.0 --port 8000"
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
@@ -19,7 +23,8 @@
     "prettier": "^3.6.2",
     "prettier-plugin-jinja-template": "^2.1.0",
     "prettier-plugin-tailwindcss": "^0.7.1",
-    "tailwindcss": "^4.1.14"
+    "tailwindcss": "^4.1.14",
+    "terser": "^5.44.0"
   },
   "prettier": {
     "plugins": [

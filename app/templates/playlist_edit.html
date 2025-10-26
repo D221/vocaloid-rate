@@ -38,6 +38,7 @@
             </div>
             <button
               data-play-button
+              title="Play track"
               data-track-id="{{ track.id }}"
               class="p-2 text-gray-text hover:text-sky-text"
             >
@@ -56,7 +57,7 @@
               />
               <div>
                 <div class="font-semibold">{{ track.title }}</div>
-                <div class="text-sm text-gray-text">{{ track.producer }}</div>
+                <div class="text-sm">{{ track.producer }}</div>
               </div>
             </a>
           </div>
@@ -85,6 +86,7 @@
             <div class="flex items-center gap-3 overflow-hidden">
               <button
                 data-play-button
+                title="Play track"
                 data-track-id="{{ track.id }}"
                 class="p-2 text-gray-text hover:text-sky-text"
               >
@@ -102,13 +104,14 @@
                 />
                 <div>
                   <div class="font-semibold">{{ track.title }}</div>
-                  <div class="text-sm text-gray-text">{{ track.producer }}</div>
+                  <div class="text-sm">{{ track.producer }}</div>
                 </div>
               </a>
             </div>
 
             <button
               data-remove-track
+              aria-label="Remove from playlist"
               class="p-2 text-red-text hover:text-red-500"
             >
               {{ icon('trash', size="h-6 w-6") }}
@@ -119,6 +122,6 @@
     </div>
   </div>
 
-  <script src="{{ url_for('static', path='js/main.js') }}"></script>
-  <script src="{{ url_for('static', path='js/playlist_editor.js') }}"></script>
+  <script src="{{ url_for('static', path='js/main.min.js') }}"></script>
+  <script src="{{ url_for('static', path='js/playlist_editor.min.js') }}"></script>
 {% endblock %}

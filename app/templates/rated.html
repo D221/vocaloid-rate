@@ -11,11 +11,11 @@
 
   <div class="grid-cols mb-4 grid grid-cols-1 gap-6 md:grid-cols-4">
     <div class="rounded border border-border bg-card-bg p-6 shadow-md">
-      <h3
+      <h2
         class="mt-0 border-b border-border pb-1 text-2xl font-semibold text-header"
       >
         Top Producers
-      </h3>
+      </h2>
       {% if stats.top_producers %}
         <ul>
           {% for producer in stats.top_producers %}
@@ -42,11 +42,11 @@
     </div>
 
     <div class="rounded border border-border bg-card-bg p-6 shadow-md">
-      <h3
+      <h2
         class="mt-0 border-b border-border pb-1 text-2xl font-semibold text-header"
       >
         Top Voicebanks
-      </h3>
+      </h2>
       {% if stats.top_voicebanks %}
         <ul class="top-list">
           {% for voicebank in stats.top_voicebanks %}
@@ -73,11 +73,11 @@
     </div>
 
     <div class="rounded border border-border bg-card-bg p-6 shadow-md">
-      <h3
+      <h2
         class="mt-0 border-b border-border pb-1 text-2xl font-semibold text-header"
       >
         Overall Stats (Across {{ stats.total_ratings }} ratings)
-      </h3>
+      </h2>
       <div class="mx-0 my-2 flex items-center justify-around text-center">
         <div>
           <div class="text-3xl font-semibold">{{ stats.average_rating }} ★</div>
@@ -92,11 +92,11 @@
 
     {% if stats.total_ratings > 0 %}
       <div class="rounded border border-border bg-card-bg p-6 shadow-md">
-        <h3
+        <h2
           class="mt-0 border-b border-border pb-1 text-2xl font-semibold text-header"
         >
           Rating Distribution
-        </h3>
+        </h2>
         <canvas
           id="ratingDistributionChart"
           data-ratings="{{ stats.rating_distribution | tojson | forceescape }}"
@@ -221,5 +221,5 @@
     </table>
   </div>
 
-  <script src="{{ url_for('static', path='js/main.js') }}"></script>
+  <script src="{{ url_for('static', path='js/main.min.js') }}"></script>
 {% endblock %}

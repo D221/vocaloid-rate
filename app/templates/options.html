@@ -38,6 +38,7 @@
       <input
         type="file"
         id="restore-file-input"
+        aria-label="Restore ratings from JSON file"
         accept=".json"
         class="rounded border border-sky-text shadow-md ease-in-out file:border-r file:border-sky-text file:p-2 file:font-bold file:text-sky-text hover:transition-colors hover:duration-200 hover:file:cursor-pointer hover:file:bg-sky-hover"
       />
@@ -56,9 +57,9 @@
       <h3 class="text-1xl mt-0 border-b border-border pb-1 font-semibold">
         Default Page Size
       </h3>
-      <p class="mb-2">
+      <label for="default-page-size-select" class="mb-2 block">
         Set the default number of tracks to display per page on the main list.
-      </p>
+      </label>
       <select
         id="default-page-size-select"
         class="rounded border border-border bg-card-bg p-2 text-foreground shadow-md"
@@ -71,5 +72,8 @@
     </div>
   </div>
 
-  <script src="{{ url_for('static', path='js/options.js') }}"></script>
+  <script
+    src="{{ url_for('static', path='js/options.min.js') }}"
+    defer
+  ></script>
 {% endblock %}

@@ -54,6 +54,7 @@
         </button>
         <button
           data-embed-button
+          title="Toggle video player"
           class="cursor-pointer rounded border border-cyan-text px-2 py-1 text-cyan-text ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
           data-youtube-url="{{ track.link }}"
         >
@@ -171,15 +172,17 @@
       class="block border-b border-border p-3 text-left last:border-b-0 md:table-cell md:border md:px-3 md:py-2 md:text-left"
     >
       {% for voicebank in track.voicebank.split(',') %}
-        <a
-          href="#"
-          class="filter-link font-semibold hover:text-sky-text hover:underline"
-          data-filter-type="voicebank_filter"
-          data-filter-value="{{ voicebank.strip() }}"
-          title="{{ voicebank.strip() }}"
-        >
-          {{ voicebank.strip() | truncate(35, True, '...') }} </a
-        >{% if not loop.last %},{% endif %}
+        {% if voicebank.strip() %}
+          <a
+            href="#"
+            class="filter-link font-semibold hover:text-sky-text hover:underline"
+            data-filter-type="voicebank_filter"
+            data-filter-value="{{ voicebank.strip() }}"
+            title="{{ voicebank.strip() }}"
+          >
+            {{ voicebank.strip() | truncate(35, True, '...') }} </a
+          >{% if not loop.last and voicebank.strip() %},{% endif %}
+        {% endif %}
       {% endfor %}
     </td>
 
@@ -253,6 +256,7 @@
           {% if track.ratings %}
             <button
               data-clear-rating
+              title="Clear my rating for this track"
               type="button"
               data-delete-endpoint="/rate/{{ track.id }}/delete"
               class="cursor-pointer rounded border border-red-text p-1 font-bold text-red-text shadow-md ease-in-out hover:bg-red-hover hover:transition-colors hover:duration-200"

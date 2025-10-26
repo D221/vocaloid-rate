@@ -1,5 +1,3 @@
-/* global Sortable */
-
 document.addEventListener("DOMContentLoaded", () => {
   const getIconSVG = (iconName, size = "h-full w-full") => {
     const icons = {
