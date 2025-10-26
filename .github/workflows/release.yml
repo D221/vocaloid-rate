@@ -1,0 +1,61 @@
+name: Create Windows Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build-and-release:
+    name: Build & Release for Windows
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+          bun install --frozen-lockfile
+
+      # Step 1: `bun run build` - Build production assets
+      - name: Build frontend (CSS & JS)
+        run: bun run build
+
+      # Step 2: `bun run package` - Package with PyInstaller
+      - name: Package with PyInstaller
+        run: bun run package
+
+      # Step 3: `bun run clean:static` - Clean unnecessary files
+      # We adapt your script to work in the GitHub Actions shell
+      - name: Clean static files from bundle
+        run: |
+          Remove-Item -Path "dist/vocaloid-rate/app/static/css/input.css" -Force
+          Get-ChildItem -Path "dist/vocaloid-rate/app/static/js" -Filter "*.js" -Exclude "*.min.js" | Remove-Item -Force
+        shell: pwsh # Use PowerShell for robust file operations
+
+      # Step 4: Create the final ZIP package
+      - name: Create Release ZIP
+        run: |
+          7z a -tzip vocaloid-rate-windows.zip ./dist/vocaloid-rate/*
+        shell: pwsh
+
+      # Step 5: Generate release notes and upload to GitHub
+      - name: Create GitHub Release
+        uses: release-it/action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          assets: vocaloid-rate-windows.zip
