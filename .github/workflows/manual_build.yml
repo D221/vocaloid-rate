@@ -1,19 +1,28 @@
 name: Manual Build for Latest Release
 
-# Trigger manually from the Actions tab
 on:
   workflow_dispatch:
 
 jobs:
   build-and-upload:
-    name: Build & Upload for Windows
-    runs-on: windows-latest
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        include:
+          - os: windows-latest
+            artifact: vocaloid-rate-windows.zip
+          - os: ubuntu-latest
+            artifact: vocaloid-rate-linux.zip
+          - os: macos-latest
+            artifact: vocaloid-rate-macos.zip
+
+    runs-on: ${{ matrix.os }}
+    name: Build & Upload for ${{ matrix.os }}
 
     permissions:
-      contents: write # Needed for gh to read releases and upload assets
+      contents: write
 
     steps:
-      # 1. Get latest release
       - name: Get Latest Release Tag
         id: get_latest
         uses: pozetroninc/github-action-get-latest-release@v0.8.0
@@ -21,34 +30,41 @@ jobs:
           repository: ${{ github.repository }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # 2. Checkout latest tag
       - name: Checkout code for the latest tag
         uses: actions/checkout@v4
         with:
           ref: ${{ steps.get_latest.outputs.release }}
 
-      # 3. All the build steps are exactly the same
       - name: Set up Python
         uses: actions/setup-python@v5
-        with: { python-version: "3.13" }
+        with:
+          python-version: "3.13"
+
       - name: Set up Bun
         uses: oven-sh/setup-bun@v1
+
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
           pip install pyinstaller
           bun install --frozen-lockfile
+
       - name: Build and Package
         run: |
           bun run build
           bun run package
-      - name: Prepare Release ZIP
-        run: 7z a -tzip vocaloid-rate-windows.zip ./dist/vocaloid-rate/*
+      - name: Prepare Release ZIP (Windows)
+        if: runner.os == 'Windows'
+        run: 7z a -tzip ${{ matrix.artifact }} ./dist/vocaloid-rate/*
         shell: pwsh
 
-      # 4. Upload the asset to that same latest release
+      - name: Prepare Release ZIP (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: zip -r ${{ matrix.artifact }} ./dist/vocaloid-rate
+        shell: bash
+
       - name: Upload Asset to Latest Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.get_latest.outputs.release }}
-          files: vocaloid-rate-windows.zip
+          files: ${{ matrix.artifact }}
