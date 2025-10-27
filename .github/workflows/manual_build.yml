@@ -1,0 +1,56 @@
+name: Manual Build for Latest Release
+
+# Trigger manually from the Actions tab
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-upload:
+    name: Build & Upload for Windows
+    runs-on: windows-latest
+
+    permissions:
+      contents: write # Needed for gh to read releases and upload assets
+
+    steps:
+      # 1. Get the tag name of the latest release
+      - name: Get Latest Release Tag
+        id: get_latest_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $latest_tag = gh release list --limit 1 --json tagName --jq '.[0].tagName'
+          echo "latest_tag=$latest_tag" >> $env:GITHUB_ENV
+        shell: pwsh
+
+      # 2. Checkout the code corresponding to that latest tag
+      - name: Checkout code for the latest tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.latest_tag }} # Use the tag we just found
+
+      # 3. All the build steps are exactly the same
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with: { python-version: "3.13" }
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v1
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+          bun install --frozen-lockfile
+      - name: Build and Package
+        run: |
+          bun run build
+          bun run package
+      - name: Prepare Release ZIP
+        run: 7z a -tzip vocaloid-rate-windows.zip ./dist/vocaloid-rate/*
+        shell: pwsh
+
+      # 4. Upload the asset to that same latest release
+      - name: Upload Asset to Latest Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.latest_tag }} # Use the tag name again
+          files: vocaloid-rate-windows.zip
