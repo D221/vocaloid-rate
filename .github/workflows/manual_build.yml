@@ -13,21 +13,19 @@ jobs:
       contents: write # Needed for gh to read releases and upload assets
 
     steps:
-      # 1. Get the tag name of the latest release
+      # 1. Get latest release
       - name: Get Latest Release Tag
-        id: get_latest_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          $latest_tag = gh release list --limit 1 --json tagName --jq '.[0].tagName'
-          echo "latest_tag=$latest_tag" >> $env:GITHUB_ENV
-        shell: pwsh
+        id: get_latest
+        uses: pozetroninc/github-action-get-latest-release@v0.8.0
+        with:
+          repository: ${{ github.repository }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      # 2. Checkout the code corresponding to that latest tag
+      # 2. Checkout latest tag
       - name: Checkout code for the latest tag
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.latest_tag }} # Use the tag we just found
+          ref: ${{ steps.get_latest.outputs.release }}
 
       # 3. All the build steps are exactly the same
       - name: Set up Python
@@ -52,5 +50,5 @@ jobs:
       - name: Upload Asset to Latest Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.latest_tag }} # Use the tag name again
+          tag_name: ${{ steps.get_latest.outputs.release }}
           files: vocaloid-rate-windows.zip
