@@ -48,6 +48,18 @@ The application is built with a Python backend using FastAPI and a dynamic vanil
 
 ![Options Mode](assets/options.png)
 
+### Playlists
+
+![Playlist List View](assets/playlists.png)
+
+### Playlist Editor
+
+![Playlist Edit View](assets/playlist-edit.png)
+
+### Mobile UI
+
+![Mobile View](assets/mobile.png)
+
 </details>
 
 ## Tech Stack
