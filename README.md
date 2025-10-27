@@ -2,32 +2,35 @@
 
 ![Vocaloid Rater Screenshot](assets/main.png)
 
-Vocaloid Rate is a personal, self-hosted web application for tracking, rating, and exploring Vocaloid music rankings. It periodically scrapes data from [Vocaloard](https://vocaloard.injpok.tokyo/en/), providing a clean and feature-rich interface to manage a personal collection of rated tracks.
+Vocaloid Rate is a personal, self-hosted web application for tracking, rating, and exploring Vocaloid music rankings. It scrapes data from [Vocaloard](https://vocaloard.injpok.tokyo/en/), providing a clean and feature-rich interface to manage your personal collection of rated tracks and playlists.
 
-The application is built with a Python backend using FastAPI and a dynamic vanilla JavaScript frontend.
+The application is built with a Python/FastAPI backend and a optimized vanilla JavaScript frontend using Tailwind CSS.
 
 ## Features
 
-- **Dynamic Track Table:** View the latest Top 300 Vocaloid tracks, with support for sorting by rank, title, producer, and more.
-- **Personal Ratings:** Rate songs on a 1-10 star scale. Your ratings are saved locally in a SQLite database.
+- **Dynamic Track Table:** View the latest Top 300 Vocaloid tracks with powerful sorting and filtering.
+- **Personal Ratings & Notes:** Rate songs on a 1-10 star scale and add personal notes, all saved locally.
 - **Interactive Filtering:**
   - Filter by text search for Title (EN/JP), Producer, and Voicebank.
-  - Filter by rating status (Rated, Unrated, All).
+  - Filter by your rating status (Rated, Unrated, All).
   - Filter by chart status (On Chart vs. Expired/Archived).
+- **Custom Playlists:**
+  - Create and manage multiple personal playlists.
+  - Add or remove tracks from any playlist with a single click.
+  - Use a drag-and-drop editor to set a custom order for your playlists.
+  - Import and Export single playlists to share with others.
 - **Dedicated Rated Tracks Page:** A dashboard view of all your rated songs, featuring detailed statistics.
 - **Advanced Statistics:**
   - View your average and median ratings.
-  - See your Top 10 favorite producers and voicebanks, calculated with a weighted Bayesian average.
+  - See your Top 10 favorite producers and voicebanks.
   - Interactive rating distribution chart to filter tracks by a specific score.
 - **Rich Media Integration:**
-  - Embed YouTube videos directly in the track list.
-  - Fetch and display song lyrics from the VocaDB API, with a language selector.
-  - Button to open the official song page on VocaDB.
-- **Smart Scraping:** The data update process is optimized to first check for changes in the rankings before running a full scrape, saving time and resources.
-- **Modern UI/UX:**
-  - Light and Dark mode, with automatic detection of system preference.
-  - (Not Ready) Fully responsive design with a horizontally scrolling table for mobile devices.
-  - Sleek skeleton loaders and debounced inputs for a smooth user experience.
+  - Integrated music player with both audio-only and embedded video modes.
+  - Player controls for shuffle, repeat, and volume.
+  - Fetch and display song lyrics from the VocaDB API.
+- **UI/UX:**
+  - Light and Dark mode with automatic system preference detection.
+  - Fully responsive design that adapts from desktop to a mobile-friendly card layout.
 
 <details>
 <summary><strong>Click to see more screenshots</strong></summary>
@@ -62,51 +65,38 @@ The application is built with a Python backend using FastAPI and a dynamic vanil
 
 </details>
 
-## Tech Stack
+## Installation (for End-Users)
 
-- **Backend:** FastAPI, SQLAlchemy, Uvicorn
-- **Frontend:** Vanilla JavaScript, HTML5, CSS3
-- **Database:** SQLite
-- **Data Scraping:** `requests`, `BeautifulSoup4`
-- **Charting:** Chart.js
+This application is designed to be easy to run on your personal computer. No technical knowledge of Python or Docker is required.
 
-## Installation & Setup
+### 1. Download the Latest Release
 
-## Method 1: Using Scripts
+Go to the [**Releases Page**](https://github.com/D221/vocaloid-rate/releases/latest) on GitHub.
 
-This method is for users who have Python installed and prefer not to use Docker. The scripts will automatically create a virtual environment and install the required packages.
+- For **Windows**, download the `vocaloid-rate-windows.zip` file.
+- For **macOS**, download the `vocaloid-rate-macos.zip` file.
+- For **Linux**, download the `vocaloid-rate-linux.zip` file.
 
-- **Ensure you have Python 3.8+ installed on your system.**
+### 2. Extract the ZIP File
 
-### 1. Download and extract
+Unzip the downloaded file to a permanent location on your computer (e.g., your Desktop or a folder in your user directory).
 
-- https://github.com/D221/vocaloid-rate/archive/refs/heads/main.zip
+### 3. Run the Application
 
-or
+- **On Windows:** Double-click the **`vocaloid-rate.exe`** file.
+- **On macOS / Linux:** Double-click the **`vocaloid-rate`** binary file. (On first run, you may need to right-click and choose "Open" to bypass security warnings).
 
-```bash
-git clone https://github.com/D221/vocaloid-rate
-cd vocaloid-rate
-```
+A terminal window will open, and after a moment, your default web browser will automatically open to `http://localhost:8000`. The application is now running.
 
-### 2. Run the Application:
+### 4. Stop the Application
 
-- On Windows: Simply double-click the run.bat file. A command prompt will open and start the server.
-- On macOS / Linux: Open a terminal in the project directory and run the script:
+To stop the server, simply close the terminal window that opened in the previous step.
 
-```bash
-bash run.sh
-```
+## Advanced Installation (Docker)
 
-(You may need to make the script executable first by running chmod +x run.sh)
+For users familiar with Docker, you can run the application using the pre-built image from the GitHub Container Registry.
 
-### 3. Stop the Application:
-
-- To stop the server, go back to the command prompt or terminal window and press Ctrl+C.
-
-## Method 2: Docker
-
-### 1. Create a file named `docker-compose.yml` and paste the following content.
+### 1. Create `docker-compose.yml`
 
 ```yaml
 services:
@@ -119,10 +109,7 @@ services:
     restart: unless-stopped
 ```
 
-### 2. Run the Application:
-
-- Open a terminal or command prompt in the same folder as your `docker-compose.yml` file.
-- Run the following command:
+### 2. Run the Container
 
 ```bash
 docker compose up -d
@@ -130,7 +117,7 @@ docker compose up -d
 
 ### 3. Access the Application:
 
-- Open your web browser and navigate to `http://localhost:8000`.
+- The application will be available at `http://localhost:8000`.
   > **Important:** You must use `localhost` and not the IP address `127.0.0.1`. Using the IP address will cause the YouTube video embeds to fail due to API security policies.
 
 ### 4. How to Stop:
@@ -138,16 +125,6 @@ docker compose up -d
 ```bash
 docker compose down
 ```
-
-## How to Use
-
-**Initial Scrape**: Upon first launch, the database will be empty. Click the "Update Tracks" button to perform the initial scrape of the Top 300 tracks.
-
-**Rate Songs**: Click the stars in the "My Rating" column to rate a track.
-
-**Explore**: Use the filter and sort options to explore the music. Click on producer or voicebank names to quickly filter the list.
-
-**View Rated Tracks**: Navigate to the "View Rated Tracks" page to see your personal collection and statistics.
 
 ## Development Setup
 
