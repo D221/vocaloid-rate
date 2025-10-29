@@ -379,13 +379,55 @@ def view_playlists_page(request: Request, db: Session = Depends(get_db)):
 
 @app.get("/playlist/{playlist_id}")
 def view_playlist_detail_page(
-    playlist_id: int, request: Request, db: Session = Depends(get_db)
+    playlist_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    page: int = 1,
+    limit: str = "all",
+    title_filter: Optional[str] = None,
+    producer_filter: Optional[str] = None,
+    voicebank_filter: Optional[str] = None,
+    sort_by: Optional[str] = None,
+    sort_dir: str = "asc",
 ):
     db_playlist = crud.get_playlist(db, playlist_id)
     if not db_playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
 
-    tracks_in_playlist = [pt.track for pt in db_playlist.playlist_tracks if pt.track]
+    filters = {
+        "title_filter": title_filter,
+        "producer_filter": producer_filter,
+        "voicebank_filter": voicebank_filter,
+    }
+
+    # Use our new functions to get the initial filtered/paginated track list
+    total_tracks = crud.get_playlist_tracks_count(
+        db, playlist_id=playlist_id, **filters
+    )
+    limit_val = total_tracks if limit == "all" else int(limit)
+    total_pages = (total_tracks + limit_val - 1) // limit_val if limit_val > 0 else 1
+    skip = (page - 1) * limit_val
+
+    tracks_in_playlist = crud.get_playlist_tracks_filtered(
+        db,
+        playlist_id=playlist_id,
+        skip=skip,
+        limit=limit_val,
+        sort_by=sort_by,
+        sort_dir=sort_dir,
+        **filters,
+    )
+
+    # Get all unique producers/voicebanks *within this playlist* for the datalists
+    all_playlist_tracks = [pt.track for pt in db_playlist.playlist_tracks if pt.track]
+    producers_flat = []
+    voicebanks_flat = []
+    for t in all_playlist_tracks:
+        producers_flat.extend([p.strip() for p in t.producer.split(",")])
+        voicebanks_flat.extend([v.strip() for v in t.voicebank.split(",")])
+    all_producers = sorted(list(set(producers_flat)))
+    all_voicebanks = sorted(list(set(voicebanks_flat)))
+
     tracks_for_json = [track.to_dict() for track in tracks_in_playlist]
     tracks_json_string = json.dumps(tracks_for_json)
 
@@ -394,7 +436,17 @@ def view_playlist_detail_page(
         {
             "request": request,
             "playlist": db_playlist,
+            "tracks": tracks_in_playlist,  # This now contains the paginated list
             "tracks_json": tracks_json_string,
+            "all_producers": all_producers,
+            "all_voicebanks": all_voicebanks,
+            "filters": filters,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total_pages": total_pages,
+                "total_tracks": total_tracks,
+            },
         },
     )
 

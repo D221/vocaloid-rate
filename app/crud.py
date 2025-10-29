@@ -611,3 +611,76 @@ def get_playlist_snapshot(
             snapshot.append({"id": str(track_id), "page": page_num})
 
     return snapshot
+
+
+def get_playlist_tracks_filtered(
+    db: Session,
+    playlist_id: int,
+    skip: int = 0,
+    limit: int = 1000,
+    title_filter: Optional[str] = None,
+    producer_filter: Optional[str] = None,
+    voicebank_filter: Optional[str] = None,
+    sort_by: Optional[str] = None,
+    sort_dir: str = "asc",
+):
+    query = (
+        db.query(models.Track)
+        .join(models.PlaylistTrack)
+        .filter(models.PlaylistTrack.playlist_id == playlist_id)
+    )
+
+    if title_filter:
+        search_term = f"%{title_filter}%"
+        query = query.filter(
+            or_(
+                models.Track.title.ilike(search_term),
+                models.Track.title_jp.ilike(search_term),
+            )
+        )
+    if producer_filter:
+        query = query.filter(models.Track.producer.ilike(f"%{producer_filter}%"))
+    if voicebank_filter:
+        query = query.filter(models.Track.voicebank.ilike(f"%{voicebank_filter}%"))
+
+    if sort_by:
+        sort_column = getattr(models.Track, sort_by, None)
+        if sort_column:
+            order_expression = (
+                sort_column.desc() if sort_dir == "desc" else sort_column.asc()
+            )
+            query = query.order_by(order_expression)
+    else:
+        # Default sort for playlists is their manually set position
+        query = query.order_by(models.PlaylistTrack.position.asc())
+
+    return query.offset(skip).limit(limit).all()
+
+
+def get_playlist_tracks_count(
+    db: Session,
+    playlist_id: int,
+    title_filter: Optional[str] = None,
+    producer_filter: Optional[str] = None,
+    voicebank_filter: Optional[str] = None,
+):
+    query = (
+        db.query(func.count(distinct(models.Track.id)))
+        .join(models.PlaylistTrack)
+        .filter(models.PlaylistTrack.playlist_id == playlist_id)
+    )
+
+    if title_filter:
+        search_term = f"%{title_filter}%"
+        query = query.filter(
+            or_(
+                models.Track.title.ilike(search_term),
+                models.Track.title_jp.ilike(search_term),
+            )
+        )
+    if producer_filter:
+        query = query.filter(models.Track.producer.ilike(f"%{producer_filter}%"))
+    if voicebank_filter:
+        query = query.filter(models.Track.voicebank.ilike(f"%{voicebank_filter}%"))
+
+    return query.scalar()

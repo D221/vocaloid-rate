@@ -7,55 +7,55 @@
   {% set subtitle = playlist.description or "No description." %}
   {% include "partials/header.html" %}
 
+  {# Create a dictionary for the filter form partial #}
+  {%
+    set context = {
+        "filters": filters,
+        "all_producers": all_producers,
+        "all_voicebanks": all_voicebanks,
+        "pagination": pagination,
+        "show_status_filter": false,
+        "show_rating_filter": false,
+        "show_pagination_limit_filter": true,
+        "show_scrape_button": false
+    }
+  %}
+  {% include "partials/filter_form.html" %}
+
   <div
     class="overflow-x-visible rounded border border-none border-border bg-card-bg shadow-md md:overflow-x-auto"
   >
     <table class="w-full border-collapse">
-      <thead
-        id="tracks-table-head"
-        class="hidden bg-table-header md:table-header-group"
+      {% include "partials/tracks_table_head.html" %}
+      <tbody
+        id="tracks-table-body"
+        data-update-url="/api/playlist/{{ playlist.id }}/get_tracks"
       >
-        <!-- Header without sorting links -->
-        <tr>
-          <th
-            class="w-1 min-w-52 border border-border px-3 py-2 text-left whitespace-nowrap"
-          >
-            Image
-          </th>
-          <th
-            class="w-1 min-w-0 border border-border p-0 px-3 py-2 text-left whitespace-nowrap"
-          >
-            #
-          </th>
-          <th
-            class="w-1/3 max-w-64 overflow-hidden border border-border px-3 py-2 text-left text-ellipsis whitespace-nowrap"
-          >
-            Title
-          </th>
-          <th
-            class="max-w-64 overflow-hidden border border-border px-3 py-2 text-left text-ellipsis"
-          >
-            Producer
-          </th>
-          <th
-            class="max-w-64 overflow-hidden border border-border px-3 py-2 text-left text-ellipsis"
-          >
-            Voicebank
-          </th>
-          <th class="w-1 min-w-0 border border-border px-3 py-2 text-left">
-            Published
-          </th>
-          <th class="w-1 min-w-0 border border-border px-3 py-2 text-left">
-            My Rating
-          </th>
-        </tr>
-      </thead>
-
-      <tbody id="tracks-table-body">
-        {% set tracks = playlist.playlist_tracks | map(attribute='track') | list %}
+        {# The initial, paginated track list is rendered here #}
         {% include "partials/tracks_table_body.html" %}
       </tbody>
     </table>
+  </div>
+
+  <div
+    class="mt-8 flex-wrap items-center justify-center gap-3"
+    id="pagination-container"
+  >
+    <button
+      class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-sky-hover disabled:cursor-not-allowed disabled:opacity-50"
+      id="prev-page-btn"
+      disabled
+    >
+      Previous
+    </button>
+    <div class="flex items-center gap-2" id="page-links"></div>
+    <button
+      class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-sky-hover disabled:cursor-not-allowed disabled:opacity-50"
+      id="next-page-btn"
+      disabled
+    >
+      Next
+    </button>
   </div>
 
   <script src="{{ url_for('static', path='js/main.min.js') }}"></script>
