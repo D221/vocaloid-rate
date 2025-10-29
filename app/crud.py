@@ -518,3 +518,96 @@ def get_track_playlist_membership(db: Session, track_id: int) -> dict:
             not_member_of.append(playlist_info)
 
     return {"member_of": member_of, "not_member_of": not_member_of}
+
+
+def get_playlist_snapshot(
+    db: Session,
+    limit: str = "all",
+    rated_filter: Optional[str] = None,
+    title_filter: Optional[str] = None,
+    producer_filter: Optional[str] = None,
+    voicebank_filter: Optional[str] = None,
+    sort_by: Optional[str] = None,
+    sort_dir: str = "asc",
+    rank_filter: str = "ranked",
+    exact_rating_filter: Optional[int] = None,
+) -> list[dict]:
+    """
+    Gets a sorted list of all track IDs matching the filters,
+    annotated with the page number they would appear on.
+    """
+    # --- 1. Build the exact same query as get_tracks, but only select the ID ---
+    query = db.query(models.Track.id)
+
+    if rank_filter == "ranked":
+        query = query.filter(models.Track.rank.isnot(None))
+    elif rank_filter == "unranked":
+        query = query.filter(models.Track.rank.is_(None))
+
+    if title_filter:
+        search_term = f"%{title_filter}%"
+        query = query.filter(
+            or_(
+                models.Track.title.ilike(search_term),
+                models.Track.title_jp.ilike(search_term),
+            )
+        )
+
+    rating_join_applied = False
+    if exact_rating_filter is not None:
+        query = query.join(models.Rating).filter(
+            models.Rating.rating == exact_rating_filter
+        )
+        rating_join_applied = True
+    elif rated_filter == "rated":
+        query = query.join(models.Rating)
+        rating_join_applied = True
+    elif rated_filter == "unrated":
+        query = query.outerjoin(models.Rating).filter(models.Rating.id.is_(None))
+        rating_join_applied = True
+
+    if producer_filter:
+        query = query.filter(models.Track.producer.ilike(f"%{producer_filter}%"))
+    if voicebank_filter:
+        query = query.filter(models.Track.voicebank.ilike(f"%{voicebank_filter}%"))
+
+    if sort_by:
+        sort_column = getattr(models.Track, sort_by, None)
+        if sort_column:
+            order_expression = (
+                sort_column.desc() if sort_dir == "desc" else sort_column.asc()
+            )
+            query = query.order_by(order_expression)
+        elif sort_by == "rating":
+            if not rating_join_applied:
+                query = query.outerjoin(models.Rating)
+            rating_column = models.Rating.rating
+            if sort_dir == "desc":
+                query = query.order_by(nullslast(rating_column.desc()))
+            else:
+                query = query.order_by(nullslast(rating_column.asc()))
+    else:
+        if rank_filter == "unranked":
+            query = query.order_by(models.Track.published_date.desc())
+        else:
+            query = query.order_by(models.Track.rank.asc())
+
+    if rating_join_applied:
+        query = query.distinct()
+
+    # --- 2. Execute the query to get ALL matching track IDs in order ---
+    all_track_ids_tuples = query.all()
+    all_track_ids = [id_tuple[0] for id_tuple in all_track_ids_tuples]
+
+    # --- 3. Calculate page number for each track ---
+    limit_val = len(all_track_ids)  # Default to all tracks on one page
+    if limit.isdigit() and int(limit) > 0:
+        limit_val = int(limit)
+
+    snapshot = []
+    if limit_val > 0:
+        for i, track_id in enumerate(all_track_ids):
+            page_num = (i // limit_val) + 1
+            snapshot.append({"id": str(track_id), "page": page_num})
+
+    return snapshot

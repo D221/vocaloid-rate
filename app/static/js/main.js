@@ -13,8 +13,10 @@ let currentLimit = localStorage.getItem("defaultPageSize") || "all";
 const playerState = {
   isPlaying: false,
   currentTrackId: null,
-  playlist: [],
-  shuffledPlaylist: [],
+  playlist: [], // This will now hold ONLY the tracks visible on the current page
+  shuffledPlaylist: [], // This can be removed or kept for page-only shuffle if desired
+  masterPlaylist: [], // This will hold ALL track IDs for the current view
+  shuffledMasterPlaylist: [], // For shuffle mode across all pages
   volume: localStorage.getItem("playerVolume") || 100,
   isMuted: localStorage.getItem("playerMuted") === "true",
   isEmbedded: false,
@@ -156,14 +158,17 @@ const loadPlaylistFromTemplate = () => {
 };
 
 function generateShuffledPlaylist() {
-  // Create a shuffled copy of the main playlist
-  playerState.shuffledPlaylist = [...playerState.playlist];
+  // Create a shuffled copy of the MASTER playlist
+  playerState.shuffledMasterPlaylist = [...playerState.masterPlaylist];
   // Fisher-Yates shuffle algorithm
-  for (let i = playerState.shuffledPlaylist.length - 1; i > 0; i--) {
+  for (let i = playerState.shuffledMasterPlaylist.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [playerState.shuffledPlaylist[i], playerState.shuffledPlaylist[j]] = [
-      playerState.shuffledPlaylist[j],
-      playerState.shuffledPlaylist[i],
+    [
+      playerState.shuffledMasterPlaylist[i],
+      playerState.shuffledMasterPlaylist[j],
+    ] = [
+      playerState.shuffledMasterPlaylist[j],
+      playerState.shuffledMasterPlaylist[i],
     ];
   }
 }
@@ -523,7 +528,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function loadAndPlayTrack(trackId) {
     const trackIndex = playerState.playlist.findIndex((t) => t.id === trackId);
-    if (trackIndex === -1) return;
+    if (trackIndex === -1) {
+      // This can happen if the track is on another page, but the page hasn't loaded yet.
+      // The playNext/Prev logic already handles this, but this is a safety net.
+      console.warn(
+        `Track ${trackId} not found in current page's playlist. A page transition might be in progress.`,
+      );
+      return;
+    }
 
     // Always ensure we are in audio mode when this is called directly
     playerState.isEmbedded = false;
@@ -545,6 +557,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Show the player UI immediately
     musicPlayerEl.classList.replace("hidden", "grid");
     updatePlayerUI();
+
+    // If shuffle mode is active, always scroll to the newly playing track.
+    if (playerState.isShuffle) {
+      scrollToPlayingTrack();
+    }
 
     // If player exists, just load the video.
     if (ytPlayer) {
@@ -575,185 +592,80 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function playNextTrack() {
-    const activePlaylist = playerState.isShuffle
-      ? playerState.shuffledPlaylist
-      : playerState.playlist;
+  async function playNextTrack() {
+    const activeMasterPlaylist = playerState.isShuffle
+      ? playerState.shuffledMasterPlaylist
+      : playerState.masterPlaylist;
 
-    const wasInEmbedMode = playerState.isEmbedded;
-    const previousTrackId = playerState.currentTrackId;
+    if (activeMasterPlaylist.length === 0) return;
 
-    const currentIndex = activePlaylist.findIndex(
+    const currentIndex = activeMasterPlaylist.findIndex(
       (t) => t.id === playerState.currentTrackId,
     );
+
     if (currentIndex === -1) return;
 
-    const nextIndex = (currentIndex + 1) % activePlaylist.length;
-    const nextTrack = activePlaylist[nextIndex];
-
-    // Close previous embed if in embed mode
-    if (wasInEmbedMode) {
-      cleanupPreviousEmbed(previousTrackId);
+    // Handle reaching the end of the playlist
+    if (
+      currentIndex === activeMasterPlaylist.length - 1 &&
+      !playerState.isRepeat
+    ) {
+      return; // Stop playback or loop back to start if you prefer
     }
 
-    // Update current track
-    playerState.currentTrackId = nextTrack.id;
-    playerState.isEmbedded = false;
+    const nextIndex = (currentIndex + 1) % activeMasterPlaylist.length;
+    const nextTrack = activeMasterPlaylist[nextIndex];
 
-    // Immediately reset the progress bar and timers to zero
-    progressBar.value = 0;
-    currentTimeEl.textContent = "0:00";
-    durationEl.textContent = "0:00";
-
-    // Update UI
-    document.getElementById("player-thumbnail").src = nextTrack.imageUrl;
-    document.getElementById("player-title").textContent = nextTrack.title;
-    document.getElementById("player-producer").textContent = nextTrack.producer;
-    updatePlayerUI();
-
-    // If was in embed mode, open embed for new track
-    if (wasInEmbedMode) {
-      setTimeout(() => {
-        const nextRow = document.querySelector(
-          `tr[data-track-id="${nextTrack.id}"]`,
-        );
-        if (nextRow) {
-          const nextEmbedBtn = nextRow.querySelector(
-            "button[data-embed-button]",
-          );
-          if (nextEmbedBtn && !nextEmbedBtn.classList.contains("is-open")) {
-            nextEmbedBtn.click();
-          }
-        }
-      }, 300);
-    } else {
-      // Audio mode - load the track in hidden player
-      const videoId = getYouTubeVideoId(nextTrack.link);
-      if (ytPlayer && videoId) {
-        ytPlayer.loadVideoById(videoId);
-      } else if (videoId) {
-        // Create player if it doesn't exist
-        ytPlayer = new YT.Player("youtube-player-container", {
-          height: "180",
-          width: "320",
-          videoId: videoId,
-          playerVars: {
-            playsinline: 1,
-            autoplay: 1,
-          },
-          events: {
-            onReady: (event) => {
-              event.target.setVolume(playerState.volume);
-              if (playerState.isMuted) {
-                event.target.mute();
-              } else {
-                event.target.unMute();
-              }
-            },
-            onStateChange: onPlayerStateChange,
-            onError: onPlayerError,
-          },
-        });
-      }
+    if (String(nextTrack.page) !== String(currentPage)) {
+      cleanupPreviousEmbed(playerState.currentTrackId);
+      currentPage = nextTrack.page;
+      showSkeleton();
+      await updateTracks(); // Wait for the new page and its data to load
+      scrollToPlayingTrack();
     }
+
+    // Now that the correct page is loaded, find the track data and play it
+    loadAndPlayTrack(nextTrack.id);
   }
 
-  function playPrevTrack() {
+  async function playPrevTrack() {
     const activePlayer = getActivePlayer();
-
-    // If the track has played for more than 5 seconds, restart it.
-    // Otherwise, or if we can't get the time, go to the previous track.
-    if (activePlayer && typeof activePlayer.getCurrentTime === "function") {
-      const currentTime = activePlayer.getCurrentTime();
-      if (currentTime > 5) {
-        activePlayer.seekTo(0, true);
-        activePlayer.playVideo(); // Ensure playback starts
-        return; // Stop execution here
-      }
+    if (
+      activePlayer &&
+      typeof activePlayer.getCurrentTime === "function" &&
+      activePlayer.getCurrentTime() > 5
+    ) {
+      activePlayer.seekTo(0, true);
+      activePlayer.playVideo();
+      return;
     }
 
-    // --- The original logic for going to the previous track ---
-    const activePlaylist = playerState.isShuffle
-      ? playerState.shuffledPlaylist
-      : playerState.playlist;
+    const activeMasterPlaylist = playerState.isShuffle
+      ? playerState.shuffledMasterPlaylist
+      : playerState.masterPlaylist;
 
-    const wasInEmbedMode = playerState.isEmbedded;
-    const previousTrackId = playerState.currentTrackId;
+    if (activeMasterPlaylist.length === 0) return;
 
-    const currentIndex = activePlaylist.findIndex(
+    const currentIndex = activeMasterPlaylist.findIndex(
       (t) => t.id === playerState.currentTrackId,
     );
+
     if (currentIndex === -1) return;
 
     const prevIndex =
-      (currentIndex - 1 + activePlaylist.length) % activePlaylist.length;
-    const prevTrack = activePlaylist[prevIndex];
+      (currentIndex - 1 + activeMasterPlaylist.length) %
+      activeMasterPlaylist.length;
+    const prevTrack = activeMasterPlaylist[prevIndex];
 
-    // Close previous embed if in embed mode
-    if (wasInEmbedMode) {
-      cleanupPreviousEmbed(previousTrackId);
+    if (String(prevTrack.page) !== String(currentPage)) {
+      cleanupPreviousEmbed(playerState.currentTrackId);
+      currentPage = prevTrack.page;
+      showSkeleton();
+      await updateTracks();
+      scrollToPlayingTrack();
     }
 
-    // Update current track
-    playerState.currentTrackId = prevTrack.id;
-    playerState.isEmbedded = false;
-
-    // Immediately reset the progress bar and timers to zero
-    progressBar.value = 0;
-    currentTimeEl.textContent = "0:00";
-    durationEl.textContent = "0:00";
-
-    // Update UI
-    document.getElementById("player-thumbnail").src = prevTrack.imageUrl;
-    document.getElementById("player-title").textContent = prevTrack.title;
-    document.getElementById("player-producer").textContent = prevTrack.producer;
-    updatePlayerUI();
-
-    // If was in embed mode, open embed for new track
-    if (wasInEmbedMode) {
-      setTimeout(() => {
-        const prevRow = document.querySelector(
-          `tr[data-track-id="${prevTrack.id}"]`,
-        );
-        if (prevRow) {
-          const prevEmbedBtn = prevRow.querySelector(
-            "button[data-embed-button]",
-          );
-          if (prevEmbedBtn && !prevEmbedBtn.classList.contains("is-open")) {
-            prevEmbedBtn.click();
-          }
-        }
-      }, 300);
-    } else {
-      // Audio mode - load the track in hidden player
-      const videoId = getYouTubeVideoId(prevTrack.link);
-      if (ytPlayer && videoId) {
-        ytPlayer.loadVideoById(videoId);
-      } else if (videoId) {
-        // Create player if it doesn't exist
-        ytPlayer = new YT.Player("youtube-player-container", {
-          height: "180",
-          width: "320",
-          videoId: videoId,
-          playerVars: {
-            playsinline: 1,
-            autoplay: 1,
-          },
-          events: {
-            onReady: (event) => {
-              event.target.setVolume(playerState.volume);
-              if (playerState.isMuted) {
-                event.target.mute();
-              } else {
-                event.target.unMute();
-              }
-            },
-            onStateChange: onPlayerStateChange,
-            onError: onPlayerError,
-          },
-        });
-      }
-    }
+    loadAndPlayTrack(prevTrack.id);
   }
 
   function stopPlayer() {
@@ -828,13 +740,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const formData = new FormData(filterForm);
 
-      // Step 1: Update the fetch parameters with the latest form data.
-      // .set() will overwrite existing keys, which is what we want.
       formData.forEach((value, key) => {
         if (value) {
           paramsForFetch.set(key, value);
         } else {
-          // If a form field is cleared, remove it from the params.
           paramsForFetch.delete(key);
         }
       });
@@ -843,49 +752,64 @@ document.addEventListener("DOMContentLoaded", () => {
         paramsForFetch.set("limit", currentLimit);
       }
 
-      // Step 2: Create a separate parameter list for the browser URL bar, removing defaults.
+      // Logic for browser URL (no changes here)
       const paramsForBrowser = new URLSearchParams(paramsForFetch.toString());
-
-      // Remove default filters
       if (paramsForBrowser.get("rank_filter") === "ranked")
         paramsForBrowser.delete("rank_filter");
       if (paramsForBrowser.get("rated_filter") === "all")
         paramsForBrowser.delete("rated_filter");
-
-      // Remove default pagination, correctly checking against localStorage
       const defaultPageSize = localStorage.getItem("defaultPageSize") || "all";
       if (paramsForBrowser.get("limit") === defaultPageSize)
         paramsForBrowser.delete("limit");
       if (paramsForBrowser.get("page") === "1") paramsForBrowser.delete("page");
-
-      // Step 3: Construct the final URLs
-      const fetchUrl = `${baseUrl}?${paramsForFetch.toString()}`;
       const browserQueryString = paramsForBrowser.toString();
       const browserUrl = browserQueryString
         ? `${window.location.pathname}?${browserQueryString}`
         : window.location.pathname;
+      window.history.pushState({}, "", browserUrl);
+
+      // --- NEW: Fetch page content and master playlist in parallel ---
+      const pageContentUrl = `${baseUrl}?${paramsForFetch.toString()}`;
+      const masterPlaylistUrl = `/api/playlist-snapshot?${paramsForFetch.toString()}`;
 
       try {
-        const response = await fetch(fetchUrl);
-        hideSkeleton();
-        const data = await response.json();
-        tableBody.innerHTML = data.table_body_html;
+        const [pageResponse, masterPlaylistResponse] = await Promise.all([
+          fetch(pageContentUrl),
+          fetch(masterPlaylistUrl),
+        ]);
 
-        loadPlaylistFromTemplate();
+        hideSkeleton();
+
+        if (!pageResponse.ok || !masterPlaylistResponse.ok) {
+          throw new Error("Failed to fetch page data or playlist snapshot.");
+        }
+
+        const pageData = await pageResponse.json();
+        const masterPlaylistData = await masterPlaylistResponse.json();
+
+        // Update the master playlist in the global state
+        playerState.masterPlaylist = masterPlaylistData;
+        if (playerState.isShuffle) {
+          generateShuffledPlaylist(); // Re-shuffle with the new master list
+        }
+
+        // Update the UI with the paginated content
+        tableBody.innerHTML = pageData.table_body_html;
+        loadPlaylistFromTemplate(); // This still loads the *current page* tracks into playerState.playlist for UI interaction
 
         if (currentTrackIdBeforeUpdate) {
-          const isTrackStillVisible = playerState.playlist.some(
+          // Check against master list to see if track is still in the filtered set
+          const isTrackStillInSet = playerState.masterPlaylist.some(
             (t) => t.id === currentTrackIdBeforeUpdate,
           );
-
-          if (isTrackStillVisible) {
+          if (isTrackStillInSet) {
             updatePlayerUI();
           } else {
             stopPlayer();
           }
         }
 
-        updatePaginationUI(data.pagination);
+        updatePaginationUI(pageData.pagination);
         upgradeThumbnails();
       } catch (error) {
         hideSkeleton();
@@ -893,7 +817,6 @@ document.addEventListener("DOMContentLoaded", () => {
         tableBody.innerHTML =
           '<tr><td colspan="7">Error loading tracks. Please try again.</td></tr>';
       }
-      window.history.pushState({}, "", browserUrl);
       updateSortIndicators();
       updateActiveFilterDisplay();
     }
@@ -1014,6 +937,19 @@ document.addEventListener("DOMContentLoaded", () => {
         playNextTrack();
       }
     }
+  }
+
+  function scrollToPlayingTrack() {
+    // A short delay ensures the DOM has updated and the .is-playing class is set
+    setTimeout(() => {
+      const trackRow = document.querySelector(`tr.is-playing`);
+      if (trackRow) {
+        trackRow.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 100);
   }
 
   const updateStarPreview = (container, event) => {
@@ -1966,17 +1902,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document
     .getElementById("player-jump-to-btn")
-    .addEventListener("click", () => {
-      if (playerState.currentTrackId) {
-        const trackRow = document.querySelector(`tr.is-playing`);
-        if (trackRow) {
-          trackRow.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-          });
-        }
-      }
-    });
+    .addEventListener("click", scrollToPlayingTrack);
 
   playPauseBtn.addEventListener("click", togglePlayPause);
   nextBtn.addEventListener("click", playNextTrack);

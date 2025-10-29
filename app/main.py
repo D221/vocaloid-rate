@@ -993,6 +993,47 @@ def get_track_playlist_status(track_id: int, db: Session = Depends(get_db)):
     return crud.get_track_playlist_membership(db, track_id=track_id)
 
 
+@app.get("/api/playlist-snapshot", response_class=JSONResponse)
+def get_playlist_snapshot_endpoint(
+    db: Session = Depends(get_db),
+    limit: str = "all",
+    rated_filter: Optional[str] = None,
+    title_filter: Optional[str] = None,
+    producer_filter: Optional[str] = None,
+    voicebank_filter: Optional[str] = None,
+    sort_by: Optional[str] = None,
+    sort_dir: str = "asc",
+    rank_filter: str = "ranked",
+    exact_rating_filter: Optional[int] = None,
+):
+    """
+    Provides a complete, ordered list of all track IDs that match the current
+    filters, along with the page number each track belongs on. This is used
+    by the frontend player for continuous playback across pages.
+    """
+    # This route now supports all filters from both the main page and rated tracks page
+    if rated_filter == "rated" and not sort_by:
+        sort_by = "rating"
+        sort_dir = "desc"
+
+    # For rated_tracks, the rank filter should be 'all' to include unranked tracks
+    if rated_filter == "rated":
+        rank_filter = "all"
+
+    return crud.get_playlist_snapshot(
+        db=db,
+        limit=limit,
+        rated_filter=rated_filter,
+        title_filter=title_filter,
+        producer_filter=producer_filter,
+        voicebank_filter=voicebank_filter,
+        sort_by=sort_by,
+        sort_dir=sort_dir,
+        rank_filter=rank_filter,
+        exact_rating_filter=exact_rating_filter,
+    )
+
+
 if __name__ == "__main__":
     import uvicorn
 
