@@ -3,9 +3,77 @@
 <div
   class="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4"
 >
-  <!-- The Title Block -->
+  <!-- Mobile Menu (Order 1 on mobile, hidden on desktop) -->
+  <div class="relative order-1 md:hidden">
+    <!-- Hamburger Button -->
+    <button
+      id="menu-toggle"
+      class="rounded border border-border p-2"
+      aria-label="Toggle menu"
+    >
+      {{ icon("bars", size="h-6 w-6") }}
+    </button>
+
+    <!-- Dropdown Menu -->
+    <div
+      id="nav-links"
+      class="absolute left-0 z-10 mt-2 hidden w-48 origin-top-left rounded-md border border-border bg-card-bg p-2 shadow-lg"
+    >
+      <!-- MODIFIED LINE IS HERE -->
+      <div class="flex flex-col divide-y divide-border">
+        {% if request.url.path != '/' %}
+          <a href="/" class="block rounded px-4 py-2 hover:bg-gray-hover"
+            >Main Chart</a
+          >
+        {% endif %}
+        {% if request.url.path != '/playlists' %}
+          <a
+            href="/playlists"
+            class="block rounded px-4 py-2 hover:bg-gray-hover"
+            >Playlists</a
+          >
+        {% endif %}
+        {% if request.url.path.startswith('/playlist/') %}
+          {%
+            set
+            playlist_id = request.url.path.split('/')[-1]
+          %}
+          {%
+            if
+            request.url.path.startswith('/playlist/edit/')
+          %}
+            <a
+              href="/playlist/{{ playlist_id }}"
+              class="block rounded px-4 py-2 text-amber-text hover:bg-amber-hover"
+              >View Playlist</a
+            >
+          {% else %}
+            <a
+              href="/playlist/edit/{{ playlist_id }}"
+              class="block rounded px-4 py-2 text-amber-text hover:bg-amber-hover"
+              >Edit Details</a
+            >
+          {% endif %}
+        {% endif %}
+        {% if request.url.path != '/rated_tracks' %}
+          <a
+            href="/rated_tracks"
+            class="block rounded px-4 py-2 hover:bg-gray-hover"
+            >Rated Tracks</a
+          >
+        {% endif %}
+        {% if request.url.path != '/options' %}
+          <a href="/options" class="block rounded px-4 py-2 hover:bg-gray-hover"
+            >Options</a
+          >
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- The Title Block (Order 2 on mobile, Order 1 on desktop) -->
   <div
-    class="grow text-center md:text-left"
+    class="order-2 grow text-center md:order-1 md:text-left"
     data-playlist-id="{{ playlist.id if playlist else '' }}"
   >
     <!-- View Mode for Title -->
@@ -75,75 +143,78 @@
     {% endif %}
   </div>
 
-  <!-- The Navigation Buttons Block -->
-  <div class="flex w-full shrink-0 items-center justify-center gap-4 md:w-auto">
-    {# Show "Back to Main Chart" if we are NOT on the main page #}
-    {% if request.url.path != '/' %}
-      <a
-        href="/"
-        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
-      >
-        Main Chart
-      </a>
-    {% endif %}
-
-    {# Show "Playlists" if we are NOT on the playlists page #}
-    {% if request.url.path != '/playlists' %}
-      <a
-        href="/playlists"
-        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
-      >
-        Playlists
-      </a>
-    {% endif %}
-
-    {% if request.url.path.startswith('/playlist/') %}
-
-      {# Extract the playlist ID. This works for both /view/ and /edit/ URLs #}
-      {% set playlist_id = request.url.path.split('/')[-1] %}
-
-      {# CASE 1: We are on the EDIT page, so show a "View" button #}
-      {% if request.url.path.startswith('/playlist/edit/') %}
+  <!-- Desktop Nav & Theme Switcher (Order 3 on mobile, Order 2 on desktop) -->
+  <div class="order-3 flex shrink-0 items-center gap-4 md:order-2">
+    <!-- Desktop Navigation (hidden on mobile) -->
+    <div class="hidden items-center gap-4 md:flex">
+      {% if request.url.path != '/' %}
         <a
-          href="/playlist/{{ playlist_id }}"
-          class="cursor-pointer rounded border border-amber-text p-3 font-bold text-amber-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
+          href="/"
+          class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
         >
-          View Playlist
-        </a>
-
-        {# CASE 2: We are on the VIEW page, so show an "Edit" button #}
-      {% else %}
-        <a
-          href="/playlist/edit/{{ playlist_id }}"
-          id="toggle-edit-playlist"
-          class="cursor-pointer rounded border border-amber-text p-3 font-bold text-amber-text shadow-md ease-in-out hover:bg-amber-hover hover:transition-colors hover:duration-200"
-        >
-          Edit Details
+          Main Chart
         </a>
       {% endif %}
-    {% endif %}
 
-    {# Show "View Rated" if we are NOT on the rated tracks page #}
-    {% if request.url.path != '/rated_tracks' %}
-      <a
-        href="/rated_tracks"
-        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
-      >
-        Rated Tracks
-      </a>
-    {% endif %}
+      {# Show "Playlists" if we are NOT on the playlists page #}
+      {% if request.url.path != '/playlists' %}
+        <a
+          href="/playlists"
+          class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
+        >
+          Playlists
+        </a>
+      {% endif %}
 
-    {# Show "Options" if we are NOT on the rated tracks page #}
-    {% if request.url.path != '/options' %}
-      <a
-        href="/options"
-        class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
-      >
-        Options
-      </a>
-    {% endif %}
+      {% if request.url.path.startswith('/playlist/') %}
 
-    <div id="theme-switcher">
+        {# Extract the playlist ID. This works for both /view/ and /edit/ URLs #}
+        {% set playlist_id = request.url.path.split('/')[-1] %}
+
+        {# CASE 1: We are on the EDIT page, so show a "View" button #}
+        {% if request.url.path.startswith('/playlist/edit/') %}
+          <a
+            href="/playlist/{{ playlist_id }}"
+            class="cursor-pointer rounded border border-amber-text p-3 font-bold text-amber-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
+          >
+            View Playlist
+          </a>
+
+          {# CASE 2: We are on the VIEW page, so show an "Edit" button #}
+        {% else %}
+          <a
+            href="/playlist/edit/{{ playlist_id }}"
+            id="toggle-edit-playlist"
+            class="cursor-pointer rounded border border-amber-text p-3 font-bold text-amber-text shadow-md ease-in-out hover:bg-amber-hover hover:transition-colors hover:duration-200"
+          >
+            Edit Details
+          </a>
+        {% endif %}
+      {% endif %}
+
+      {# Show "View Rated" if we are NOT on the rated tracks page #}
+      {% if request.url.path != '/rated_tracks' %}
+        <a
+          href="/rated_tracks"
+          class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
+        >
+          Rated Tracks
+        </a>
+      {% endif %}
+
+      {# Show "Options" if we are NOT on the rated tracks page #}
+      {% if request.url.path != '/options' %}
+        <a
+          href="/options"
+          class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
+        >
+          Options
+        </a>
+      {% endif %}
+    </div>
+
+    <!-- Theme Switcher (always visible within this block) -->
+    <div id="theme-switcher" class="cursor-pointer p-2">
       <span id="theme-icon" class="inline-block h-6 w-6 text-foreground">
         {{ icon('moon') }}
       </span>

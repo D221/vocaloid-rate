@@ -1903,6 +1903,24 @@ document.addEventListener("DOMContentLoaded", () => {
     renderRatingChart();
   });
 
+  const menuToggle = document.getElementById("menu-toggle");
+  const navLinks = document.getElementById("nav-links");
+
+  if (menuToggle && navLinks) {
+    menuToggle.addEventListener("click", (e) => {
+      // Prevent this click from instantly closing the menu via the body listener
+      e.stopPropagation();
+      navLinks.classList.toggle("hidden");
+    });
+
+    // Add a listener to the body to close the menu when clicking elsewhere
+    document.body.addEventListener("click", () => {
+      if (!navLinks.classList.contains("hidden")) {
+        navLinks.classList.add("hidden");
+      }
+    });
+  }
+
   document.getElementById("player-embed-btn").addEventListener("click", () => {
     if (!playerState.currentTrackId) return;
 
