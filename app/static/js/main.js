@@ -603,15 +603,8 @@ document.addEventListener("DOMContentLoaded", () => {
       (t) => t.id === playerState.currentTrackId,
     );
 
+    // If the current track isn't found, we can't determine the next one.
     if (currentIndex === -1) return;
-
-    // Handle reaching the end of the playlist
-    if (
-      currentIndex === activeMasterPlaylist.length - 1 &&
-      !playerState.isRepeat
-    ) {
-      return; // Stop playback or loop back to start if you prefer
-    }
 
     const nextIndex = (currentIndex + 1) % activeMasterPlaylist.length;
     const nextTrack = activeMasterPlaylist[nextIndex];
