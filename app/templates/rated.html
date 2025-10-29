@@ -127,11 +127,34 @@
       <tbody
         id="tracks-table-body"
         class="tracks-table-body"
-        data-update-url="/_/rated_tracks_table_body"
+        data-update-url="/_/get_tracks"
+        data-static-filter-key="rated_filter"
+        data-static-filter-value="rated"
       >
         {% include "partials/tracks_table_body.html" %}
       </tbody>
     </table>
+  </div>
+
+  <div
+    class="mt-8 flex-wrap items-center justify-center gap-3"
+    id="pagination-container"
+  >
+    <button
+      class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-sky-hover disabled:cursor-not-allowed disabled:opacity-50"
+      id="prev-page-btn"
+      disabled
+    >
+      Previous
+    </button>
+    <div class="flex items-center gap-2" id="page-links"></div>
+    <button
+      class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-sky-hover disabled:cursor-not-allowed disabled:opacity-50"
+      id="next-page-btn"
+      disabled
+    >
+      Next
+    </button>
   </div>
 
   <script src="{{ url_for('static', path='js/main.min.js') }}"></script>

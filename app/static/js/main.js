@@ -745,6 +745,13 @@ document.addEventListener("DOMContentLoaded", () => {
         paramsForFetch.set("limit", currentLimit);
       }
 
+      // Check for static filters embedded in the table body tag
+      const staticFilterKey = tableBody.dataset.staticFilterKey;
+      const staticFilterValue = tableBody.dataset.staticFilterValue;
+      if (staticFilterKey && staticFilterValue) {
+        paramsForFetch.set(staticFilterKey, staticFilterValue);
+      }
+
       // Logic for browser URL (no changes here)
       const paramsForBrowser = new URLSearchParams(paramsForFetch.toString());
       if (paramsForBrowser.get("rank_filter") === "ranked")
@@ -2053,8 +2060,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Initial Page Load Logic ---
-  // This should only run on the main index page, not the rated tracks page.
-  if (document.getElementById("scrape-button")) {
+  if (document.getElementById("tracks-table-body")) {
     const urlParams = new URLSearchParams(window.location.search);
     currentPage = parseInt(urlParams.get("page"), 10) || 1;
     currentLimit =
@@ -2062,7 +2068,8 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.getItem("defaultPageSize") ||
       "all";
     if (limitFilter) limitFilter.value = currentLimit;
-    // 2. Fetch the initial view based on the resolved state
+
+    // Fetch the initial view based on the resolved state
     showSkeleton();
     updateTracks();
   }

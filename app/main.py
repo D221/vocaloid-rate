@@ -44,7 +44,7 @@ def resource_path(relative: str) -> Path:
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def app_lifespan(app: FastAPI):
     # --- Code to run on startup ---
     global initial_scrape_in_progress
     db = SessionLocal()
@@ -72,7 +72,7 @@ async def lifespan(app: FastAPI):
     print("--- Application shutting down. ---")
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=app_lifespan)
 
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -286,6 +286,9 @@ def get_scrape_status():
 def read_rated_tracks(
     request: Request,
     db: Session = Depends(get_db),
+    page: int = 1,
+    limit: str = "all",
+    title_filter: Optional[str] = None,
     producer_filter: Optional[str] = None,
     voicebank_filter: Optional[str] = None,
     sort_by: Optional[str] = None,
@@ -296,9 +299,33 @@ def read_rated_tracks(
         sort_by = "rating"
         sort_dir = "desc"
 
-    tracks = crud.get_tracks(
+    filters = {
+        "title_filter": title_filter,
+        "producer_filter": producer_filter,
+        "voicebank_filter": voicebank_filter,
+        "exact_rating_filter": exact_rating_filter,
+    }
+
+    total_tracks = crud.get_tracks_count(
         db,
         rated_filter="rated",
+        title_filter=title_filter,
+        producer_filter=producer_filter,
+        voicebank_filter=voicebank_filter,
+        exact_rating_filter=exact_rating_filter,
+        rank_filter="all",
+    )
+
+    limit_val = total_tracks if limit == "all" else int(limit)
+    total_pages = (total_tracks + limit_val - 1) // limit_val if limit_val > 0 else 1
+    skip = (page - 1) * limit_val
+
+    tracks = crud.get_tracks(
+        db,
+        skip=skip,
+        limit=limit_val,
+        rated_filter="rated",
+        title_filter=title_filter,
         producer_filter=producer_filter,
         voicebank_filter=voicebank_filter,
         sort_by=sort_by,
@@ -307,7 +334,7 @@ def read_rated_tracks(
         rank_filter="all",
     )
 
-    all_db_tracks = crud.get_tracks(db, limit=1000)
+    all_db_tracks = crud.get_tracks(db, limit=1000, rank_filter="all")
 
     producers_flat = []
     voicebanks_flat = []
@@ -319,7 +346,6 @@ def read_rated_tracks(
     all_voicebanks = sorted(list(set(voicebanks_flat)))
 
     stats = crud.get_rating_statistics(db)
-
     tracks_for_json = [track.to_dict() for track in tracks]
     tracks_json_string = json.dumps(tracks_for_json)
 
@@ -332,6 +358,13 @@ def read_rated_tracks(
             "all_producers": all_producers,
             "all_voicebanks": all_voicebanks,
             "stats": stats,
+            "filters": filters,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total_pages": total_pages,
+                "total_tracks": total_tracks,
+            },
         },
     )
 
@@ -393,65 +426,64 @@ def edit_playlist_page(
     )
 
 
-@app.get("/_/rated_tracks_table_body", response_class=JSONResponse)
-def get_rated_tracks_table_body(
+@app.get("/_/get_tracks", response_class=JSONResponse)
+def get_tracks_partial(
     request: Request,
     db: Session = Depends(get_db),
     page: int = 1,
     limit: str = "all",
+    rated_filter: Optional[str] = None,
     title_filter: Optional[str] = None,
     producer_filter: Optional[str] = None,
     voicebank_filter: Optional[str] = None,
     sort_by: Optional[str] = None,
     sort_dir: str = "asc",
+    rank_filter: str = "ranked",
     exact_rating_filter: Optional[int] = None,
 ):
-    if not sort_by:
-        sort_by = "rating"
-        sort_dir = "desc"
-    # 1. Get the total count of tracks matching THIS view's filters
+    # This logic ensures that if the request is for rated tracks,
+    # it correctly includes unranked tracks and sorts by rating by default.
+    if rated_filter == "rated":
+        rank_filter = "all"
+        if not sort_by:
+            sort_by = "rating"
+            sort_dir = "desc"
+
     total_tracks = crud.get_tracks_count(
         db,
-        rated_filter="rated",
+        rated_filter=rated_filter,
         title_filter=title_filter,
         producer_filter=producer_filter,
         voicebank_filter=voicebank_filter,
+        rank_filter=rank_filter,
         exact_rating_filter=exact_rating_filter,
-        rank_filter="all",  # Rated tracks can be on or off the chart
     )
 
-    # 2. Calculate pagination variables
-    limit_val = total_tracks
-    if limit.isdigit() and int(limit) > 0:
-        limit_val = int(limit)
-
+    limit_val = total_tracks if limit == "all" else int(limit)
     total_pages = (total_tracks + limit_val - 1) // limit_val if limit_val > 0 else 1
     skip = (page - 1) * limit_val
 
-    # 3. Get the paginated tracks
     tracks = crud.get_tracks(
         db,
         skip=skip,
         limit=limit_val,
-        rated_filter="rated",
+        rated_filter=rated_filter,
         title_filter=title_filter,
         producer_filter=producer_filter,
         voicebank_filter=voicebank_filter,
         sort_by=sort_by,
         sort_dir=sort_dir,
+        rank_filter=rank_filter,
         exact_rating_filter=exact_rating_filter,
-        rank_filter="all",
     )
 
     tracks_for_json = [track.to_dict() for track in tracks]
     tracks_json_string = json.dumps(tracks_for_json)
 
-    # 4. Render the HTML partial
     table_body_html = templates.get_template("partials/tracks_table_body.html").render(
         {"request": request, "tracks": tracks, "tracks_json": tracks_json_string}
     )
 
-    # 5. Return the JSON structure the JavaScript expects
     return JSONResponse(
         content={
             "table_body_html": table_body_html,
@@ -465,50 +497,41 @@ def get_rated_tracks_table_body(
     )
 
 
-@app.get("/_/tracks_table_body")
-def get_tracks_table_body(
+@app.get("/api/playlist/{playlist_id}/get_tracks", response_class=JSONResponse)
+def get_playlist_tracks_partial(
+    playlist_id: int,
     request: Request,
     db: Session = Depends(get_db),
     page: int = 1,
     limit: str = "all",
-    rated_filter: Optional[str] = None,
     title_filter: Optional[str] = None,
     producer_filter: Optional[str] = None,
     voicebank_filter: Optional[str] = None,
     sort_by: Optional[str] = None,
     sort_dir: str = "asc",
-    rank_filter: str = "ranked",
 ):
-    total_tracks = crud.get_tracks_count(
+    total_tracks = crud.get_playlist_tracks_count(
         db,
-        rated_filter=rated_filter,
+        playlist_id=playlist_id,
         title_filter=title_filter,
         producer_filter=producer_filter,
         voicebank_filter=voicebank_filter,
-        rank_filter=rank_filter,
     )
 
-    limit_val = 10000  # A large number for "all"
-    if limit.isdigit():
-        limit_val = int(limit)
+    limit_val = total_tracks if limit == "all" else int(limit)
+    total_pages = (total_tracks + limit_val - 1) // limit_val if limit_val > 0 else 1
+    skip = (page - 1) * limit_val
 
-    total_pages = 1
-    if limit_val != 10000:
-        total_pages = (total_tracks + limit_val - 1) // limit_val
-
-    skip = (page - 1) * limit_val if limit_val != 10000 else 0
-
-    tracks = crud.get_tracks(
+    tracks = crud.get_playlist_tracks_filtered(
         db,
+        playlist_id=playlist_id,
         skip=skip,
         limit=limit_val,
-        rated_filter=rated_filter,
         title_filter=title_filter,
         producer_filter=producer_filter,
         voicebank_filter=voicebank_filter,
         sort_by=sort_by,
         sort_dir=sort_dir,
-        rank_filter=rank_filter,
     )
 
     tracks_for_json = [track.to_dict() for track in tracks]
@@ -1012,13 +1035,11 @@ def get_playlist_snapshot_endpoint(
     by the frontend player for continuous playback across pages.
     """
     # This route now supports all filters from both the main page and rated tracks page
-    if rated_filter == "rated" and not sort_by:
-        sort_by = "rating"
-        sort_dir = "desc"
-
-    # For rated_tracks, the rank filter should be 'all' to include unranked tracks
     if rated_filter == "rated":
         rank_filter = "all"
+        if not sort_by:
+            sort_by = "rating"
+            sort_dir = "desc"
 
     return crud.get_playlist_snapshot(
         db=db,
