@@ -105,106 +105,19 @@
     {% endif %}
   </div>
 
-  <div class="mb-8 rounded-md bg-card-bg p-5 shadow-md">
-    <div class="mb-6 block" id="rating-filter-indicator-container"></div>
-
-    <form
-      id="filter-form"
-      class="flex flex-col items-stretch gap-5 md:flex-row md:flex-wrap md:items-center"
-    >
-      <div class="relative w-full md:flex md:w-50 md:items-center md:gap-2">
-        <label
-          for="title_filter"
-          class="mb-1 block font-bold md:mb-0 md:text-right"
-          >Title:</label
-        >
-        <input
-          type="text"
-          name="title_filter"
-          id="title_filter"
-          placeholder="Search..."
-          autocomplete="off"
-          class="w-full rounded border border-border bg-background px-3 py-2 pr-10 leading-normal text-foreground shadow-md"
-        />
-        <button
-          type="button"
-          data-clear
-          class="invisible absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer px-1 py-0 text-xl leading-none text-foreground opacity-0"
-          aria-label="Clear title search"
-        >
-          &times;
-        </button>
-      </div>
-
-      <div class="relative w-full md:flex md:w-80 md:items-center md:gap-2">
-        <label
-          for="producer_filter"
-          class="mb-1 block font-bold md:mb-0 md:text-right"
-          >Producer:</label
-        >
-        <input
-          type="text"
-          name="producer_filter"
-          id="producer_filter"
-          list="producers-list"
-          autocomplete="off"
-          placeholder="Filter..."
-          class="w-full rounded border border-border bg-background px-3 py-2 pr-10 leading-normal text-foreground shadow-md"
-        />
-        <button
-          type="button"
-          data-clear
-          class="invisible absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer px-1 py-0 text-xl leading-none text-foreground opacity-0"
-          aria-label="Clear producer filter"
-        >
-          &times;
-        </button>
-        <datalist id="producers-list">
-          {% for producer in all_producers %}
-            <option value="{{ producer }}"></option>
-          {% endfor %}
-        </datalist>
-      </div>
-
-      <div class="relative w-full md:flex md:w-80 md:items-center md:gap-2">
-        <label
-          for="voicebank_filter"
-          class="mb-1 block font-bold md:mb-0 md:text-right"
-          >Voicebank:</label
-        >
-        <input
-          type="text"
-          name="voicebank_filter"
-          id="voicebank_filter"
-          list="voicebanks-list"
-          autocomplete="off"
-          placeholder="Filter..."
-          class="w-full rounded border border-border bg-background px-3 py-2 pr-10 leading-normal text-foreground shadow-md"
-        />
-        <button
-          type="button"
-          data-clear
-          class="invisible absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer px-1 py-0 text-xl leading-none text-foreground opacity-0"
-          aria-label="Clear voicebank filter"
-        >
-          &times;
-        </button>
-        <datalist id="voicebanks-list">
-          {% for voicebank in all_voicebanks %}
-            <option value="{{ voicebank }}"></option>
-          {% endfor %}
-        </datalist>
-      </div>
-
-      <button
-        type="button"
-        id="clear-filters-btn"
-        class="cursor-pointer rounded border border-gray-text p-2 font-bold text-gray-text shadow-md ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-gray-hover"
-      >
-        Clear
-      </button>
-    </form>
-  </div>
+  {%
+    set context = {
+        "filters": filters,
+        "all_producers": all_producers,
+        "all_voicebanks": all_voicebanks,
+        "pagination": pagination,
+        "show_status_filter": false,
+        "show_rating_filter": false,
+        "show_pagination_limit_filter": true,
+        "show_scrape_button": false
+    }
+  %}
+  {% include "partials/filter_form.html" %}
 
   <div
     class="overflow-x-visible rounded border border-none border-border bg-card-bg shadow-md md:overflow-x-auto"
