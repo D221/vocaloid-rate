@@ -659,6 +659,20 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function playPrevTrack() {
+    const activePlayer = getActivePlayer();
+
+    // If the track has played for more than 5 seconds, restart it.
+    // Otherwise, or if we can't get the time, go to the previous track.
+    if (activePlayer && typeof activePlayer.getCurrentTime === "function") {
+      const currentTime = activePlayer.getCurrentTime();
+      if (currentTime > 5) {
+        activePlayer.seekTo(0, true);
+        activePlayer.playVideo(); // Ensure playback starts
+        return; // Stop execution here
+      }
+    }
+
+    // --- The original logic for going to the previous track ---
     const activePlaylist = playerState.isShuffle
       ? playerState.shuffledPlaylist
       : playerState.playlist;
