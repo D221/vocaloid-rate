@@ -1,7 +1,9 @@
-name: Manual Build for Latest Release
+name: Build for Latest Release
 
 on:
   workflow_dispatch:
+  release:
+    types: [published]
 
 jobs:
   build-and-upload:
@@ -24,16 +26,18 @@ jobs:
 
     steps:
       - name: Get Latest Release Tag
-        id: get_latest
-        uses: pozetroninc/github-action-get-latest-release@v0.8.0
-        with:
-          repository: ${{ github.repository }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+        id: get_latest_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $latest_tag = gh release list --repo "${{ github.repository }}" --limit 1 --json tagName --jq '.[0].tagName'
+          echo "latest_tag=$latest_tag" >> $env:GITHUB_ENV
+        shell: pwsh
 
       - name: Checkout code for the latest tag
         uses: actions/checkout@v4
         with:
-          ref: ${{ steps.get_latest.outputs.release }}
+          ref: ${{ env.latest_tag }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -53,18 +57,25 @@ jobs:
         run: |
           bun run build
           bun run package
+          bun run clean:static
+
       - name: Prepare Release ZIP (Windows)
         if: runner.os == 'Windows'
-        run: 7z a -tzip ${{ matrix.artifact }} ./dist/vocaloid-rate/*
+        run: |
+          New-Item -ItemType Directory -Force -Path ./vocaloid-rate
+          Move-Item ./dist/vocaloid-rate/* ./vocaloid-rate/
+          7z a -tzip ${{ matrix.artifact }} ./vocaloid-rate/*
         shell: pwsh
 
       - name: Prepare Release ZIP (Linux/macOS)
         if: runner.os != 'Windows'
-        run: zip -r ${{ matrix.artifact }} ./dist/vocaloid-rate
+        run: |
+          mv ./dist/vocaloid-rate ./vocaloid-rate
+          zip -r ${{ matrix.artifact }} ./vocaloid-rate
         shell: bash
 
       - name: Upload Asset to Latest Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.get_latest.outputs.release }}
+          tag_name: ${{ env.latest_tag }}
           files: ${{ matrix.artifact }}
