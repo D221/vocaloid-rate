@@ -1477,6 +1477,14 @@ document.addEventListener("DOMContentLoaded", () => {
           },
           events: {
             onReady: (event) => {
+              // Sync volume and mute state from the global player state
+              event.target.setVolume(playerState.volume);
+              if (playerState.isMuted) {
+                event.target.mute();
+              } else {
+                event.target.unMute();
+              }
+
               // Get the video ID of the hidden player, if it exists and has a video
               const hiddenPlayerVideoId = ytPlayer
                 ? getYouTubeVideoId(ytPlayer.getVideoUrl())
@@ -1503,11 +1511,12 @@ document.addEventListener("DOMContentLoaded", () => {
           },
         });
       } else {
-        // Closing embed
+        // --- Closing the embed and switching to audio-only mode ---
         const wasPlaying =
           playerState.isPlaying && trackId === playerState.currentTrackId;
         let currentTime = 0;
 
+        // Safely get current time before destroying the player
         if (playerState.embeddedPlayers[trackId]) {
           try {
             currentTime =
@@ -1519,51 +1528,77 @@ document.addEventListener("DOMContentLoaded", () => {
           delete playerState.embeddedPlayers[trackId];
         }
 
+        // Clean up DOM
         videoContainer.innerHTML = "";
         videoContainer.style.display = "none";
 
-        // If this was the playing track, switch back to hidden audio player
+        // Only proceed if we are closing the currently active track
         if (trackId === playerState.currentTrackId) {
           playerState.isEmbedded = false;
 
+          const track = playerState.playlist.find((t) => t.id === trackId);
+          if (!track) return; // Safety check
+
+          const videoId = getYouTubeVideoId(track.link);
+          if (!videoId) return; // Safety check
+
           // Always ensure the hidden player exists and continues playback
           if (!ytPlayer) {
-            // Create the hidden player if it doesn't exist
-            const track = playerState.playlist.find((t) => t.id === trackId);
-            if (track) {
-              const videoId = getYouTubeVideoId(track.link);
-              ytPlayer = new YT.Player("youtube-player-container", {
-                height: "180",
-                width: "320",
-                videoId: videoId,
-                playerVars: {
-                  playsinline: 1,
-                  autoplay: wasPlaying ? 1 : 0,
+            // If the hidden player doesn't exist, create it.
+            ytPlayer = new YT.Player("youtube-player-container", {
+              height: "180",
+              width: "320",
+              videoId: videoId,
+              playerVars: {
+                playsinline: 1,
+                autoplay: wasPlaying ? 1 : 0,
+                start: Math.floor(currentTime), // Use startSeconds for efficiency
+              },
+              events: {
+                onReady: (event) => {
+                  event.target.setVolume(playerState.volume);
+                  if (playerState.isMuted) event.target.mute();
+                  else event.target.unMute();
                 },
-                events: {
-                  onReady: (event) => {
-                    event.target.setVolume(playerState.volume);
-                    if (playerState.isMuted) {
-                      event.target.mute();
-                    } else {
-                      event.target.unMute();
-                    }
-                    if (currentTime > 0) {
-                      event.target.seekTo(currentTime, true);
-                    }
-                  },
-                  onStateChange: onPlayerStateChange,
-                  onError: onPlayerError,
-                },
-              });
-            }
+                onStateChange: onPlayerStateChange,
+                onError: onPlayerError,
+              },
+            });
           } else {
-            // Player exists, just seek and play/pause
-            ytPlayer.seekTo(currentTime, true);
-            if (wasPlaying) {
-              ytPlayer.playVideo();
+            // Player exists, ensure it's synced before use.
+            const currentHiddenPlayerVideoId = getYouTubeVideoId(
+              ytPlayer.getVideoUrl(),
+            );
+
+            // Always sync volume and mute state from our global state back to the hidden player.
+            ytPlayer.setVolume(playerState.volume);
+            if (playerState.isMuted) {
+              ytPlayer.mute();
             } else {
-              ytPlayer.pauseVideo();
+              ytPlayer.unMute();
+            }
+
+            if (currentHiddenPlayerVideoId !== videoId) {
+              // The hidden player is on the WRONG video. Load the correct one.
+              if (wasPlaying) {
+                ytPlayer.loadVideoById({
+                  videoId: videoId,
+                  startSeconds: currentTime,
+                });
+              } else {
+                ytPlayer.cueVideoById({
+                  videoId: videoId,
+                  startSeconds: currentTime,
+                });
+              }
+            } else {
+              // The hidden player is on the correct video. Just seek and update state.
+              ytPlayer.seekTo(currentTime, true);
+              if (wasPlaying) {
+                ytPlayer.playVideo();
+              } else {
+                ytPlayer.pauseVideo();
+              }
             }
           }
         }
