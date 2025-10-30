@@ -423,6 +423,10 @@ const closePlaylistModals = () => {
   document
     .querySelectorAll(".playlist-modal")
     .forEach((modal) => modal.remove());
+  // Also remove any backdrops
+  document
+    .querySelectorAll(".playlist-modal-backdrop")
+    .forEach((backdrop) => backdrop.remove());
 };
 
 const openPlaylistModal = async (trackId, buttonElement) => {
@@ -435,73 +439,107 @@ const openPlaylistModal = async (trackId, buttonElement) => {
 
     const modal = document.createElement("div");
     modal.className =
-      "playlist-modal fixed z-20 mt-2 w-72 rounded-md border border-border bg-card-bg p-2 shadow-lg";
+      "playlist-modal fixed z-20 mt-2 w-72 max-w-[90vw] rounded-md border border-border bg-card-bg p-2 shadow-lg";
     modal.dataset.trackId = trackId;
 
     let memberHTML = "";
     if (member_of.length > 0) {
       memberHTML = `
-                <div class="px-2 pt-2 text-sm font-bold text-header">In Playlists</div>
-                <div class="space-y-1 p-1">
-                    ${member_of
-                      .map(
-                        (p) => `
-                        <div class="flex items-center justify-between rounded hover:bg-gray-hover">
-                            <a href="/playlist/${p.id}" class="grow p-2 text-left text-foreground">${p.name}</a>
-                            <button data-remove-from-playlist="${p.id}" class="p-2 text-red-text hover:text-red-500">
-                                <span class="inline-block h-4 w-4">${getIconSVG("minus")}</span>
-                            </button>
-                        </div>
-                    `,
-                      )
-                      .join("")}
+        <div class="px-2 pt-2 text-sm font-bold text-header">In Playlists</div>
+        <div class="space-y-1 p-1">
+            ${member_of
+              .map(
+                (p) => `
+                <div class="flex items-center justify-between rounded hover:bg-gray-hover">
+                    <a href="/playlist/${p.id}" class="grow p-2 text-left text-foreground">${p.name}</a>
+                    <button data-remove-from-playlist="${p.id}" class="p-2 text-red-text hover:text-red-500">
+                        <span class="inline-block h-4 w-4">${getIconSVG("minus")}</span>
+                    </button>
                 </div>
-            `;
+            `,
+              )
+              .join("")}
+        </div>`;
     }
 
-    // "Not Member Of" section
     let notMemberHTML = "";
     if (not_member_of.length > 0) {
       notMemberHTML = `
-                <div class="px-2 pt-2 text-sm font-bold text-header">Add to...</div>
-                <div class="space-y-1 p-1">
-                     ${not_member_of
-                       .map(
-                         (p) => `
-                        <div class="flex items-center justify-between rounded hover:bg-gray-hover">
-                             <span class="grow p-2 text-left text-foreground">${p.name}</span>
-                             <button data-add-to-existing-playlist="${p.id}" class="p-2 text-green-text hover:text-green-500">
-                                <span class="inline-block h-4 w-4 text-green-text">${getIconSVG("plus")}</span>
-                            </button>
-                        </div>
-                    `,
-                       )
-                       .join("")}
+        <div class="px-2 pt-2 text-sm font-bold text-header">Add to...</div>
+        <div class="space-y-1 p-1">
+             ${not_member_of
+               .map(
+                 (p) => `
+                <div class="flex items-center justify-between rounded hover:bg-gray-hover">
+                     <span class="grow p-2 text-left text-foreground">${p.name}</span>
+                     <button data-add-to-existing-playlist="${p.id}" class="p-2 text-green-text hover:text-green-500">
+                        <span class="inline-block h-4 w-4 text-green-text">${getIconSVG("plus")}</span>
+                    </button>
                 </div>
-            `;
+            `,
+               )
+               .join("")}
+        </div>`;
     }
 
-    // Final Modal HTML
     modal.innerHTML = `
-            <div class="max-h-80 overflow-y-auto">
-                ${memberHTML}
-                ${notMemberHTML}
-            </div>
-            <div class="mt-2 border-t border-border pt-2">
-                <input type="text" data-new-playlist-name placeholder="Or create new..." class="w-full rounded border border-border bg-background p-2 text-foreground placeholder:text-gray-text">
-                <button data-create-playlist class="mt-2 w-full cursor-pointer rounded border border-cyan-text px-2 py-1 text-cyan-text ease-in-out  hover:transition-colors hover:duration-200 hover:bg-cyan-hover disabled:opacity-50" disabled>Create & Add</button>
-            </div>
-        `;
+      <div class="max-h-80 overflow-y-auto">
+          ${memberHTML}
+          ${notMemberHTML}
+      </div>
+      <div class="mt-2 border-t border-border pt-2">
+          <input type="text" data-new-playlist-name placeholder="Or create new..." class="w-full rounded border border-border bg-background p-2 text-foreground placeholder:text-gray-text">
+          <button data-create-playlist class="mt-2 w-full cursor-pointer rounded border border-cyan-text px-2 py-1 text-cyan-text ease-in-out  hover:transition-colors hover:duration-200 hover:bg-cyan-hover disabled:opacity-50" disabled>Create & Add</button>
+      </div>`;
 
     document.body.appendChild(modal);
-    const btnRect = buttonElement.getBoundingClientRect();
-    let top = window.scrollY + btnRect.bottom;
-    let left = window.scrollX + btnRect.left;
-    if (left + 288 > window.innerWidth) {
-      left = window.innerWidth - 298;
+
+    // --- NEW: Responsive Modal Positioning ---
+    if (window.innerWidth < 768) {
+      // Tailwind's 'md' breakpoint
+      // On mobile, center the modal on the screen
+      modal.style.top = "50%";
+      modal.style.left = "50%";
+      modal.style.transform = "translate(-50%, -50%)";
+
+      // Add a backdrop to capture clicks outside the modal
+      const backdrop = document.createElement("div");
+      backdrop.className =
+        "playlist-modal-backdrop fixed inset-0 z-10 bg-black bg-opacity-50";
+      document.body.appendChild(backdrop);
+    } else {
+      // On desktop, position it relative to the button
+      const btnRect = buttonElement.getBoundingClientRect();
+
+      // Correct top position: button's bottom edge relative to the viewport.
+      let top = btnRect.bottom;
+
+      // Correct left position: button's left edge relative to the viewport.
+      let left = btnRect.left;
+
+      // --- Vertical Overflow Check ---
+      // If the modal would go off the bottom of the screen,
+      // place it *above* the button instead.
+      if (top + modal.offsetHeight > window.innerHeight - 10) {
+        // 10px buffer
+        top = btnRect.top - modal.offsetHeight;
+      }
+
+      // --- Horizontal Overflow Check ---
+      // If the modal would go off the right edge of the screen,
+      // align its right edge with the button's right edge.
+      if (left + modal.offsetWidth > window.innerWidth - 10) {
+        left = btnRect.right - modal.offsetWidth;
+      }
+
+      // Ensure the modal doesn't go off the left edge either
+      if (left < 10) {
+        left = 10;
+      }
+
+      modal.style.top = `${top}px`;
+      modal.style.left = `${left}px`;
     }
-    modal.style.top = `${top}px`;
-    modal.style.left = `${left}px`;
   } catch (error) {
     showToast(error.message, "error");
   }
@@ -1054,6 +1092,12 @@ document.addEventListener("DOMContentLoaded", () => {
   loadPlaylistFromTemplate();
 
   document.body.addEventListener("click", (e) => {
+    const backdrop = e.target.closest(".playlist-modal-backdrop");
+    if (backdrop) {
+      closePlaylistModals();
+      return; // Stop processing to prevent other actions
+    }
+
     const clearRatingBtn = e.target.closest("[data-clear-rating]");
     if (clearRatingBtn) {
       e.preventDefault();
