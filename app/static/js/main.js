@@ -768,10 +768,11 @@ document.addEventListener("DOMContentLoaded", () => {
         : window.location.pathname;
       window.history.pushState({}, "", browserUrl);
 
-      // --- NEW: Fetch page content and master playlist in parallel ---
-      const pageContentUrl = `${baseUrl}?${paramsForFetch.toString()}`;
-      const masterPlaylistUrl = `/api/playlist-snapshot?${paramsForFetch.toString()}`;
+      const snapshotUrl =
+        tableBody.dataset.snapshotUrl || "/api/playlist-snapshot";
 
+      const pageContentUrl = `${baseUrl}?${paramsForFetch.toString()}`;
+      const masterPlaylistUrl = `${snapshotUrl}?${paramsForFetch.toString()}`;
       try {
         const [pageResponse, masterPlaylistResponse] = await Promise.all([
           fetch(pageContentUrl),

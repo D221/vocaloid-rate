@@ -30,6 +30,7 @@
       <tbody
         id="tracks-table-body"
         data-update-url="/api/playlist/{{ playlist.id }}/get_tracks"
+        data-snapshot-url="/api/playlist/{{ playlist.id }}/playlist-snapshot"
       >
         {# The initial, paginated track list is rendered here #}
         {% include "partials/tracks_table_body.html" %}

@@ -1107,6 +1107,33 @@ def get_playlist_snapshot_endpoint(
     )
 
 
+@app.get("/api/playlist/{playlist_id}/playlist-snapshot", response_class=JSONResponse)
+def get_playlist_snapshot_for_playlist_endpoint(
+    playlist_id: int,
+    db: Session = Depends(get_db),
+    limit: str = "all",
+    title_filter: Optional[str] = None,
+    producer_filter: Optional[str] = None,
+    voicebank_filter: Optional[str] = None,
+    sort_by: Optional[str] = None,
+    sort_dir: str = "asc",
+):
+    """
+    Provides a complete, ordered list of all track IDs for a SPECIFIC PLAYLIST
+    that match the current filters.
+    """
+    return crud.get_playlist_snapshot_for_playlist(
+        db=db,
+        playlist_id=playlist_id,
+        limit=limit,
+        title_filter=title_filter,
+        producer_filter=producer_filter,
+        voicebank_filter=voicebank_filter,
+        sort_by=sort_by,
+        sort_dir=sort_dir,
+    )
+
+
 if __name__ == "__main__":
     import uvicorn
 
