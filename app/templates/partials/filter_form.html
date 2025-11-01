@@ -1,47 +1,50 @@
 <div class="mb-8 rounded-md bg-card-bg p-5 shadow-md">
-  <form
-    id="filter-form"
-    class="flex flex-col items-stretch gap-5 md:flex-row md:flex-wrap md:items-center"
-  >
+  <form id="filter-form" class="flex flex-wrap items-center gap-4">
     {% if context.show_status_filter %}
-      <div class="flex items-center gap-2 rounded border border-border p-3">
-        <label class="font-bold">Status:</label>
-        <input
-          type="radio"
-          id="rank_ranked"
+      <div class="w-full md:flex md:w-fit md:items-center md:gap-2">
+        <label
+          for="rank_filter"
+          class="mb-1 block font-bold md:mb-0 md:whitespace-nowrap"
+          >Chart:</label
+        >
+        <select
           name="rank_filter"
-          value="ranked"
-          {% if context.filters.rank_filter == 'ranked' or not context.filters.rank_filter %}checked{% endif %}
-        />
-        <label for="rank_ranked">On Chart</label>
-        <input
-          type="radio"
-          id="rank_unranked"
-          name="rank_filter"
-          value="unranked"
-          {% if context.filters.rank_filter == 'unranked' %}checked{% endif %}
-        />
-        <label for="rank_unranked">Archived</label>
-        <input
-          type="radio"
-          id="rank_all"
-          name="rank_filter"
-          value="all"
-          {% if context.filters.rank_filter == 'all' %}checked{% endif %}
-        />
-        <label for="rank_all">All</label>
+          id="rank_filter"
+          class="w-full rounded border border-border bg-background px-3 py-2 leading-normal text-foreground shadow-md md:w-auto"
+        >
+          <option
+            value="ranked"
+            {% if context.filters.rank_filter == 'ranked' or not context.filters.rank_filter %}selected{% endif %}
+          >
+            Charting
+          </option>
+          <option
+            value="unranked"
+            {% if context.filters.rank_filter == 'unranked' %}selected{% endif %}
+          >
+            Charted
+          </option>
+          <option
+            value="all"
+            {% if context.filters.rank_filter == 'all' %}selected{% endif %}
+          >
+            All
+          </option>
+        </select>
       </div>
     {% endif %}
 
     {% if context.show_rating_filter %}
-      <div class="relative w-full md:flex md:w-50 md:items-center md:gap-2">
-        <label for="rated_filter" class="mb-1 block font-bold md:mb-0"
+      <div class="w-full md:flex md:w-fit md:items-center md:gap-2">
+        <label
+          for="rated_filter"
+          class="mb-1 block font-bold md:mb-0 md:whitespace-nowrap"
           >Rating:</label
         >
         <select
           name="rated_filter"
           id="rated_filter"
-          class="w-full rounded border border-border bg-background px-3 py-2 pr-10 leading-normal text-foreground shadow-md"
+          class="w-full rounded border border-border bg-background px-3 py-2 leading-normal text-foreground shadow-md md:w-auto"
         >
           <option
             value="all"
@@ -65,19 +68,19 @@
       </div>
     {% endif %}
 
-    <div class="relative w-full md:w-52">
+    <div class="w-full md:flex md:w-fit md:items-center md:gap-2">
       <input
         type="search"
         name="title_filter"
         id="title_filter"
         autocomplete="off"
         placeholder="Search by title..."
-        class="w-full rounded border border-border bg-background px-3 py-2 leading-normal text-foreground shadow-md"
+        class="w-full rounded border border-border bg-background px-3 py-2 leading-normal text-foreground shadow-md md:w-auto"
         value="{{ context.filters.title_filter or '' }}"
       />
     </div>
 
-    <div class="relative w-full md:w-52">
+    <div class="w-full md:flex md:w-fit md:items-center md:gap-2">
       <input
         type="search"
         name="producer_filter"
@@ -85,8 +88,8 @@
         list="producers-list"
         autocomplete="off"
         placeholder="Filter by producer..."
+        class="w-full rounded border border-border bg-background px-3 py-2 leading-normal text-foreground shadow-md md:w-auto"
         value="{{ context.filters.producer_filter or '' }}"
-        class="w-full rounded border border-border bg-background px-3 py-2 leading-normal text-foreground shadow-md"
       />
       <datalist id="producers-list">
         {% for producer in context.all_producers %}
@@ -95,7 +98,7 @@
       </datalist>
     </div>
 
-    <div class="relative w-full md:w-52">
+    <div class="w-full md:flex md:w-fit md:items-center md:gap-2">
       <input
         type="search"
         name="voicebank_filter"
@@ -103,8 +106,8 @@
         list="voicebanks-list"
         autocomplete="off"
         placeholder="Filter by voicebank..."
+        class="w-full rounded border border-border bg-background px-3 py-2 leading-normal text-foreground shadow-md md:w-auto"
         value="{{ context.filters.voicebank_filter or '' }}"
-        class="w-full rounded border border-border bg-background px-3 py-2 leading-normal text-foreground shadow-md"
       />
       <datalist id="voicebanks-list">
         {% for voicebank in context.all_voicebanks %}
@@ -114,16 +117,16 @@
     </div>
 
     {% if context.show_pagination_limit_filter %}
-      <div class="relative w-full md:flex md:w-52 md:items-center md:gap-2">
+      <div class="w-full md:flex md:w-fit md:items-center md:gap-2">
         <label
           for="limit_filter"
-          class="mb-1 block font-bold whitespace-nowrap md:mb-0"
-          >Per Page:</label
+          class="mb-1 block font-bold md:mb-0 md:whitespace-nowrap"
+          >Items per page:</label
         >
         <select
           name="limit"
           id="limit_filter"
-          class="w-full rounded border border-border bg-background px-3 py-2 pr-10 leading-normal text-foreground shadow-md"
+          class="w-full rounded border border-border bg-background px-3 py-2 leading-normal text-foreground shadow-md md:w-auto"
         >
           <option
             value="all"
