@@ -48,31 +48,30 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const createPlaylistItemElement = (sourceItem) => {
-    // 1. Get all the necessary data from the source item
-    const trackId = sourceItem.dataset.trackId;
-    const trackLink = sourceItem.dataset.trackLink;
-    const imageSrc = sourceItem.querySelector("img").src;
-    const title = sourceItem.querySelector(".font-semibold").textContent;
-    const producer = sourceItem.querySelector(".text-sm").textContent;
+    // 1. Get all the necessary data from the source item's data attributes
+    const trackData = sourceItem.dataset; // This gets all data-* attributes at once!
 
     // 2. Create the new element and set its properties
     const newPlaylistItem = document.createElement("div");
     newPlaylistItem.className =
       "track-item flex cursor-grab items-center justify-between gap-3 rounded bg-card-bg p-2 shadow";
-    newPlaylistItem.dataset.trackId = trackId;
-    newPlaylistItem.dataset.trackLink = trackLink;
 
-    // 3. Set the correct innerHTML, same as your working click handler
+    // Copy all data attributes from the source to the new item
+    Object.keys(trackData).forEach((key) => {
+      newPlaylistItem.dataset[key] = trackData[key];
+    });
+
+    // 3. Set the innerHTML using the data we gathered
     newPlaylistItem.innerHTML = `
         <div class="flex items-center gap-3 overflow-hidden">
-            <button data-play-button data-track-id="${trackId}" class="p-2 text-gray-text hover:text-cyan-text">
+            <button data-play-button data-track-id="${trackData.trackId}" class="p-2 text-gray-text hover:text-sky-text">
                 <span class="inline-block h-6 w-6">${getIconSVG("play")}</span>
             </button>
-            <a href="${trackLink}" target="_blank" class="flex items-center gap-3">
-                <img src="${imageSrc}" alt="${title}" class="h-10 w-10 rounded object-cover">
+            <a href="${trackData.trackLink}" target="_blank" class="flex items-center gap-3">
+                <img src="${trackData.trackImageUrl}" alt="${trackData.trackTitle}" class="h-10 w-10 rounded object-cover">
                 <div>
-                    <div class="font-semibold truncate">${title}</div>
-                    <div class="text-sm text-gray-text truncate">${producer}</div>
+                    <div class="font-semibold truncate">${trackData.trackTitle}</div>
+                    <div class="text-sm text-gray-text truncate">${trackData.trackProducer}</div>
                 </div>
             </a>
         </div>
@@ -239,23 +238,28 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   allTracksList.addEventListener("click", (e) => {
+    // First, check if the click was on a button we should ignore.
+    const playButton = e.target.closest("[data-play-button]");
+    if (playButton) {
+      // If the user clicked the play button, do nothing and let the other
+      // event listener handle it.
+      return;
+    }
+
+    // Now, continue with the original logic for adding/removing tracks.
     const trackItem = e.target.closest(".track-item");
     if (!trackItem) return;
+
     const trackId = trackItem.dataset.trackId;
 
     if (trackItem && !trackItem.classList.contains("cursor-not-allowed")) {
-      const trackId = trackItem.dataset.trackId;
       addTrack(trackId); // API call
-
-      // Use the new helper function
       const newPlaylistItem = createPlaylistItemElement(trackItem);
-
       playlistTracksList.appendChild(newPlaylistItem);
     } else {
       const itemToRemove = playlistTracksList.querySelector(
         `.track-item[data-track-id="${trackId}"]`,
       );
-
       if (itemToRemove) {
         removeTrack(trackId);
         itemToRemove.remove();
@@ -300,14 +304,24 @@ document.addEventListener("DOMContentLoaded", () => {
         e.stopPropagation();
 
         const trackId = playButton.dataset.trackId;
+        const clickedItem = playButton.closest(".track-item"); // Get the element that was clicked
 
-        // Check if the player API from main.js is available
         if (window.playerAPI) {
-          const trackItems = document.querySelectorAll(".track-item");
-          // Build the playlist using the new helper on the API
-          window.playerAPI.buildPlaylistFromEditor(trackItems);
+          let playlistItemsForPlayer;
 
-          // Call the play function through the API
+          // Check if the clicked item is inside the "Available Tracks" list
+          if (clickedItem.closest("#all-tracks-list")) {
+            // It's a PREVIEW from the left. The playlist is just this one song.
+            playlistItemsForPlayer = [clickedItem];
+          } else {
+            // It's from the playlist on the right. The playlist is the entire right-hand list.
+            playlistItemsForPlayer =
+              playlistTracksList.querySelectorAll(".track-item");
+          }
+
+          // Now, build the state using the correct context and play the track.
+          // This works for both cases because the track will always be in the list we provide.
+          window.playerAPI.buildPlaylistFromEditor(playlistItemsForPlayer);
           window.playerAPI.loadAndPlayTrack(trackId);
         } else {
           alert(

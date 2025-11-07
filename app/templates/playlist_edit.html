@@ -34,6 +34,11 @@
             class="track-item flex cursor-grab items-center gap-3 rounded hover:bg-gray-hover"
             data-track-id="{{ track.id }}"
             data-track-link="{{ track.link }}"
+            data-track-image-url="{{ track.image_url }}"
+            data-track-title="{{ track.title }}"
+            data-track-title-jp="{{ track.title_jp or '' }}"
+            data-track-producer="{{ track.producer }}"
+            data-track-producer-jp="{{ track.producer_jp or '' }}"
           >
             <div data-add-indicator class="p-2 text-gray-text">
               {{ icon('plus', size="h-6 w-6") }}
@@ -84,6 +89,11 @@
             class="track-item flex cursor-grab items-center justify-between gap-3 rounded bg-card-bg p-2 shadow"
             data-track-id="{{ track.id }}"
             data-track-link="{{ track.link }}"
+            data-track-image-url="{{ track.image_url }}"
+            data-track-title="{{ track.title }}"
+            data-track-title-jp="{{ track.title_jp or '' }}"
+            data-track-producer="{{ track.producer }}"
+            data-track-producer-jp="{{ track.producer_jp or '' }}"
           >
             <div class="flex items-center gap-3 overflow-hidden">
               <button

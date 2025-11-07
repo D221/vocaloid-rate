@@ -148,22 +148,31 @@ const getIconSVG = (iconName, size = "h-full w-full") => {
   return icons[iconName] || "";
 };
 
+const buildTrackObjectFromRow = (rowElement) => {
+  if (!rowElement || !rowElement.dataset.trackId) {
+    return null;
+  }
+  return {
+    id: rowElement.dataset.trackId,
+    link: rowElement.dataset.trackLink,
+    imageUrl: rowElement.dataset.trackImageUrl,
+    title: rowElement.dataset.trackTitle,
+    title_jp: rowElement.dataset.trackTitleJp,
+    producer: rowElement.dataset.trackProducer,
+    producer_jp: rowElement.dataset.trackProducerJp,
+  };
+};
+
 // ===================================================================
 // CORE APPLICATION LOGIC & STATE MANAGEMENT
 // ===================================================================
 
 // --- Playlist Management ---
 const loadPlaylistFromTemplate = () => {
-  const playlistDataTemplate = document.getElementById("playlist-data");
-  if (playlistDataTemplate) {
-    try {
-      const data = JSON.parse(playlistDataTemplate.innerHTML);
-      if (Array.isArray(data)) {
-        playerState.playlist = data;
-      }
-    } catch (e) {
-      console.error("Failed to parse playlist data from <template> tag:", e);
-    }
+  const tableBody = document.getElementById("tracks-table-body");
+  if (tableBody) {
+    const allRows = Array.from(tableBody.querySelectorAll("tr[data-track-id]"));
+    playerState.playlist = allRows.map(buildTrackObjectFromRow).filter(Boolean);
   }
 };
 
@@ -648,33 +657,54 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+  async function navigateToTrack(trackId, onTrackReadyCallback) {
+    const trackData = playerState.masterPlaylist.find((t) => t.id === trackId);
+    if (!trackData) {
+      console.error(`Track ${trackId} not found in master playlist.`);
+      return false; // Return false on error
+    }
+
+    let pageDidChange = false;
+    if (String(trackData.page) !== String(currentPage)) {
+      currentPage = trackData.page;
+      pageDidChange = true; // We changed the page!
+      showSkeleton();
+      await updateTracks();
+    }
+
+    onTrackReadyCallback(trackId);
+    return pageDidChange; // Report whether a page change happened.
+  }
+
   async function playNextTrack() {
     const activeMasterPlaylist = playerState.isShuffle
       ? playerState.shuffledMasterPlaylist
       : playerState.masterPlaylist;
-
     if (activeMasterPlaylist.length === 0) return;
 
     const currentIndex = activeMasterPlaylist.findIndex(
       (t) => t.id === playerState.currentTrackId,
     );
-
-    // If the current track isn't found, we can't determine the next one.
     if (currentIndex === -1) return;
 
     const nextIndex = (currentIndex + 1) % activeMasterPlaylist.length;
-    const nextTrack = activeMasterPlaylist[nextIndex];
+    const nextTrackId = activeMasterPlaylist[nextIndex].id;
 
-    if (String(nextTrack.page) !== String(currentPage)) {
+    let pageChanged = false;
+
+    if (playerState.isEmbedded) {
       cleanupPreviousEmbed(playerState.currentTrackId);
-      currentPage = nextTrack.page;
-      showSkeleton();
-      await updateTracks(); // Wait for the new page and its data to load
-      scrollToPlayingTrack();
+      pageChanged = await navigateToTrack(nextTrackId, (id) => {
+        const row = document.querySelector(`tr[data-track-id="${id}"]`);
+        row?.querySelector("button[data-embed-button]")?.click();
+      });
+    } else {
+      pageChanged = await navigateToTrack(nextTrackId, loadAndPlayTrack);
     }
 
-    // Now that the correct page is loaded, find the track data and play it
-    loadAndPlayTrack(nextTrack.id);
+    if (pageChanged || playerState.isShuffle) {
+      scrollToPlayingTrack();
+    }
   }
 
   async function playPrevTrack() {
@@ -692,29 +722,34 @@ document.addEventListener("DOMContentLoaded", async () => {
     const activeMasterPlaylist = playerState.isShuffle
       ? playerState.shuffledMasterPlaylist
       : playerState.masterPlaylist;
-
     if (activeMasterPlaylist.length === 0) return;
 
     const currentIndex = activeMasterPlaylist.findIndex(
       (t) => t.id === playerState.currentTrackId,
     );
-
     if (currentIndex === -1) return;
 
     const prevIndex =
       (currentIndex - 1 + activeMasterPlaylist.length) %
       activeMasterPlaylist.length;
-    const prevTrack = activeMasterPlaylist[prevIndex];
+    const prevTrackId = activeMasterPlaylist[prevIndex].id;
 
-    if (String(prevTrack.page) !== String(currentPage)) {
+    let pageChanged = false;
+
+    if (playerState.isEmbedded) {
       cleanupPreviousEmbed(playerState.currentTrackId);
-      currentPage = prevTrack.page;
-      showSkeleton();
-      await updateTracks();
-      scrollToPlayingTrack();
+      pageChanged = await navigateToTrack(prevTrackId, (id) => {
+        const row = document.querySelector(`tr[data-track-id="${id}"]`);
+        row?.querySelector("button[data-embed-button]")?.click();
+      });
+    } else {
+      pageChanged = await navigateToTrack(prevTrackId, loadAndPlayTrack);
     }
 
-    loadAndPlayTrack(prevTrack.id);
+    // Scroll ONLY if the page changed OR shuffle is on.
+    if (pageChanged || playerState.isShuffle) {
+      scrollToPlayingTrack();
+    }
   }
 
   function stopPlayer() {
@@ -766,7 +801,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       activePlayer = ytPlayer;
     }
 
-    if (activePlayer) {
+    if (activePlayer && typeof activePlayer.getDuration === "function") {
       const duration = activePlayer.getDuration();
       if (duration > 0) {
         const seekToTime = (progressBar.value / 100) * duration;
@@ -974,7 +1009,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         activePlayer = ytPlayer;
       }
 
-      if (activePlayer && playerState.isPlaying) {
+      if (
+        activePlayer &&
+        typeof activePlayer.getCurrentTime === "function" &&
+        playerState.isPlaying
+      ) {
         const currentTime = activePlayer.getCurrentTime();
         const duration = activePlayer.getDuration();
         if (duration > 0) {
@@ -1448,28 +1487,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       // Build playlist if needed
       const tableBody = trackRow.closest("tbody");
-      if (!tableBody.dataset.playlistBuilt) {
-        const allRows = Array.from(tableBody.querySelectorAll("tr"));
-        playerState.playlist = allRows
-          .map((row) => {
-            const titleLink = row.querySelector('td[data-label="Title"] a');
-            const producerLink = row.querySelector(
-              'td[data-label="Producer"] a',
-            );
-            const playButton = row.querySelector("button[data-play-button]");
-            return {
-              id: playButton ? playButton.dataset.trackId : null,
-              title: titleLink ? titleLink.textContent.trim() : "Unknown",
-              producer: producerLink
-                ? producerLink.textContent.trim()
-                : "Unknown",
-              link: titleLink ? titleLink.href : "",
-              imageUrl: row.querySelector("td:nth-child(1) img").src,
-            };
-          })
-          .filter((t) => t.id);
-        tableBody.dataset.playlistBuilt = "true";
-      }
+      const allRows = Array.from(
+        tableBody.querySelectorAll("tr[data-track-id]"),
+      );
+      playerState.playlist = allRows
+        .map(buildTrackObjectFromRow)
+        .filter(Boolean);
 
       // Show the player menu
       musicPlayerEl.classList.replace("hidden", "grid");
@@ -2170,19 +2193,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     buildPlaylistFromEditor: (items) => {
       // A new helper for the editor
       const newPlaylist = Array.from(items)
-        .map((item) => {
-          const imageEl = item.querySelector("img");
-          const titleEl = item.querySelector(".font-semibold");
-          const producerEl = item.querySelector(".text-sm");
-          return {
-            id: item.dataset.trackId,
-            title: titleEl ? titleEl.textContent : "Unknown",
-            producer: producerEl ? producerEl.textContent : "Unknown",
-            imageUrl: imageEl ? imageEl.src : "",
-            link: item.dataset.trackLink || "",
-          };
-        })
-        .filter((track) => track.id && track.link);
+        .map(buildTrackObjectFromRow)
+        .filter(Boolean);
       playerState.playlist = newPlaylist;
     },
   };

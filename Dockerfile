@@ -4,7 +4,7 @@
 # - Frontend (CSS, JS) via Bun/Tailwind/Terser
 # - Translations (.mo files) via Python/PyBabel
 # =================================================================
-FROM python:3.13 as builder
+FROM python:3.13 AS builder
 
 # Install Bun
 RUN curl -fsSL https://bun.sh/install | bash
