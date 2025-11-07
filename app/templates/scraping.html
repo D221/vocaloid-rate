@@ -1,21 +1,22 @@
 {% extends "base.html" %}
 
-{% block title %}Scraping Tracks - Vocaloid Rater{% endblock %}
+{% block title %}{{ _('Scraping Tracks') }} - {{ _('Vocaloid Rater') }}{% endblock %}
 
 {% block content %}
   <div class="text-center">
     <h1 class="mb-4 text-4xl font-bold text-sky-text">
-      Initial Data Scrape in Progress
+      {{ _('Initial Data Scrape in Progress') }}
     </h1>
     <p class="mb-8 text-xl text-foreground">
-      The database is being populated with the latest Vocaloid track rankings
-      for the first time.
+      {{ _('The database is being populated with the latest Vocaloid track rankings for the first time.') }}
       <br />
-      Please wait, this page will automatically reload once the process is
-      complete. This can take a few minutes.
+      {{ _('Please wait, this page will automatically reload once the process is complete. This can take a few minutes.') }}
     </p>
     <div id="scrape-status-indicator">
-      <p>Status: <span id="scrape-status-text">Scraping...</span></p>
+      <p>
+        {{ _('Status:') }}
+        <span id="scrape-status-text">{{ _('Scraping...') }}</span>
+      </p>
     </div>
   </div>
 
@@ -28,14 +29,16 @@
           .then((data) => {
             if (data.status === "completed" || data.status === "no_changes") {
               clearInterval(interval);
-              scrapeStatusText.textContent = "Completed! Reloading...";
+              scrapeStatusText.textContent =
+                "{{ _('Completed! Reloading...') }}";
               window.location.reload();
             } else if (data.status === "error") {
               clearInterval(interval);
               scrapeStatusText.textContent =
-                "An error occurred. Please check the server logs and restart the application.";
+                "{{ _('An error occurred. Please check the server logs and restart the application.') }}";
             } else {
-              scrapeStatusText.textContent = "Scraping... please wait.";
+              scrapeStatusText.textContent =
+                "{{ _('Scraping... please wait.') }}";
             }
           });
       }, 2000);

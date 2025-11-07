@@ -1,0 +1,441 @@
+# Translations template for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-11-07 02:51+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: app/templates/base.html:203
+msgid "Data sourced from"
+msgstr ""
+
+#: app/templates/base.html:208
+msgid "Vocaloard"
+msgstr ""
+
+#: app/templates/base.html:209
+msgid "This is an independent project."
+msgstr ""
+
+#: app/templates/index.html:3 app/templates/index.html:6
+msgid "Vocaloid Rate"
+msgstr ""
+
+#: app/templates/index.html:47 app/templates/playlist_view.html:50
+#: app/templates/rated.html:152
+msgid "Previous"
+msgstr ""
+
+#: app/templates/index.html:55 app/templates/playlist_view.html:58
+#: app/templates/rated.html:160
+msgid "Next"
+msgstr ""
+
+#: app/templates/options.html:3 app/templates/options.html:6
+#: app/templates/partials/header.html:61 app/templates/partials/header.html:205
+msgid "Options"
+msgstr ""
+
+#: app/templates/options.html:3 app/templates/rated.html:3
+#: app/templates/scraping.html:3
+msgid "Vocaloid Rater"
+msgstr ""
+
+#: app/templates/options.html:11
+msgid "Backup & Restore"
+msgstr ""
+
+#: app/templates/options.html:16
+msgid "Backup Rated Tracks"
+msgstr ""
+
+#: app/templates/options.html:19
+msgid ""
+"Download a JSON file containing all your rated tracks, including their "
+"rating and any notes."
+msgstr ""
+
+#: app/templates/options.html:25
+msgid "Download Backup"
+msgstr ""
+
+#: app/templates/options.html:31
+msgid "Restore Rated Tracks"
+msgstr ""
+
+#: app/templates/options.html:34
+msgid ""
+"Upload a JSON backup file to restore your ratings. If a track from the "
+"backup does not exist in the database, it will be added."
+msgstr ""
+
+#: app/templates/options.html:48
+msgid "Upload and Restore"
+msgstr ""
+
+#: app/templates/options.html:56
+msgid "Default Page Size"
+msgstr ""
+
+#: app/templates/options.html:59
+msgid "Set the default number of tracks to display per page on the main list."
+msgstr ""
+
+#: app/templates/options.html:65 app/templates/partials/filter_form.html:31
+#: app/templates/partials/filter_form.html:53
+#: app/templates/partials/filter_form.html:135
+msgid "All"
+msgstr ""
+
+#: app/templates/playlist_edit.html:4
+#, python-format
+msgid "Edit: %(playlist_name)s"
+msgstr ""
+
+#: app/templates/playlist_edit.html:8 app/templates/playlist_view.html:7
+#: app/templates/playlists.html:42
+msgid "No description."
+msgstr ""
+
+#: app/templates/playlist_edit.html:19
+msgid "Available Tracks"
+msgstr ""
+
+#: app/templates/playlist_edit.html:24
+msgid "Search all tracks..."
+msgstr ""
+
+#: app/templates/playlist_edit.html:43 app/templates/playlist_edit.html:91
+msgid "Play track"
+msgstr ""
+
+#: app/templates/playlist_edit.html:72
+msgid "Playlist Tracks"
+msgstr ""
+
+#: app/templates/playlist_edit.html:74
+msgid "Drag to reorder, or drag from the left to add."
+msgstr ""
+
+#: app/templates/playlist_edit.html:116
+msgid "Remove from playlist"
+msgstr ""
+
+#: app/templates/playlist_view.html:3
+#, python-format
+msgid "%(playlist_name)s - Playlist"
+msgstr ""
+
+#: app/templates/playlists.html:4
+msgid "My Playlists"
+msgstr ""
+
+#: app/templates/partials/header.html:33 app/templates/partials/header.html:159
+#: app/templates/playlists.html:7
+msgid "Playlists"
+msgstr ""
+
+#: app/templates/playlists.html:16
+msgid "Import Playlist"
+msgstr ""
+
+#: app/templates/playlists.html:29
+msgid "Create New Playlist"
+msgstr ""
+
+#: app/templates/playlists.html:49
+msgid "View"
+msgstr ""
+
+#: app/templates/playlists.html:55
+msgid "Edit"
+msgstr ""
+
+#: app/templates/playlists.html:62
+msgid "Export"
+msgstr ""
+
+#: app/templates/playlists.html:70
+msgid "Delete"
+msgstr ""
+
+#: app/templates/playlists.html:81
+msgid "You haven't created any playlists yet."
+msgstr ""
+
+#: app/templates/playlists.html:91
+msgid "Manage Playlists"
+msgstr ""
+
+#: app/templates/playlists.html:96
+msgid "Export All"
+msgstr ""
+
+#: app/templates/playlists.html:98
+msgid "Download all your playlists as a single JSON file."
+msgstr ""
+
+#: app/templates/playlists.html:104
+msgid "Export to File"
+msgstr ""
+
+#: app/templates/playlists.html:109
+msgid "Import"
+msgstr ""
+
+#: app/templates/playlists.html:111
+msgid "Upload a JSON file to restore or add playlists."
+msgstr ""
+
+#: app/templates/playlists.html:124
+msgid "Import from File"
+msgstr ""
+
+#: app/templates/partials/header.html:56 app/templates/partials/header.html:195
+#: app/templates/rated.html:3
+msgid "Rated Tracks"
+msgstr ""
+
+#: app/templates/rated.html:17
+msgid "Top Producers"
+msgstr ""
+
+#: app/templates/rated.html:34 app/templates/rated.html:67
+msgid "avg"
+msgstr ""
+
+#: app/templates/rated.html:41
+msgid "Not enough data. Rate at least 3 tracks from the same producer."
+msgstr ""
+
+#: app/templates/rated.html:50
+msgid "Top Voicebanks"
+msgstr ""
+
+#: app/templates/rated.html:74
+msgid "Not enough data. Rate at least 3 tracks from the same voicebank."
+msgstr ""
+
+#: app/templates/rated.html:83
+#, python-format
+msgid "Overall Stats (Across %(total_ratings)s ratings)"
+msgstr ""
+
+#: app/templates/rated.html:88
+msgid "Average"
+msgstr ""
+
+#: app/templates/rated.html:92
+msgid "Median"
+msgstr ""
+
+#: app/templates/rated.html:102
+msgid "Rating Distribution"
+msgstr ""
+
+#: app/templates/scraping.html:3
+msgid "Scraping Tracks"
+msgstr ""
+
+#: app/templates/scraping.html:8
+msgid "Initial Data Scrape in Progress"
+msgstr ""
+
+#: app/templates/scraping.html:11
+msgid ""
+"The database is being populated with the latest Vocaloid track rankings "
+"for the first time."
+msgstr ""
+
+#: app/templates/scraping.html:13
+msgid ""
+"Please wait, this page will automatically reload once the process is "
+"complete. This can take a few minutes."
+msgstr ""
+
+#: app/templates/scraping.html:17
+msgid "Status:"
+msgstr ""
+
+#: app/templates/scraping.html:18
+msgid "Scraping..."
+msgstr ""
+
+#: app/templates/scraping.html:33
+msgid "Completed! Reloading..."
+msgstr ""
+
+#: app/templates/scraping.html:38
+msgid ""
+"An error occurred. Please check the server logs and restart the "
+"application."
+msgstr ""
+
+#: app/templates/scraping.html:41
+msgid "Scraping... please wait."
+msgstr ""
+
+#: app/templates/partials/filter_form.html:8
+msgid "Chart:"
+msgstr ""
+
+#: app/templates/partials/filter_form.html:19
+msgid "Charting"
+msgstr ""
+
+#: app/templates/partials/filter_form.html:25
+msgid "Charted"
+msgstr ""
+
+#: app/templates/partials/filter_form.html:42
+msgid "Rating:"
+msgstr ""
+
+#: app/templates/partials/filter_form.html:59
+msgid "Rated"
+msgstr ""
+
+#: app/templates/partials/filter_form.html:65
+msgid "Unrated"
+msgstr ""
+
+#: app/templates/partials/filter_form.html:77
+msgid "Search by title..."
+msgstr ""
+
+#: app/templates/partials/filter_form.html:90
+msgid "Filter by producer..."
+msgstr ""
+
+#: app/templates/partials/filter_form.html:108
+msgid "Filter by voicebank..."
+msgstr ""
+
+#: app/templates/partials/filter_form.html:124
+msgid "Items per page:"
+msgstr ""
+
+#: app/templates/partials/filter_form.html:164
+msgid "Clear"
+msgstr ""
+
+#: app/templates/partials/filter_form.html:173
+msgid "Update Tracks"
+msgstr ""
+
+#: app/templates/partials/header.html:12
+msgid "Toggle menu"
+msgstr ""
+
+#: app/templates/partials/header.html:26 app/templates/partials/header.html:149
+msgid "Main Chart"
+msgstr ""
+
+#: app/templates/partials/header.html:42 app/templates/partials/header.html:174
+msgid "View Playlist"
+msgstr ""
+
+#: app/templates/partials/header.html:48 app/templates/partials/header.html:184
+msgid "Edit Details"
+msgstr ""
+
+#: app/templates/partials/header.html:86
+msgid "Edit playlist name"
+msgstr ""
+
+#: app/templates/partials/header.html:109
+msgid "Edit playlist description"
+msgstr ""
+
+#: app/templates/partials/header.html:128
+msgid "Last updated:"
+msgstr ""
+
+#: app/templates/partials/header.html:131
+#, python-format
+msgid "Your database is %(days)s day(s) old, please update."
+msgstr ""
+
+#: app/templates/partials/header.html:134
+msgid "Database not updated yet. Please update."
+msgstr ""
+
+#: app/templates/partials/tracks_table_body.html:11
+#: app/templates/partials/tracks_table_head.html:9
+msgid "Image"
+msgstr ""
+
+#: app/templates/partials/tracks_table_body.html:25
+msgid "Rank"
+msgstr ""
+
+#: app/templates/partials/tracks_table_body.html:33
+#: app/templates/partials/tracks_table_head.html:20
+msgid "Title"
+msgstr ""
+
+#: app/templates/partials/tracks_table_body.html:67
+msgid "Play this track"
+msgstr ""
+
+#: app/templates/partials/tracks_table_body.html:73
+msgid "Toggle video player"
+msgstr ""
+
+#: app/templates/partials/tracks_table_body.html:99
+msgid "Lyrics"
+msgstr ""
+
+#: app/templates/partials/tracks_table_body.html:109
+msgid "Manage playlists"
+msgstr ""
+
+#: app/templates/partials/tracks_table_body.html:151
+#: app/templates/partials/tracks_table_head.html:27
+msgid "Producer"
+msgstr ""
+
+#: app/templates/partials/tracks_table_body.html:199
+msgid "Search producer on VocaDB"
+msgstr ""
+
+#: app/templates/partials/tracks_table_body.html:209
+#: app/templates/partials/tracks_table_head.html:34
+msgid "Voicebank"
+msgstr ""
+
+#: app/templates/partials/tracks_table_body.html:253
+#: app/templates/partials/tracks_table_body.html:259
+#: app/templates/partials/tracks_table_head.html:41
+msgid "Published"
+msgstr ""
+
+#: app/templates/partials/tracks_table_body.html:265
+#: app/templates/partials/tracks_table_head.html:46
+msgid "My Rating"
+msgstr ""
+
+#: app/templates/partials/tracks_table_body.html:313
+msgid "Edit Note"
+msgstr ""
+
+#: app/templates/partials/tracks_table_body.html:313
+msgid "Add Note"
+msgstr ""
+
+#: app/templates/partials/tracks_table_body.html:318
+msgid "Clear my rating for this track"
+msgstr ""
+

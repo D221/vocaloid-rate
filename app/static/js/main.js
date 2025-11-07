@@ -2,6 +2,16 @@
 // GLOBAL STATE & CONFIGURATION
 // ===================================================================
 
+let translations = {};
+
+function _(key, ...args) {
+  let translated = translations[key] || key;
+  if (args.length > 0) {
+    translated = translated.replace(/%s/g, () => args.shift());
+  }
+  return translated;
+}
+
 let ytPlayer;
 let progressUpdateInterval;
 let ratingChart = null;
@@ -56,7 +66,7 @@ const showToast = (message, type = "success") => {
   const textColor = "text-white"; // Or a theme color for light text
 
   toast.className = `fixed bottom-24 right-5 z-[2000] rounded-md px-4 py-3 font-semibold shadow-lg ${bgColor} ${textColor}`;
-  toast.textContent = message;
+  toast.textContent = _(message);
 
   document.body.appendChild(toast);
 
@@ -391,10 +401,10 @@ const updateActiveFilterDisplay = () => {
   if (ratingFilter) {
     container.innerHTML = `
       <div data-active-rating-filter class="inline-flex items-center justify-between gap-3 rounded-3xl border border-gray-text bg-card-bg px-3 py-2 shadow-sm">
-          <span>Filtering by rating: <strong>${ratingFilter} ★</strong></span>
+          <span>${_("Filtering by rating: %s ★", ratingFilter)}</span>
           <button type="button" data-clear-rating-filter
               class="text-xl text-gray-text hover:text-red-text leading-none"
-              title="Clear rating filter">&times;</button>
+              title="${_("Clear rating filter")}">&times;</button>
       </div>
 		`;
     container.style.display = "block";
@@ -445,7 +455,7 @@ const openPlaylistModal = async (trackId, buttonElement) => {
     let memberHTML = "";
     if (member_of.length > 0) {
       memberHTML = `
-        <div class="px-2 pt-2 text-sm font-bold text-header">In Playlists</div>
+        <div class="px-2 pt-2 text-sm font-bold text-header">${_("In Playlists")}</div>
         <div class="space-y-1 p-1">
             ${member_of
               .map(
@@ -465,7 +475,7 @@ const openPlaylistModal = async (trackId, buttonElement) => {
     let notMemberHTML = "";
     if (not_member_of.length > 0) {
       notMemberHTML = `
-        <div class="px-2 pt-2 text-sm font-bold text-header">Add to...</div>
+        <div class="px-2 pt-2 text-sm font-bold text-header">${_("Add to...")}</div>
         <div class="space-y-1 p-1">
              ${not_member_of
                .map(
@@ -488,8 +498,8 @@ const openPlaylistModal = async (trackId, buttonElement) => {
           ${notMemberHTML}
       </div>
       <div class="mt-2 border-t border-border pt-2">
-          <input type="text" data-new-playlist-name placeholder="Or create new..." class="w-full rounded border border-border bg-background p-2 text-foreground placeholder:text-gray-text">
-          <button data-create-playlist class="mt-2 w-full cursor-pointer rounded border border-cyan-text px-2 py-1 text-cyan-text ease-in-out  hover:transition-colors hover:duration-200 hover:bg-cyan-hover disabled:opacity-50" disabled>Create & Add</button>
+          <input type="text" data-new-playlist-name placeholder="${_("Or create new...")}" class="w-full rounded border border-border bg-background p-2 text-foreground placeholder:text-gray-text">
+          <button data-create-playlist class="mt-2 w-full cursor-pointer rounded border border-cyan-text px-2 py-1 text-cyan-text ease-in-out  hover:transition-colors hover:duration-200 hover:bg-cyan-hover disabled:opacity-50" disabled>${_("Create & Add")}</button>
       </div>`;
 
     document.body.appendChild(modal);
@@ -548,7 +558,15 @@ const openPlaylistModal = async (trackId, buttonElement) => {
 // ===================================================================
 // INITIALIZATION & EVENT LISTENERS (The "Entry Point")
 // ===================================================================
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  const lang = document.documentElement.lang || "en";
+  try {
+    const response = await fetch(`/api/translations?lang=${lang}`);
+    translations = await response.json();
+  } catch (error) {
+    console.error("Could not fetch translations:", error);
+  }
+
   const musicPlayerEl = document.getElementById("music-player");
   const playPauseBtn = document.getElementById("player-play-pause-btn");
   const nextBtn = document.getElementById("player-next-btn");
@@ -583,7 +601,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const videoId = getYouTubeVideoId(track.link);
 
     if (!videoId) {
-      showToast("Could not find a valid YouTube video ID.", "error");
+      showToast(_("Could not find a valid YouTube video ID."), "error");
       return;
     }
 
@@ -854,7 +872,9 @@ document.addEventListener("DOMContentLoaded", () => {
         hideSkeleton();
         console.error("Failed to update tracks:", error);
         tableBody.innerHTML =
-          '<tr><td colspan="7">Error loading tracks. Please try again.</td></tr>';
+          '<tr><td colspan="7">' +
+          _("Error loading tracks. Please try again.") +
+          "</td></tr>";
       }
       updateSortIndicators();
       updateActiveFilterDisplay();
@@ -882,10 +902,20 @@ document.addEventListener("DOMContentLoaded", () => {
         (t) => t.id === playerState.currentTrackId,
       );
       if (track) {
+        // Determine which language to display
+        const currentLang = document.documentElement.lang || "en";
+        const displayTitle =
+          currentLang === "ja" && track.title_jp ? track.title_jp : track.title;
+        const displayProducer =
+          currentLang === "ja" && track.producer_jp
+            ? track.producer_jp
+            : track.producer;
+
         // Update player info
         document.getElementById("player-thumbnail").src = track.imageUrl;
-        document.getElementById("player-title").textContent = track.title;
-        document.getElementById("player-producer").textContent = track.producer;
+        document.getElementById("player-title").textContent = displayTitle;
+        document.getElementById("player-producer").textContent =
+          displayProducer;
 
         // Find the corresponding row and play button in the table
         const trackRow = document.querySelector(
@@ -918,7 +948,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function onPlayerError(event) {
     console.error("YouTube Player Error:", event.data);
     showToast(
-      `Could not play this video.\n\nThis might be because the uploader has disabled embedding, or the video is private/deleted.\n(Error code: ${event.data})`,
+      _(
+        `Could not play this video.\n\nThis might be because the uploader has disabled embedding, or the video is private/deleted.\n(Error code: %s)`,
+        event.data,
+      ),
       "error",
     );
     playNextTrack(); // Attempt to play the next track
@@ -1154,7 +1187,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (playerState.playlist.length === 0) {
         loadPlaylistFromTemplate();
         if (playerState.playlist.length === 0) {
-          showToast("Could not find playlist data to play track.", "error");
+          showToast(_("Could not find playlist data to play track."), "error");
           return;
         }
       }
@@ -1343,12 +1376,14 @@ document.addEventListener("DOMContentLoaded", () => {
       fetch(
         `/api/vocadb_search?title_en=${titleEn}&producer=${producer}&title_jp=${titleJp}`,
       )
-        .then((res) => (res.ok ? res.json() : Promise.reject("Search failed")))
+        .then((res) =>
+          res.ok ? res.json() : Promise.reject(_("Search failed")),
+        )
         .then((data) => {
           if (data.url) window.open(data.url, "_blank");
-          else showToast("Track not found on VocaDB.", "error");
+          else showToast(_("Track not found on VocaDB."), "error");
         })
-        .catch(() => showToast("Could not search VocaDB.", "error"))
+        .catch(() => showToast(_("Could not search VocaDB."), "error"))
         .finally(() => {
           vocadbBtn.disabled = false;
           vocadbBtn.textContent = "VocaDB";
@@ -1367,16 +1402,18 @@ document.addEventListener("DOMContentLoaded", () => {
       fetch(
         `/api/vocadb_artist_search?producer=${encodeURIComponent(producer)}`,
       )
-        .then((res) => (res.ok ? res.json() : Promise.reject("Search failed")))
+        .then((res) =>
+          res.ok ? res.json() : Promise.reject(_("Search failed")),
+        )
         .then((data) => {
           if (data.url) {
             window.open(data.url, "_blank");
           } else {
-            showToast("Producer not found on VocaDB.", "error");
+            showToast(_("Producer not found on VocaDB."), "error");
           }
         })
         .catch(() =>
-          showToast("Could not search VocaDB for this producer.", "error"),
+          showToast(_("Could not search VocaDB for this producer."), "error"),
         )
         .finally(() => {
           vocadbProducerBtn.disabled = false;
@@ -1618,7 +1655,7 @@ document.addEventListener("DOMContentLoaded", () => {
         "div[data-lyrics-content]",
       );
       if (lyricsButton.classList.toggle("is-open")) {
-        lyricsButton.textContent = "Close";
+        lyricsButton.textContent = _("Close");
         if (lyricsContainer.dataset.loaded === "true") {
           lyricsContainer.style.display = "block";
         } else {
@@ -1649,20 +1686,20 @@ document.addEventListener("DOMContentLoaded", () => {
             `/api/vocadb_search?title_en=${titleEn}&producer=${producer}&title_jp=${titleJp}`,
           )
             .then((res) =>
-              res.ok ? res.json() : Promise.reject("Song not found"),
+              res.ok ? res.json() : Promise.reject(_("Song not found")),
             )
             .then((searchData) =>
               searchData.song_id
                 ? fetch(`/api/vocadb_lyrics/${searchData.song_id}`)
-                : Promise.reject("Song not found"),
+                : Promise.reject(_("Song not found")),
             )
             .then((res) =>
-              res.ok ? res.json() : Promise.reject("Lyrics not available"),
+              res.ok ? res.json() : Promise.reject(_("Lyrics not available")),
             )
             .then((data) => {
               allLyricsData = data.lyrics;
               if (allLyricsData.length === 0)
-                return Promise.reject("No lyrics found");
+                return Promise.reject(_("No lyrics found"));
               lyricsSelect.innerHTML = "";
               allLyricsData.forEach((lyric, index) => {
                 const option = document.createElement("option");
@@ -1694,15 +1731,15 @@ document.addEventListener("DOMContentLoaded", () => {
             .finally(() => {
               lyricsButton.disabled = false;
               if (lyricsButton.classList.contains("is-open")) {
-                lyricsButton.textContent = "Close";
+                lyricsButton.textContent = _("Close");
               } else {
-                lyricsButton.textContent = "Lyrics";
+                lyricsButton.textContent = _("Lyrics");
               }
             });
         }
       } else {
         lyricsContainer.style.display = "none";
-        lyricsButton.textContent = "Lyrics";
+        lyricsButton.textContent = _("Lyrics");
       }
       return;
     }
@@ -1730,8 +1767,8 @@ document.addEventListener("DOMContentLoaded", () => {
           method: "POST",
         })
           .then((res) => {
-            if (!res.ok) throw new Error("Failed to add track.");
-            showToast("Track added!");
+            if (!res.ok) throw new Error(_("Failed to add track."));
+            showToast(_("Track added!"));
             closePlaylistModals();
             showSkeleton();
             updateTracks(); // This will handle the button color change
@@ -1747,8 +1784,8 @@ document.addEventListener("DOMContentLoaded", () => {
           method: "DELETE",
         })
           .then((res) => {
-            if (!res.ok) throw new Error("Failed to remove track.");
-            showToast("Track removed.");
+            if (!res.ok) throw new Error(_("Failed to remove track."));
+            showToast(_("Track removed."));
             closePlaylistModals();
             showSkeleton();
             updateTracks(); // This will handle the button color change
@@ -1775,8 +1812,8 @@ document.addEventListener("DOMContentLoaded", () => {
             )
             .then((res) => {
               if (!res.ok)
-                throw new Error("Failed to add track to new playlist.");
-              showToast(`Track added to new playlist: ${playlistName}!`);
+                throw new Error(_("Failed to add track to new playlist."));
+              showToast(_(`Track added to new playlist: %s!`, playlistName));
               closePlaylistModals();
               showSkeleton();
               updateTracks(); // This will handle the button color change
@@ -1834,7 +1871,7 @@ document.addEventListener("DOMContentLoaded", () => {
               );
               if (notesBtn) {
                 const hasNote = notesInput.value.trim().length > 0;
-                notesBtn.textContent = "Saved!";
+                notesBtn.textContent = _("Saved!");
 
                 // Update button style based on whether there's a note
                 notesBtn.classList.toggle("border-green-text", hasNote);
@@ -1843,7 +1880,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 notesBtn.classList.toggle("text-gray-text", !hasNote);
 
                 setTimeout(() => {
-                  notesBtn.textContent = hasNote ? "Edit Note" : "Add Note";
+                  notesBtn.textContent = hasNote
+                    ? _("Edit Note")
+                    : _("Add Note");
                 }, 2000);
               }
             },
@@ -2062,7 +2101,7 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       const scrapeStatus = document.getElementById("scrape-status");
       scrapeButton.disabled = true;
-      scrapeButton.textContent = "Checking...";
+      scrapeButton.textContent = _("Checking...");
       fetch("/scrape", { method: "POST" })
         .then((res) => res.json())
         .then((data) => {
@@ -2073,29 +2112,35 @@ document.addEventListener("DOMContentLoaded", () => {
               .then((statusData) => {
                 if (statusData.status === "no_changes") {
                   clearInterval(interval);
-                  scrapeStatus.textContent = "Ranking is already up-to-date.";
+                  scrapeStatus.textContent = _(
+                    "Ranking is already up-to-date.",
+                  );
                   scrapeButton.disabled = false;
-                  scrapeButton.textContent = "Update Tracks";
+                  scrapeButton.textContent = _("Update Tracks");
                   setTimeout(() => {
                     scrapeStatus.textContent = "";
                   }, 4000);
                 } else if (statusData.status === "completed") {
                   clearInterval(interval);
-                  scrapeStatus.textContent = "Completed! Reloading...";
+                  scrapeStatus.textContent = _("Completed! Reloading...");
                   window.location.reload();
                 } else if (statusData.status === "error") {
                   clearInterval(interval);
-                  scrapeStatus.textContent =
-                    "An error occurred. Check server logs.";
+                  scrapeStatus.textContent = _(
+                    "An error occurred. Check server logs.",
+                  );
                   scrapeButton.disabled = false;
-                  scrapeButton.textContent = "Update Tracks";
+                  scrapeButton.textContent = _("Update Tracks");
                 } else if (statusData.status.startsWith("in_progress")) {
-                  scrapeButton.textContent = "Scraping...";
+                  scrapeButton.textContent = _("Scraping...");
                   const progress = statusData.status.split(":")[1];
                   if (progress) {
-                    scrapeStatus.textContent = `Scraping page ${progress}...`;
+                    scrapeStatus.textContent = _(
+                      `Scraping page %s...`,
+                      progress,
+                    );
                   } else {
-                    scrapeStatus.textContent = "Changes found, updating...";
+                    scrapeStatus.textContent = _("Changes found, updating...");
                   }
                 }
               });

@@ -8,7 +8,7 @@
   >
     <!-- Image -->
     <td
-      data-label="Image"
+      data-label="{{ _('Image') }}"
       class="border-b border-border p-0 md:table-cell md:border md:p-2 md:whitespace-nowrap"
     >
       <a href="{{ track.link }}" target="_blank">
@@ -22,7 +22,7 @@
 
     <!-- Rank -->
     <td
-      data-label="Rank"
+      data-label="{{ _('Rank') }}"
       class="block border-b border-border p-3 text-center last:border-b-0 md:table-cell md:w-1 md:min-w-0 md:border md:px-3 md:py-2 md:text-left md:whitespace-nowrap"
     >
       {{ track.rank if track.rank is not none else '—' }}
@@ -30,31 +30,47 @@
 
     <!-- Title -->
     <td
-      data-label="Title"
+      data-label="{{ _('Title') }}"
       class="block border-b border-border p-3 text-center last:border-b-0 md:table-cell md:w-1/3 md:border md:px-3 md:py-2 md:text-left"
     >
       <a
         href="{{ track.link }}"
         target="_blank"
         class="font-semibold hover:text-sky-text hover:underline"
-        title="{{ track.title }}"
+        title="{% if locale == 'ja' and track.title_jp %}
+          {{ track.title_jp }}
+          ({{ track.title }})
+        {% else %}
+          {{ track.title }}{% if track.title_jp %}({{ track.title_jp }}){% endif %}
+        {% endif %}"
       >
-        {{ track.title | truncate(35, True, '...') }}
+        {% if locale == 'ja' and track.title_jp %}
+          {{ track.title_jp | truncate(35, True, '...') }}
+          <br /><span class="text-sm text-gray-text"
+            >({{ track.title | truncate(30, True, '...') }})</span
+          >
+        {% else %}
+          {{ track.title | truncate(35, True, '...') }}
+          {% if track.title_jp %}
+            <br /><span class="text-sm text-gray-text"
+              >({{ track.title_jp | truncate(30, True, '...') }})</span
+            >
+          {% endif %}
+        {% endif %}
       </a>
-      {% if track.title_jp %}<br />({{ track.title_jp }}){% endif %}
 
       <div class="mt-2 flex justify-center gap-2 md:justify-start">
         <button
           data-play-button
           class="cursor-pointer rounded border border-gray-text px-2 py-1 text-gray-text ease-in-out hover:bg-gray-hover hover:transition-colors hover:duration-200"
           data-track-id="{{ track.id }}"
-          title="Play this track"
+          title="{{ _('Play this track') }}"
         >
           {{ icon('play', size="h-4 w-4") }}
         </button>
         <button
           data-embed-button
-          title="Toggle video player"
+          title="{{ _('Toggle video player') }}"
           class="cursor-pointer rounded border border-cyan-text px-2 py-1 text-cyan-text ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
           data-youtube-url="{{ track.link }}"
         >
@@ -65,10 +81,7 @@
           class="cursor-pointer rounded border border-purple-text px-2 py-1 font-semibold text-purple-text ease-in-out hover:bg-purple-hover hover:transition-colors hover:duration-200"
           data-title-en="{{ track.title }}"
           data-producer="{{ track.producer.split(',')[0].strip() }}"
-          {%
-            if
-            track.title_jp
-          %}
+          {% if track.title_jp %}
             data-title-jp="{{ track.title_jp }}"
           {% endif %}
         >
@@ -79,14 +92,11 @@
           class="cursor-pointer rounded border border-green-text px-2 py-1 font-semibold text-green-text ease-in-out hover:bg-green-hover hover:transition-colors hover:duration-200"
           data-title-en="{{ track.title }}"
           data-producer="{{ track.producer.split(',')[0].strip() }}"
-          {%
-            if
-            track.title_jp
-          %}
+          {% if track.title_jp %}
             data-title-jp="{{ track.title_jp }}"
           {% endif %}
         >
-          Lyrics
+          {{ _('Lyrics') }}
         </button>
         <button
           data-add-to-playlist-button
@@ -96,7 +106,7 @@
           {% else %}
             border-amber-text text-amber-text hover:bg-amber-hover
           {% endif %} cursor-pointer rounded border px-2 py-1 shadow-md ease-in-out hover:transition-colors hover:duration-200"
-          title="Manage playlists"
+          title="{{ _('Manage playlists') }}"
         >
           {{ icon('plus', size="h-4 w-4") }}
         </button>
@@ -138,69 +148,121 @@
 
     <!-- Producer -->
     <td
-      data-label="Producer"
+      data-label="{{ _('Producer') }}"
       class="block border-b border-border p-3 text-left last:border-b-0 md:table-cell md:border md:px-3 md:py-2 md:text-left"
     >
-      <div>
-        {% for producer in track.producer.split(',') %}
-          <a
-            href="#"
-            class="filter-link font-semibold hover:text-sky-text hover:underline"
-            data-filter-type="producer_filter"
-            data-filter-value="{{ producer.strip() }}"
-            title="{{ producer.strip() }}"
+      <!-- Use a single flex container to control the layout -->
+      <div class="flex flex-col">
+        <!-- Part 1: All text content -->
+        <div>
+          {% if locale == 'ja' and track.producer_jp %}
+            {% for producer in track.producer_jp.split(',') %}
+              <a
+                href="#"
+                class="filter-link font-semibold hover:text-sky-text hover:underline"
+                data-filter-type="producer_filter"
+                data-filter-value="{{ producer.strip() }}"
+                title="{{ producer.strip() }}"
+              >
+                {{ producer.strip() | truncate(35, True, '...') }}</a
+              >{% if not loop.last %},{% endif %}
+            {% endfor %}
+            <br /><span class="text-sm text-gray-text"
+              >({{ track.producer | truncate(30, True, '...') }})</span
+            >
+          {% else %}
+            {% for producer in track.producer.split(',') %}
+              <a
+                href="#"
+                class="filter-link font-semibold hover:text-sky-text hover:underline"
+                data-filter-type="producer_filter"
+                data-filter-value="{{ producer.strip() }}"
+                title="{{ producer.strip() }}"
+              >
+                {{ producer.strip() | truncate(35, True, '...') }}</a
+              >{% if not loop.last %},{% endif %}
+            {% endfor %}
+            {% if track.producer_jp %}
+              <br /><span class="text-sm text-gray-text"
+                >({{ track.producer_jp | truncate(30, True, '...') }})</span
+              >
+            {% endif %}
+          {% endif %}
+        </div>
+
+        <!-- Part 2: The button, with controlled margin -->
+        <div class="mt-2 flex justify-center gap-2 md:justify-start">
+          <button
+            data-vocadb-artist-button
+            class="cursor-pointer rounded border border-purple-text px-2 py-1 font-semibold text-purple-text ease-in-out hover:bg-purple-hover hover:transition-colors hover:duration-200"
+            data-producer="{{ track.producer.split(',')[0].strip() }}"
+            title="{{ _('Search producer on VocaDB') }}"
           >
-            {{ producer.strip() | truncate(35, True, '...') }} </a
-          >{% if not loop.last %},{% endif %}
-        {% endfor %}
-      </div>
-      <div class="mt-2 flex justify-center gap-2 md:justify-start">
-        <button
-          data-vocadb-artist-button
-          class="cursor-pointer rounded border border-purple-text px-2 py-1 font-semibold text-purple-text ease-in-out hover:bg-purple-hover hover:transition-colors hover:duration-200"
-          data-producer="{{ track.producer.split(',')[0].strip() }}"
-          title="Search producer on VocaDB"
-        >
-          VocaDB
-        </button>
+            VocaDB
+          </button>
+        </div>
       </div>
     </td>
 
     <!-- Voicebank -->
     <td
-      data-label="Voicebank"
+      data-label="{{ _('Voicebank') }}"
       class="block border-b border-border p-3 text-left last:border-b-0 md:table-cell md:border md:px-3 md:py-2 md:text-left"
     >
-      {% for voicebank in track.voicebank.split(',') %}
-        {% if voicebank.strip() %}
-          <a
-            href="#"
-            class="filter-link font-semibold hover:text-sky-text hover:underline"
-            data-filter-type="voicebank_filter"
-            data-filter-value="{{ voicebank.strip() }}"
-            title="{{ voicebank.strip() }}"
+      {% if locale == 'ja' and track.voicebank_jp %}
+        {% for voicebank in track.voicebank_jp.split(',') %}
+          {% if voicebank.strip() %}
+            <a
+              href="#"
+              class="filter-link font-semibold hover:text-sky-text hover:underline"
+              data-filter-type="voicebank_filter"
+              data-filter-value="{{ voicebank.strip() }}"
+              title="{{ voicebank.strip() }}"
+            >
+              {{ voicebank.strip() }}</a
+            >{% if not loop.last and voicebank.strip() %},{% endif %}
+          {% endif %}
+        {% endfor %}
+        <br /><span class="text-sm text-gray-text"
+          >({{ track.voicebank }})</span
+        >
+      {% else %}
+        {% for voicebank in track.voicebank.split(',') %}
+          {% if voicebank.strip() %}
+            <a
+              href="#"
+              class="filter-link font-semibold hover:text-sky-text hover:underline"
+              data-filter-type="voicebank_filter"
+              data-filter-value="{{ voicebank.strip() }}"
+              title="{{ voicebank.strip() }}"
+            >
+              {{ voicebank.strip() }}</a
+            >{% if not loop.last and voicebank.strip() %},{% endif %}
+          {% endif %}
+        {% endfor %}
+        {% if track.voicebank_jp %}
+          <br /><span class="text-sm text-gray-text"
+            >({{ track.voicebank_jp }})</span
           >
-            {{ voicebank.strip() | truncate(35, True, '...') }} </a
-          >{% if not loop.last and voicebank.strip() %},{% endif %}
         {% endif %}
-      {% endfor %}
+      {% endif %}
     </td>
 
     <!-- Published -->
     <td
-      data-label="Published"
+      data-label="{{ _('Published') }}"
       class="block border-b border-border p-3 text-left last:border-b-0 md:table-cell md:w-1 md:min-w-0 md:border md:px-3 md:py-2 md:text-left md:whitespace-nowrap"
       title="{{ track.published_date.strftime('%Y-%m-%d') }}"
     >
       {{ track.published_date | time_ago }}
       <span class="inline-block w-24 font-bold text-header md:hidden"
-        >Published</span
+        >{{ _('Published') }}</span
       >
     </td>
 
     <!-- My Rating -->
     <td
-      data-label="My Rating"
+      data-label="{{ _('My Rating') }}"
       class="block border-b border-border p-3 text-left last:border-b-0 md:table-cell md:w-1 md:min-w-0 md:border md:px-3 md:py-2 md:text-left md:whitespace-nowrap"
     >
       {% set current_rating = track.ratings[0].rating if track.ratings else 0 %}
@@ -230,10 +292,7 @@
               name="rating"
               value="{{ i }}"
               id="star-{{ track.id }}-{{ i }}"
-              {%
-                if
-                current_rating==i
-              %}
+              {% if current_rating==i %}
                 checked
               {% endif %}
             />
@@ -251,12 +310,12 @@
               text-gray-text hover:bg-gray-hover
             {% endif %} cursor-pointer rounded border px-2 py-1 font-bold shadow-md ease-in-out hover:transition-colors hover:duration-200"
           >
-            {{ 'Edit Note' if has_note else 'Add Note' }}
+            {{ _('Edit Note') if has_note else _('Add Note') }}
           </button>
           {% if track.ratings %}
             <button
               data-clear-rating
-              title="Clear my rating for this track"
+              title="{{ _('Clear my rating for this track') }}"
               type="button"
               data-delete-endpoint="/rate/{{ track.id }}/delete"
               class="cursor-pointer rounded border border-red-text p-1 font-bold text-red-text shadow-md ease-in-out hover:bg-red-hover hover:transition-colors hover:duration-200"

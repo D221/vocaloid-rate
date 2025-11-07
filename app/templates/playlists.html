@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% from "macros/icons.html" import render as icon %}
 
-{% block title %}My Playlists{% endblock %}
+{% block title %}{{ _('My Playlists') }}{% endblock %}
 
 {% block content %}
-  {% set title = "Playlists" %}
+  {% set title = _("Playlists") %}
   {% include "partials/header.html" %}
 
   <div class="mx-auto max-w-4xl">
@@ -13,7 +13,7 @@
         for="import-single-playlist-input"
         class="flex cursor-pointer items-center gap-2 rounded border border-green-text p-2 font-bold text-green-text shadow-md ease-in-out hover:bg-green-hover hover:transition-colors hover:duration-200"
       >
-        {{ icon('upload', size="h-6 w-6") }} Import Playlist
+        {{ icon('upload', size="h-6 w-6") }} {{ _('Import Playlist') }}
       </label>
       <input
         type="file"
@@ -26,7 +26,7 @@
         id="create-new-playlist-btn"
         class="flex cursor-pointer items-center gap-2 rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:bg-sky-hover hover:transition-colors hover:duration-200"
       >
-        {{ icon('plus', size="h-6 w-6") }} Create New Playlist
+        {{ icon('plus', size="h-6 w-6") }} {{ _('Create New Playlist') }}
       </button>
     </div>
 
@@ -39,27 +39,27 @@
             <div>
               <h2 class="text-xl font-bold text-header">{{ playlist.name }}</h2>
               <p class="text-gray-text">
-                {{ playlist.description or "No description." }}
+                {{ playlist.description or _("No description.") }}
               </p>
             </div>
             <div class="flex shrink-0 gap-2">
               <a
                 href="/playlist/{{ playlist.id }}"
                 class="cursor-pointer rounded border border-gray-text p-2 font-bold text-gray-text shadow-md ease-in-out hover:bg-gray-hover hover:transition-colors hover:duration-200"
-                title="View"
+                title="{{ _('View') }}"
                 >{{ icon('eye', size="h-6 w-6") }}</a
               >
               <a
                 href="/playlist/edit/{{ playlist.id }}"
                 class="cursor-pointer rounded border border-amber-text p-2 font-bold text-amber-text shadow-md ease-in-out hover:bg-amber-hover hover:transition-colors hover:duration-200"
-                title="Edit"
+                title="{{ _('Edit') }}"
                 >{{ icon('pencil', size="h-6 w-6") }}</a
               >
               <!-- NEW: Export Single Playlist Button -->
               <button
                 data-export-single-playlist="{{ playlist.id }}"
                 class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:bg-sky-hover hover:transition-colors hover:duration-200"
-                title="Export"
+                title="{{ _('Export') }}"
               >
                 {{ icon('download', size="h-6 w-6") }}
               </button>
@@ -67,7 +67,7 @@
                 data-delete-playlist="{{ playlist.id }}"
                 data-playlist-name="{{ playlist.name }}"
                 class="cursor-pointer rounded border border-red-text p-2 font-bold text-red-text shadow-md ease-in-out hover:bg-red-hover hover:transition-colors hover:duration-200"
-                title="Delete"
+                title="{{ _('Delete') }}"
               >
                 {{ icon('trash', size="h-6 w-6") }}
               </button>
@@ -78,7 +78,7 @@
         <div
           class="rounded border border-border bg-card-bg p-8 text-center text-gray-text shadow-md"
         >
-          You haven't created any playlists yet.
+          {{ _("You haven't created any playlists yet.") }}
         </div>
       {% endif %}
     </div>
@@ -88,27 +88,27 @@
       <h2
         class="mb-2 border-b border-border pb-2 text-xl font-semibold text-header"
       >
-        Manage Playlists
+        {{ _('Manage Playlists') }}
       </h2>
       <div class="flex flex-wrap items-start gap-8">
         <!-- Export -->
         <div>
-          <h3 class="font-bold">Export All</h3>
+          <h3 class="font-bold">{{ _('Export All') }}</h3>
           <p class="text-sm text-gray-text">
-            Download all your playlists as a single JSON file.
+            {{ _('Download all your playlists as a single JSON file.') }}
           </p>
           <button
             id="export-playlists-btn"
             class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:bg-sky-hover hover:transition-colors hover:duration-200"
           >
-            Export to File
+            {{ _('Export to File') }}
           </button>
         </div>
         <!-- Import -->
         <div>
-          <h3 class="font-bold">Import</h3>
+          <h3 class="font-bold">{{ _('Import') }}</h3>
           <p class="text-sm text-gray-text">
-            Upload a JSON file to restore or add playlists.
+            {{ _('Upload a JSON file to restore or add playlists.') }}
           </p>
           <input
             type="file"
@@ -121,7 +121,7 @@
             class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-sky-hover disabled:cursor-not-allowed disabled:opacity-50"
             disabled
           >
-            Import from File
+            {{ _('Import from File') }}
           </button>
           <div id="import-status" class="mt-2 text-sm font-bold"></div>
         </div>

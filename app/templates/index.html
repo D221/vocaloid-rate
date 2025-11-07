@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
-{% block title %}Vocaloid Rate{% endblock %}
+{% block title %}{{ _('Vocaloid Rate') }}{% endblock %}
 
 {% block content %}
-  {% set title = "Vocaloid Rate" %}
+  {% set title = _("Vocaloid Rate") %}
   {% include "partials/header.html" %}
 
   {%
@@ -44,7 +44,7 @@
       id="prev-page-btn"
       disabled
     >
-      Previous
+      {{ _('Previous') }}
     </button>
     <div class="flex items-center gap-2" id="page-links"></div>
     <button
@@ -52,7 +52,7 @@
       id="next-page-btn"
       disabled
     >
-      Next
+      {{ _('Next') }}
     </button>
   </div>
 

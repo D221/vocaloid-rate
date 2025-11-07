@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Rated Tracks - Vocaloid Rater{% endblock %}
+{% block title %}{{ _('Rated Tracks') }} - {{ _('Vocaloid Rater') }}{% endblock %}
 
 {% block head_extra %}
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -14,7 +14,7 @@
       <h2
         class="mt-0 border-b border-border pb-1 text-2xl font-semibold text-header"
       >
-        Top Producers
+        {{ _('Top Producers') }}
       </h2>
       {% if stats.top_producers %}
         <ul>
@@ -30,13 +30,15 @@
               >
                 <span>{{ producer.name }}</span>
               </a>
-              <span class="text-header">{{ producer.avg_rating }} ★ avg</span>
+              <span class="text-header"
+                >{{ producer.avg_rating }} ★ {{ _('avg') }}</span
+              >
             </li>
           {% endfor %}
         </ul>
       {% else %}
         <p class="detail">
-          Not enough data. Rate at least 3 tracks from the same producer.
+          {{ _('Not enough data. Rate at least 3 tracks from the same producer.') }}
         </p>
       {% endif %}
     </div>
@@ -45,7 +47,7 @@
       <h2
         class="mt-0 border-b border-border pb-1 text-2xl font-semibold text-header"
       >
-        Top Voicebanks
+        {{ _('Top Voicebanks') }}
       </h2>
       {% if stats.top_voicebanks %}
         <ul class="top-list">
@@ -61,13 +63,15 @@
               >
                 <span>{{ voicebank.name }}</span>
               </a>
-              <span class="text-header">{{ voicebank.avg_rating }} ★ avg</span>
+              <span class="text-header"
+                >{{ voicebank.avg_rating }} ★ {{ _('avg') }}</span
+              >
             </li>
           {% endfor %}
         </ul>
       {% else %}
         <p class="detail">
-          Not enough data. Rate at least 3 tracks from the same voicebank.
+          {{ _('Not enough data. Rate at least 3 tracks from the same voicebank.') }}
         </p>
       {% endif %}
     </div>
@@ -76,16 +80,16 @@
       <h2
         class="mt-0 border-b border-border pb-1 text-2xl font-semibold text-header"
       >
-        Overall Stats (Across {{ stats.total_ratings }} ratings)
+        {{ _('Overall Stats (Across %(total_ratings)s ratings)')|format(total_ratings=stats.total_ratings) }}
       </h2>
       <div class="mx-0 my-2 flex items-center justify-around text-center">
         <div>
           <div class="text-3xl font-semibold">{{ stats.average_rating }} ★</div>
-          <div>Average</div>
+          <div>{{ _('Average') }}</div>
         </div>
         <div>
           <div class="text-3xl font-semibold">{{ stats.median_rating }} ★</div>
-          <div>Median</div>
+          <div>{{ _('Median') }}</div>
         </div>
       </div>
     </div>
@@ -95,7 +99,7 @@
         <h2
           class="mt-0 border-b border-border pb-1 text-2xl font-semibold text-header"
         >
-          Rating Distribution
+          {{ _('Rating Distribution') }}
         </h2>
         <canvas
           id="ratingDistributionChart"
@@ -145,7 +149,7 @@
       id="prev-page-btn"
       disabled
     >
-      Previous
+      {{ _('Previous') }}
     </button>
     <div class="flex items-center gap-2" id="page-links"></div>
     <button
@@ -153,7 +157,7 @@
       id="next-page-btn"
       disabled
     >
-      Next
+      {{ _('Next') }}
     </button>
   </div>
 

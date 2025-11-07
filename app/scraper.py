@@ -76,6 +76,8 @@ def _scrape_single_page(page_num: int):
                 continue
 
             title_jp_tag = row_jp.select_one(".song-title")
+            producer_jp_tag = row_jp.select_one(".artists")
+            voicebank_jp_tag = row_jp.select_one(".singers")
 
             track_data = {
                 "title": title_tag.text.strip(),
@@ -84,7 +86,15 @@ def _scrape_single_page(page_num: int):
                 else None,
                 "link": link,
                 "producer": producer_tag.text.strip(),
+                "producer_jp": producer_jp_tag.text.strip()
+                if producer_jp_tag
+                and producer_jp_tag.text.strip() != producer_tag.text.strip()
+                else None,
                 "voicebank": voicebank_tag.text.strip(),
+                "voicebank_jp": voicebank_jp_tag.text.strip()
+                if voicebank_jp_tag
+                and voicebank_jp_tag.text.strip() != voicebank_tag.text.strip()
+                else None,
                 "published_date": datetime.datetime.strptime(
                     published_tag.text.strip(), "%Y/%m/%d"
                 ),

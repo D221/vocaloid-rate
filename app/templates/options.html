@@ -1,39 +1,37 @@
 {% extends "base.html" %}
 
-{% block title %}Options - Vocaloid Rater{% endblock %}
+{% block title %}{{ _('Options') }} - {{ _('Vocaloid Rater') }}{% endblock %}
 
 {% block content %}
-  {% set title = "Options" %}
+  {% set title = _("Options") %}
   {% include "partials/header.html" %}
 
   <div class="mx-auto my-8 max-w-3xl p-4">
     <h2 class="mt-0 border-b border-border pb-1 text-2xl font-semibold">
-      Backup & Restore
+      {{ _('Backup & Restore') }}
     </h2>
 
     <div class="m-4 rounded border border-border bg-card-bg p-4 shadow-md">
       <h3 class="text-1xl mt-0 border-b border-border pb-1 font-semibold">
-        Backup Rated Tracks
+        {{ _('Backup Rated Tracks') }}
       </h3>
       <p class="mb-2">
-        Download a JSON file containing all your rated tracks, including their
-        rating and any notes.
+        {{ _('Download a JSON file containing all your rated tracks, including their rating and any notes.') }}
       </p>
       <button
         id="backup-button"
         class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-sky-hover disabled:cursor-not-allowed disabled:opacity-50"
       >
-        Download Backup
+        {{ _('Download Backup') }}
       </button>
     </div>
 
     <div class="m-4 rounded border border-border bg-card-bg p-4 shadow-md">
       <h3 class="text-1xl mt-0 border-b border-border pb-1 font-semibold">
-        Restore Ratings
+        {{ _('Restore Rated Tracks') }}
       </h3>
       <p class="mb-2">
-        Upload a JSON backup file to restore your ratings. If a track from the
-        backup does not exist in the database, it will be added.
+        {{ _('Upload a JSON backup file to restore your ratings. If a track from the backup does not exist in the database, it will be added.') }}
       </p>
       <input
         type="file"
@@ -47,7 +45,7 @@
         class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-sky-hover disabled:cursor-not-allowed disabled:opacity-50"
         disabled
       >
-        Upload and Restore
+        {{ _('Upload and Restore') }}
       </button>
       <div class="spinner" id="restore-spinner"></div>
       <p id="restore-status" style="margin-top: 1rem; font-weight: bold;"></p>
@@ -55,16 +53,16 @@
 
     <div class="m-4 rounded border border-border bg-card-bg p-4 shadow-md">
       <h3 class="text-1xl mt-0 border-b border-border pb-1 font-semibold">
-        Default Page Size
+        {{ _('Default Page Size') }}
       </h3>
       <label for="default-page-size-select" class="mb-2 block">
-        Set the default number of tracks to display per page on the main list.
+        {{ _('Set the default number of tracks to display per page on the main list.') }}
       </label>
       <select
         id="default-page-size-select"
         class="rounded border border-border bg-card-bg p-2 text-foreground shadow-md"
       >
-        <option value="all">All</option>
+        <option value="all">{{ _('All') }}</option>
         <option value="25">25</option>
         <option value="50">50</option>
         <option value="100">100</option>

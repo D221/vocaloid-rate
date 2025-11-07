@@ -5,7 +5,7 @@
         <label
           for="rank_filter"
           class="mb-1 block font-bold md:mb-0 md:whitespace-nowrap"
-          >Chart:</label
+          >{{ _('Chart:') }}</label
         >
         <select
           name="rank_filter"
@@ -16,19 +16,19 @@
             value="ranked"
             {% if context.filters.rank_filter == 'ranked' or not context.filters.rank_filter %}selected{% endif %}
           >
-            Charting
+            {{ _('Charting') }}
           </option>
           <option
             value="unranked"
             {% if context.filters.rank_filter == 'unranked' %}selected{% endif %}
           >
-            Charted
+            {{ _('Charted') }}
           </option>
           <option
             value="all"
             {% if context.filters.rank_filter == 'all' %}selected{% endif %}
           >
-            All
+            {{ _('All') }}
           </option>
         </select>
       </div>
@@ -39,7 +39,7 @@
         <label
           for="rated_filter"
           class="mb-1 block font-bold md:mb-0 md:whitespace-nowrap"
-          >Rating:</label
+          >{{ _('Rating:') }}</label
         >
         <select
           name="rated_filter"
@@ -50,19 +50,19 @@
             value="all"
             {% if context.filters.rated_filter == 'all' %}selected{% endif %}
           >
-            All
+            {{ _('All') }}
           </option>
           <option
             value="rated"
             {% if context.filters.rated_filter == 'rated' %}selected{% endif %}
           >
-            Rated
+            {{ _('Rated') }}
           </option>
           <option
             value="unrated"
             {% if context.filters.rated_filter == 'unrated' %}selected{% endif %}
           >
-            Unrated
+            {{ _('Unrated') }}
           </option>
         </select>
       </div>
@@ -74,7 +74,7 @@
         name="title_filter"
         id="title_filter"
         autocomplete="off"
-        placeholder="Search by title..."
+        placeholder="{{ _('Search by title...') }}"
         class="w-full rounded border border-border bg-background px-3 py-2 leading-normal text-foreground shadow-md md:w-auto"
         value="{{ context.filters.title_filter or '' }}"
       />
@@ -87,7 +87,7 @@
         id="producer_filter"
         list="producers-list"
         autocomplete="off"
-        placeholder="Filter by producer..."
+        placeholder="{{ _('Filter by producer...') }}"
         class="w-full rounded border border-border bg-background px-3 py-2 leading-normal text-foreground shadow-md md:w-auto"
         value="{{ context.filters.producer_filter or '' }}"
       />
@@ -105,7 +105,7 @@
         id="voicebank_filter"
         list="voicebanks-list"
         autocomplete="off"
-        placeholder="Filter by voicebank..."
+        placeholder="{{ _('Filter by voicebank...') }}"
         class="w-full rounded border border-border bg-background px-3 py-2 leading-normal text-foreground shadow-md md:w-auto"
         value="{{ context.filters.voicebank_filter or '' }}"
       />
@@ -121,7 +121,7 @@
         <label
           for="limit_filter"
           class="mb-1 block font-bold md:mb-0 md:whitespace-nowrap"
-          >Items per page:</label
+          >{{ _('Items per page:') }}</label
         >
         <select
           name="limit"
@@ -132,7 +132,7 @@
             value="all"
             {% if context.pagination.limit == 'all' %}selected{% endif %}
           >
-            All
+            {{ _('All') }}
           </option>
           <option
             value="25"
@@ -161,7 +161,7 @@
       id="clear-filters-btn"
       class="cursor-pointer rounded border border-gray-text p-2 font-bold text-gray-text shadow-md ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-gray-hover"
     >
-      Clear
+      {{ _('Clear') }}
     </button>
 
     {% if context.show_scrape_button %}
@@ -170,7 +170,7 @@
         id="scrape-button"
         class="cursor-pointer rounded border border-green-text p-2 font-bold text-green-text shadow-md ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-green-hover"
       >
-        Update Tracks
+        {{ _('Update Tracks') }}
       </button>
       <span id="scrape-status"></span>
     {% endif %}

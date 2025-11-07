@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ locale }}">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -200,13 +200,13 @@
       class="mt-12 border-t border-border pt-6 text-center text-foreground"
     >
       <p>
-        Data sourced from
+        {{ _('Data sourced from') }}
         <a
           class="text-cyan-text underline"
           href="https://vocaloard.injpok.tokyo/en/"
           target="_blank"
-          >Vocaloard</a
-        >. This is an independent project.
+          >{{ _('Vocaloard') }}</a
+        >. {{ _('This is an independent project.') }}
       </p>
     </footer>
 

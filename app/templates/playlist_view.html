@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}{{ playlist.name }} - Playlist{% endblock %}
+{% block title %}{{ _('%(playlist_name)s - Playlist') % { 'playlist_name': playlist.name } }}{% endblock %}
 
 {% block content %}
   {% set title = playlist.name %}
-  {% set subtitle = playlist.description or "No description." %}
+  {% set subtitle = playlist.description or _("No description.") %}
   {% include "partials/header.html" %}
 
   {# Create a dictionary for the filter form partial #}
@@ -47,7 +47,7 @@
       id="prev-page-btn"
       disabled
     >
-      Previous
+      {{ _('Previous') }}
     </button>
     <div class="flex items-center gap-2" id="page-links"></div>
     <button
@@ -55,7 +55,7 @@
       id="next-page-btn"
       disabled
     >
-      Next
+      {{ _('Next') }}
     </button>
   </div>
 

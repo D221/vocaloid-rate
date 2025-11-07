@@ -9,7 +9,7 @@
     <button
       id="menu-toggle"
       class="rounded border border-border p-2"
-      aria-label="Toggle menu"
+      aria-label="{{ _('Toggle menu') }}"
     >
       {{ icon("bars", size="h-6 w-6") }}
     </button>
@@ -23,35 +23,29 @@
       <div class="flex flex-col divide-y divide-border">
         {% if request.url.path != '/' %}
           <a href="/" class="block rounded px-4 py-2 hover:bg-gray-hover"
-            >Main Chart</a
+            >{{ _('Main Chart') }}</a
           >
         {% endif %}
         {% if request.url.path != '/playlists' %}
           <a
             href="/playlists"
             class="block rounded px-4 py-2 hover:bg-gray-hover"
-            >Playlists</a
+            >{{ _('Playlists') }}</a
           >
         {% endif %}
         {% if request.url.path.startswith('/playlist/') %}
-          {%
-            set
-            playlist_id = request.url.path.split('/')[-1]
-          %}
-          {%
-            if
-            request.url.path.startswith('/playlist/edit/')
-          %}
+          {% set playlist_id = request.url.path.split('/')[-1] %}
+          {% if request.url.path.startswith('/playlist/edit/') %}
             <a
               href="/playlist/{{ playlist_id }}"
               class="block rounded px-4 py-2 text-amber-text hover:bg-amber-hover"
-              >View Playlist</a
+              >{{ _('View Playlist') }}</a
             >
           {% else %}
             <a
               href="/playlist/edit/{{ playlist_id }}"
               class="block rounded px-4 py-2 text-amber-text hover:bg-amber-hover"
-              >Edit Details</a
+              >{{ _('Edit Details') }}</a
             >
           {% endif %}
         {% endif %}
@@ -59,12 +53,12 @@
           <a
             href="/rated_tracks"
             class="block rounded px-4 py-2 hover:bg-gray-hover"
-            >Rated Tracks</a
+            >{{ _('Rated Tracks') }}</a
           >
         {% endif %}
         {% if request.url.path != '/options' %}
           <a href="/options" class="block rounded px-4 py-2 hover:bg-gray-hover"
-            >Options</a
+            >{{ _('Options') }}</a
           >
         {% endif %}
       </div>
@@ -89,7 +83,7 @@
       {% if request.url.path.startswith('/playlist/edit/') %}
         <button
           data-edit-field="name"
-          aria-label="Edit playlist name"
+          aria-label="{{ _('Edit playlist name') }}"
           class="ml-2 text-gray-text opacity-0 transition-opacity group-hover:opacity-100"
         >
           {{ icon('pencil', size="h-4 w-4") }}
@@ -112,7 +106,7 @@
         {% if request.url.path.startswith('/playlist/edit/') %}
           <button
             data-edit-field="description"
-            aria-label="Edit playlist description"
+            aria-label="{{ _('Edit playlist description') }}"
             class="ml-2 text-gray-text opacity-0 transition-opacity group-hover:opacity-100"
           >
             {{ icon('pencil', size="h-4 w-4") }}
@@ -131,13 +125,13 @@
         {% endif %} text-sm"
       >
         {% if last_update %}
-          Last updated: {{ last_update.updated_at.strftime('%Y-%m-%d %H:%M') }}
+          {{ _('Last updated:') }}
+          {{ last_update.updated_at.strftime('%Y-%m-%d %H:%M') }}
           {% if is_db_outdated and update_age_days is not none %}
-            <br />Your database is {{ update_age_days }}
-            day{{ 's' if update_age_days > 1 else '' }} old, please update.
+            <br />{{ _('Your database is %(days)s day(s) old, please update.')|format(days=update_age_days) }}
           {% endif %}
         {% else %}
-          Database not updated yet. Please update.
+          {{ _('Database not updated yet. Please update.') }}
         {% endif %}
       </span>
     {% endif %}
@@ -152,7 +146,7 @@
           href="/"
           class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
         >
-          Main Chart
+          {{ _('Main Chart') }}
         </a>
       {% endif %}
 
@@ -162,7 +156,7 @@
           href="/playlists"
           class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
         >
-          Playlists
+          {{ _('Playlists') }}
         </a>
       {% endif %}
 
@@ -177,7 +171,7 @@
             href="/playlist/{{ playlist_id }}"
             class="cursor-pointer rounded border border-amber-text p-3 font-bold text-amber-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
           >
-            View Playlist
+            {{ _('View Playlist') }}
           </a>
 
           {# CASE 2: We are on the VIEW page, so show an "Edit" button #}
@@ -187,7 +181,7 @@
             id="toggle-edit-playlist"
             class="cursor-pointer rounded border border-amber-text p-3 font-bold text-amber-text shadow-md ease-in-out hover:bg-amber-hover hover:transition-colors hover:duration-200"
           >
-            Edit Details
+            {{ _('Edit Details') }}
           </a>
         {% endif %}
       {% endif %}
@@ -198,7 +192,7 @@
           href="/rated_tracks"
           class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
         >
-          Rated Tracks
+          {{ _('Rated Tracks') }}
         </a>
       {% endif %}
 
@@ -208,16 +202,32 @@
           href="/options"
           class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
         >
-          Options
+          {{ _('Options') }}
         </a>
       {% endif %}
     </div>
 
-    <!-- Theme Switcher (always visible within this block) -->
-    <div id="theme-switcher" class="cursor-pointer p-2">
-      <span id="theme-icon" class="inline-block h-6 w-6 text-foreground">
-        {{ icon('moon') }}
-      </span>
+    <!-- Theme Switcher & Language Toggle -->
+    <div class="flex items-center gap-2">
+      <!-- Language Switcher -->
+      <a
+        href="{% if locale == 'ja' %}?lang=en{% else %}?lang=ja{% endif %}"
+        class="flex cursor-pointer items-center gap-2 rounded border border-cyan-text px-3 py-2 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
+        title="Switch Language"
+      >
+        {{ icon("globe", size="h-5 w-5") }}
+        <span>{% if locale == 'ja' %}English{% else %}日本語{% endif %}</span>
+      </a>
+
+      <!-- Theme Switcher -->
+      <div
+        id="theme-switcher"
+        class="cursor-pointer rounded border border-border p-2 shadow-md"
+      >
+        <span id="theme-icon" class="inline-block h-6 w-6 text-foreground">
+          {{ icon('moon') }}
+        </span>
+      </div>
     </div>
   </div>
 </div>

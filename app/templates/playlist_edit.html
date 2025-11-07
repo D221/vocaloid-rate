@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% from "macros/icons.html" import render as icon %}
 
-{% block title %}Edit: {{ playlist.name }}{% endblock %}
+{% block title %}{{ _('Edit: %(playlist_name)s') % { 'playlist_name': playlist.name } }}{% endblock %}
 
 {% block content %}
   {% set title = playlist.name %}
-  {% set subtitle = playlist.description or "No description." %}
+  {% set subtitle = playlist.description or _("No description.") %}
   {% include "partials/header.html" %}
 
   <!-- Main Editor Layout -->
@@ -15,11 +15,13 @@
   >
     <!-- Left Column: All Available Tracks -->
     <div>
-      <h2 class="text-2xl font-bold text-header">Available Tracks</h2>
+      <h2 class="text-2xl font-bold text-header">
+        {{ _('Available Tracks') }}
+      </h2>
       <input
         type="search"
         id="track-search"
-        placeholder="Search all tracks..."
+        placeholder="{{ _('Search all tracks...') }}"
         class="my-4 w-full rounded border border-border bg-background p-2 text-foreground"
       />
       <div
@@ -38,7 +40,7 @@
             </div>
             <button
               data-play-button
-              title="Play track"
+              title="{{ _('Play track') }}"
               data-track-id="{{ track.id }}"
               class="p-2 text-gray-text hover:text-sky-text"
             >
@@ -67,9 +69,9 @@
 
     <!-- Right Column: Current Playlist Tracks -->
     <div>
-      <h2 class="text-2xl font-bold text-header">Playlist Tracks</h2>
+      <h2 class="text-2xl font-bold text-header">{{ _('Playlist Tracks') }}</h2>
       <div class="my-4 text-gray-text">
-        Drag to reorder, or drag from the left to add.
+        {{ _('Drag to reorder, or drag from the left to add.') }}
       </div>
       <div
         id="playlist-tracks-list"
@@ -86,7 +88,7 @@
             <div class="flex items-center gap-3 overflow-hidden">
               <button
                 data-play-button
-                title="Play track"
+                title="{{ _('Play track') }}"
                 data-track-id="{{ track.id }}"
                 class="p-2 text-gray-text hover:text-sky-text"
               >
@@ -111,7 +113,7 @@
 
             <button
               data-remove-track
-              aria-label="Remove from playlist"
+              aria-label="{{ _('Remove from playlist') }}"
               class="p-2 text-red-text hover:text-red-500"
             >
               {{ icon('trash', size="h-6 w-6") }}

@@ -6,11 +6,13 @@ import threading
 import webbrowser
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from gettext import NullTranslations
 from pathlib import Path
 from typing import Optional
 from urllib.parse import quote
 
 import requests
+from babel.support import Translations
 from fastapi import (
     BackgroundTasks,
     Depends,
@@ -95,6 +97,65 @@ async def add_cache_control_header(request: Request, call_next):
 models.Base.metadata.create_all(bind=engine)
 
 BASE_DIR = Path(__file__).resolve().parent
+
+
+# --- i18n setup ---
+SUPPORTED_LOCALES = ["en", "ja"]
+DEFAULT_LOCALE = "en"
+
+
+def get_locale(request: Request) -> str:
+    lang = request.query_params.get("lang")
+    if lang and lang in SUPPORTED_LOCALES:
+        return lang
+    if (
+        "language" in request.cookies
+        and request.cookies["language"] in SUPPORTED_LOCALES
+    ):
+        return request.cookies["language"]
+    return request.headers.get("accept-language", DEFAULT_LOCALE).split(",")[0]
+
+
+def get_translations(
+    locale: str = Depends(get_locale),
+) -> Translations | NullTranslations:
+    """
+    Load translations and ensure .info() contains a 'language' key so callers
+    can safely do translations.info()['language'].
+    """
+    try:
+        t = Translations.load("locales", [locale])
+    except Exception:
+        t = NullTranslations()
+
+    info = t.info() if hasattr(t, "info") else {}
+    if "language" in info:
+        return t
+
+    # Wrap the translations so .info() always includes 'language'
+    class SafeTranslations(NullTranslations):
+        def __init__(self, inner, language):
+            super().__init__()
+            self._inner = inner
+            self._language = language
+
+        def gettext(self, message: str) -> str:
+            if hasattr(self._inner, "gettext"):
+                return self._inner.gettext(message)
+            return message
+
+        def info(self):
+            d = {}
+            if hasattr(self._inner, "info"):
+                try:
+                    d.update(self._inner.info())
+                except Exception:
+                    d = {}
+            d.setdefault("language", self._language)
+            return d
+
+    return SafeTranslations(t, locale)
+
 
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
@@ -294,7 +355,9 @@ def read_rated_tracks(
     sort_by: Optional[str] = None,
     sort_dir: str = "asc",
     exact_rating_filter: Optional[int] = None,
+    translations: Translations = Depends(get_translations),
 ):
+    locale = translations.info()["language"]
     if not sort_by:
         sort_by = "rating"
         sort_dir = "desc"
@@ -314,6 +377,7 @@ def read_rated_tracks(
         voicebank_filter=voicebank_filter,
         exact_rating_filter=exact_rating_filter,
         rank_filter="all",
+        locale=locale,
     )
 
     limit_val = total_tracks if limit == "all" else int(limit)
@@ -332,6 +396,7 @@ def read_rated_tracks(
         sort_dir=sort_dir,
         exact_rating_filter=exact_rating_filter,
         rank_filter="all",
+        locale=locale,
     )
 
     all_db_tracks = crud.get_tracks(db, limit=1000, rank_filter="all")
@@ -339,13 +404,20 @@ def read_rated_tracks(
     producers_flat = []
     voicebanks_flat = []
     for t in all_db_tracks:
-        producers_flat.extend([p.strip() for p in t.producer.split(",")])
-        voicebanks_flat.extend([v.strip() for v in t.voicebank.split(",")])
+        if locale == "ja" and t.producer_jp:
+            producers_flat.extend([p.strip() for p in t.producer_jp.split(",")])
+        else:
+            producers_flat.extend([p.strip() for p in t.producer.split(",")])
+
+        if locale == "ja" and t.voicebank_jp:
+            voicebanks_flat.extend([v.strip() for v in t.voicebank_jp.split(",")])
+        else:
+            voicebanks_flat.extend([v.strip() for v in t.voicebank.split(",")])
 
     all_producers = sorted(list(set(producers_flat)))
     all_voicebanks = sorted(list(set(voicebanks_flat)))
 
-    stats = crud.get_rating_statistics(db)
+    stats = crud.get_rating_statistics(db, locale=locale)
     tracks_for_json = [track.to_dict() for track in tracks]
     tracks_json_string = json.dumps(tracks_for_json)
 
@@ -353,12 +425,14 @@ def read_rated_tracks(
         "rated.html",
         {
             "request": request,
+            "_": translations.gettext,
             "tracks": tracks,
             "tracks_json": tracks_json_string,
             "all_producers": all_producers,
             "all_voicebanks": all_voicebanks,
             "stats": stats,
             "filters": filters,
+            "locale": translations.info()["language"],
             "pagination": {
                 "page": page,
                 "limit": limit,
@@ -370,10 +444,15 @@ def read_rated_tracks(
 
 
 @app.get("/playlists")
-def view_playlists_page(request: Request, db: Session = Depends(get_db)):
+def view_playlists_page(
+    request: Request,
+    db: Session = Depends(get_db),
+    translations: Translations = Depends(get_translations),
+):
     playlists = crud.get_playlists(db)
     return templates.TemplateResponse(
-        "playlists.html", {"request": request, "playlists": playlists}
+        "playlists.html",
+        {"request": request, "_": translations.gettext, "playlists": playlists},
     )
 
 
@@ -389,7 +468,9 @@ def view_playlist_detail_page(
     voicebank_filter: Optional[str] = None,
     sort_by: Optional[str] = None,
     sort_dir: str = "asc",
+    translations: Translations = Depends(get_translations),
 ):
+    locale = translations.info()["language"]
     db_playlist = crud.get_playlist(db, playlist_id)
     if not db_playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
@@ -402,7 +483,7 @@ def view_playlist_detail_page(
 
     # Use our new functions to get the initial filtered/paginated track list
     total_tracks = crud.get_playlist_tracks_count(
-        db, playlist_id=playlist_id, **filters
+        db, playlist_id=playlist_id, locale=locale, **filters
     )
     limit_val = total_tracks if limit == "all" else int(limit)
     total_pages = (total_tracks + limit_val - 1) // limit_val if limit_val > 0 else 1
@@ -415,6 +496,7 @@ def view_playlist_detail_page(
         limit=limit_val,
         sort_by=sort_by,
         sort_dir=sort_dir,
+        locale=locale,
         **filters,
     )
 
@@ -423,8 +505,15 @@ def view_playlist_detail_page(
     producers_flat = []
     voicebanks_flat = []
     for t in all_playlist_tracks:
-        producers_flat.extend([p.strip() for p in t.producer.split(",")])
-        voicebanks_flat.extend([v.strip() for v in t.voicebank.split(",")])
+        if locale == "ja" and t.producer_jp:
+            producers_flat.extend([p.strip() for p in t.producer_jp.split(",")])
+        else:
+            producers_flat.extend([p.strip() for p in t.producer.split(",")])
+
+        if locale == "ja" and t.voicebank_jp:
+            voicebanks_flat.extend([v.strip() for v in t.voicebank_jp.split(",")])
+        else:
+            voicebanks_flat.extend([v.strip() for v in t.voicebank.split(",")])
     all_producers = sorted(list(set(producers_flat)))
     all_voicebanks = sorted(list(set(voicebanks_flat)))
 
@@ -435,12 +524,14 @@ def view_playlist_detail_page(
         "playlist_view.html",
         {
             "request": request,
+            "_": translations.gettext,
             "playlist": db_playlist,
             "tracks": tracks_in_playlist,  # This now contains the paginated list
             "tracks_json": tracks_json_string,
             "all_producers": all_producers,
             "all_voicebanks": all_voicebanks,
             "filters": filters,
+            "locale": translations.info()["language"],
             "pagination": {
                 "page": page,
                 "limit": limit,
@@ -453,7 +544,10 @@ def view_playlist_detail_page(
 
 @app.get("/playlist/edit/{playlist_id}")
 def edit_playlist_page(
-    playlist_id: int, request: Request, db: Session = Depends(get_db)
+    playlist_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    translations: Translations = Depends(get_translations),
 ):
     db_playlist = crud.get_playlist(db, playlist_id)
     if not db_playlist:
@@ -471,6 +565,7 @@ def edit_playlist_page(
         "playlist_edit.html",
         {
             "request": request,
+            "_": translations.gettext,
             "playlist": db_playlist,
             "all_tracks": all_tracks,
             "tracks_json": tracks_json_string,
@@ -492,7 +587,9 @@ def get_tracks_partial(
     sort_dir: str = "asc",
     rank_filter: str = "ranked",
     exact_rating_filter: Optional[int] = None,
+    translations: Translations = Depends(get_translations),
 ):
+    locale = translations.info()["language"]
     # This logic ensures that if the request is for rated tracks,
     # it correctly includes unranked tracks and sorts by rating by default.
     if rated_filter == "rated":
@@ -509,6 +606,7 @@ def get_tracks_partial(
         voicebank_filter=voicebank_filter,
         rank_filter=rank_filter,
         exact_rating_filter=exact_rating_filter,
+        locale=locale,
     )
 
     limit_val = total_tracks if limit == "all" else int(limit)
@@ -527,13 +625,20 @@ def get_tracks_partial(
         sort_dir=sort_dir,
         rank_filter=rank_filter,
         exact_rating_filter=exact_rating_filter,
+        locale=locale,
     )
 
     tracks_for_json = [track.to_dict() for track in tracks]
     tracks_json_string = json.dumps(tracks_for_json)
 
     table_body_html = templates.get_template("partials/tracks_table_body.html").render(
-        {"request": request, "tracks": tracks, "tracks_json": tracks_json_string}
+        {
+            "request": request,
+            "_": translations.gettext,
+            "tracks": tracks,
+            "tracks_json": tracks_json_string,
+            "locale": translations.info()["language"],
+        }
     )
 
     return JSONResponse(
@@ -561,13 +666,16 @@ def get_playlist_tracks_partial(
     voicebank_filter: Optional[str] = None,
     sort_by: Optional[str] = None,
     sort_dir: str = "asc",
+    translations: Translations = Depends(get_translations),
 ):
+    locale = translations.info()["language"]
     total_tracks = crud.get_playlist_tracks_count(
         db,
         playlist_id=playlist_id,
         title_filter=title_filter,
         producer_filter=producer_filter,
         voicebank_filter=voicebank_filter,
+        locale=locale,
     )
 
     limit_val = total_tracks if limit == "all" else int(limit)
@@ -584,13 +692,20 @@ def get_playlist_tracks_partial(
         voicebank_filter=voicebank_filter,
         sort_by=sort_by,
         sort_dir=sort_dir,
+        locale=locale,
     )
 
     tracks_for_json = [track.to_dict() for track in tracks]
     tracks_json_string = json.dumps(tracks_for_json)
 
     table_body_html = templates.get_template("partials/tracks_table_body.html").render(
-        {"request": request, "tracks": tracks, "tracks_json": tracks_json_string}
+        {
+            "request": request,
+            "_": translations.gettext,
+            "tracks": tracks,
+            "tracks_json": tracks_json_string,
+            "locale": translations.info()["language"],
+        }
     )
 
     return JSONResponse(
@@ -607,8 +722,12 @@ def get_playlist_tracks_partial(
 
 
 @app.get("/options")
-def read_options(request: Request):
-    return templates.TemplateResponse("options.html", {"request": request})
+def read_options(
+    request: Request, translations: Translations = Depends(get_translations)
+):
+    return templates.TemplateResponse(
+        "options.html", {"request": request, "_": translations.gettext}
+    )
 
 
 @app.get("/api/backup/ratings")
@@ -624,6 +743,8 @@ def backup_ratings(db: Session = Depends(get_db)):
                 "voicebank": track.voicebank,
                 "published_date": track.published_date.isoformat(),
                 "title_jp": track.title_jp,
+                "producer_jp": track.producer_jp,
+                "voicebank_jp": track.voicebank_jp,
                 "image_url": track.image_url,
                 "rating": track.ratings[0].rating if track.ratings else None,
                 "notes": track.ratings[0].notes if track.ratings else None,
@@ -659,6 +780,8 @@ async def restore_ratings(file: UploadFile = File(...), db: Session = Depends(ge
                 "voicebank": item["voicebank"],
                 "published_date": datetime.fromisoformat(item["published_date"]),
                 "title_jp": item.get("title_jp"),
+                "producer_jp": item.get("producer_jp"),
+                "voicebank_jp": item.get("voicebank_jp"),
                 "image_url": item.get("image_url"),
                 "rank": None,  # New tracks from backup are unranked
             }
@@ -686,7 +809,9 @@ def read_root(
     sort_by: Optional[str] = None,
     sort_dir: str = "asc",
     rank_filter: str = "ranked",
+    translations: Translations = Depends(get_translations),
 ):
+    locale = translations.info()["language"]
     global initial_scrape_in_progress
     if initial_scrape_in_progress:
         if os.path.exists(SCRAPE_STATUS_FILE):
@@ -696,7 +821,9 @@ def read_root(
                     initial_scrape_in_progress = False
 
     if initial_scrape_in_progress:
-        return templates.TemplateResponse("scraping.html", {"request": request})
+        return templates.TemplateResponse(
+            "scraping.html", {"request": request, "_": translations.gettext}
+        )
 
     filters = {
         "rated_filter": rated_filter,
@@ -712,6 +839,7 @@ def read_root(
         producer_filter=producer_filter,
         voicebank_filter=voicebank_filter,
         rank_filter=rank_filter,
+        locale=locale,
     )
 
     limit_val = 10000  # A large number for "all"
@@ -735,6 +863,7 @@ def read_root(
         sort_by=sort_by,
         sort_dir=sort_dir,
         rank_filter=rank_filter,
+        locale=locale,
     )
 
     # 1. Create a list of dictionaries by CALLING the to_dict() method
@@ -748,8 +877,15 @@ def read_root(
     producers_flat = []
     voicebanks_flat = []
     for t in all_db_tracks:
-        producers_flat.extend([p.strip() for p in t.producer.split(",")])
-        voicebanks_flat.extend([v.strip() for v in t.voicebank.split(",")])
+        if locale == "ja" and t.producer_jp:
+            producers_flat.extend([p.strip() for p in t.producer_jp.split(",")])
+        else:
+            producers_flat.extend([p.strip() for p in t.producer.split(",")])
+
+        if locale == "ja" and t.voicebank_jp:
+            voicebanks_flat.extend([v.strip() for v in t.voicebank_jp.split(",")])
+        else:
+            voicebanks_flat.extend([v.strip() for v in t.voicebank.split(",")])
 
     all_producers = sorted(list(set(producers_flat)))
     all_voicebanks = sorted(list(set(voicebanks_flat)))
@@ -764,10 +900,11 @@ def read_root(
         if update_age.total_seconds() > 24 * 3600:
             is_db_outdated = True
 
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         "index.html",
         {
             "request": request,
+            "_": translations.gettext,
             "tracks": tracks,
             "tracks_json": tracks_json_string,
             "all_producers": all_producers,
@@ -776,6 +913,7 @@ def read_root(
             "is_db_outdated": is_db_outdated,
             "update_age_days": update_age_days,
             "filters": filters,
+            "locale": translations.info()["language"],
             "pagination": {
                 "page": page,
                 "limit": limit,
@@ -784,6 +922,15 @@ def read_root(
             },
         },
     )
+    response.set_cookie(key="language", value=get_locale(request))
+    return response
+
+
+@app.get("/api/translations")
+def get_js_translations(locale: str = Depends(get_locale)):
+    with open("locales/js_translations.json", "r", encoding="utf-8") as f:
+        all_translations = json.load(f)
+    return all_translations.get(locale, all_translations["en"])
 
 
 @app.post("/rate/{track_id}/delete")
@@ -1080,10 +1227,12 @@ def get_playlist_snapshot_endpoint(
     sort_dir: str = "asc",
     rank_filter: str = "ranked",
     exact_rating_filter: Optional[int] = None,
+    translations: Translations = Depends(get_translations),
 ):
+    locale = translations.info()["language"]
     """
     Provides a complete, ordered list of all track IDs that match the current
-    filters, along with the page number each track belongs on. This is used
+    filters, along with the page number each track belongs on.
     by the frontend player for continuous playback across pages.
     """
     # This route now supports all filters from both the main page and rated tracks page
@@ -1104,6 +1253,7 @@ def get_playlist_snapshot_endpoint(
         sort_dir=sort_dir,
         rank_filter=rank_filter,
         exact_rating_filter=exact_rating_filter,
+        locale=locale,
     )
 
 
@@ -1117,7 +1267,9 @@ def get_playlist_snapshot_for_playlist_endpoint(
     voicebank_filter: Optional[str] = None,
     sort_by: Optional[str] = None,
     sort_dir: str = "asc",
+    translations: Translations = Depends(get_translations),
 ):
+    locale = translations.info()["language"]
     """
     Provides a complete, ordered list of all track IDs for a SPECIFIC PLAYLIST
     that match the current filters.
@@ -1131,6 +1283,7 @@ def get_playlist_snapshot_for_playlist_endpoint(
         voicebank_filter=voicebank_filter,
         sort_by=sort_by,
         sort_dir=sort_dir,
+        locale=locale,
     )
 
 

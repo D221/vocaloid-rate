@@ -41,6 +41,7 @@ def get_tracks(
     sort_dir: str = "asc",
     rank_filter: str = "ranked",
     exact_rating_filter: Optional[int] = None,
+    locale: str = "en",
 ):
     query = db.query(
         models.Track,
@@ -81,9 +82,27 @@ def get_tracks(
         rating_join_applied = True
 
     if producer_filter:
-        query = query.filter(models.Track.producer.ilike(f"%{producer_filter}%"))
+        search_term = f"%{producer_filter}%"
+        if locale == "ja":
+            query = query.filter(
+                or_(
+                    models.Track.producer.ilike(search_term),
+                    models.Track.producer_jp.ilike(search_term),
+                )
+            )
+        else:
+            query = query.filter(models.Track.producer.ilike(search_term))
     if voicebank_filter:
-        query = query.filter(models.Track.voicebank.ilike(f"%{voicebank_filter}%"))
+        search_term = f"%{voicebank_filter}%"
+        if locale == "ja":
+            query = query.filter(
+                or_(
+                    models.Track.voicebank.ilike(search_term),
+                    models.Track.voicebank_jp.ilike(search_term),
+                )
+            )
+        else:
+            query = query.filter(models.Track.voicebank.ilike(search_term))
 
     if sort_by:
         sort_column = getattr(models.Track, sort_by, None)
@@ -131,6 +150,7 @@ def get_tracks_count(
     voicebank_filter: Optional[str] = None,
     rank_filter: str = "ranked",
     exact_rating_filter: Optional[int] = None,
+    locale: str = "en",
 ):
     query = db.query(func.count(distinct(models.Track.id)))
 
@@ -158,9 +178,27 @@ def get_tracks_count(
         query = query.outerjoin(models.Rating).filter(models.Rating.id.is_(None))
 
     if producer_filter:
-        query = query.filter(models.Track.producer.ilike(f"%{producer_filter}%"))
+        search_term = f"%{producer_filter}%"
+        if locale == "ja":
+            query = query.filter(
+                or_(
+                    models.Track.producer.ilike(search_term),
+                    models.Track.producer_jp.ilike(search_term),
+                )
+            )
+        else:
+            query = query.filter(models.Track.producer.ilike(search_term))
     if voicebank_filter:
-        query = query.filter(models.Track.voicebank.ilike(f"%{voicebank_filter}%"))
+        search_term = f"%{voicebank_filter}%"
+        if locale == "ja":
+            query = query.filter(
+                or_(
+                    models.Track.voicebank.ilike(search_term),
+                    models.Track.voicebank_jp.ilike(search_term),
+                )
+            )
+        else:
+            query = query.filter(models.Track.voicebank.ilike(search_term))
 
     return query.scalar()
 
@@ -191,7 +229,7 @@ def delete_rating(db: Session, track_id: int):
         db.commit()
 
 
-def get_rating_statistics(db: Session):
+def get_rating_statistics(db: Session, locale: str = "en"):
     all_ratings_query = db.query(models.Rating.rating).all()
     if not all_ratings_query:
         # Return default structure if no ratings exist
@@ -213,7 +251,13 @@ def get_rating_statistics(db: Session):
 
     # Fetch all rated tracks with their producer, voicebank, and rating
     rated_tracks_data = (
-        db.query(models.Track.producer, models.Track.voicebank, models.Rating.rating)
+        db.query(
+            models.Track.producer,
+            models.Track.voicebank,
+            models.Track.producer_jp,
+            models.Track.voicebank_jp,
+            models.Rating.rating,
+        )
         .join(models.Rating)
         .all()
     )
@@ -222,9 +266,22 @@ def get_rating_statistics(db: Session):
     voicebank_ratings = defaultdict(list)
 
     # De-normalize the data: split comma-separated strings
-    for producer_str, voicebank_str, rating in rated_tracks_data:
-        producers = [p.strip() for p in producer_str.split(",")]
-        voicebanks = [v.strip() for v in voicebank_str.split(",")]
+    for (
+        producer_en_str,
+        voicebank_en_str,
+        producer_jp_str,
+        voicebank_jp_str,
+        rating,
+    ) in rated_tracks_data:
+        if locale == "ja" and producer_jp_str:
+            producers = [p.strip() for p in producer_jp_str.split(",")]
+        else:
+            producers = [p.strip() for p in producer_en_str.split(",")]
+
+        if locale == "ja" and voicebank_jp_str:
+            voicebanks = [v.strip() for v in voicebank_jp_str.split(",")]
+        else:
+            voicebanks = [v.strip() for v in voicebank_en_str.split(",")]
 
         for p in producers:
             producer_ratings[p].append(rating)
@@ -531,6 +588,7 @@ def get_playlist_snapshot(
     sort_dir: str = "asc",
     rank_filter: str = "ranked",
     exact_rating_filter: Optional[int] = None,
+    locale: str = "en",
 ) -> list[dict]:
     """
     Gets a sorted list of all track IDs matching the filters,
@@ -567,9 +625,27 @@ def get_playlist_snapshot(
         rating_join_applied = True
 
     if producer_filter:
-        query = query.filter(models.Track.producer.ilike(f"%{producer_filter}%"))
+        search_term = f"%{producer_filter}%"
+        if locale == "ja":
+            query = query.filter(
+                or_(
+                    models.Track.producer.ilike(search_term),
+                    models.Track.producer_jp.ilike(search_term),
+                )
+            )
+        else:
+            query = query.filter(models.Track.producer.ilike(search_term))
     if voicebank_filter:
-        query = query.filter(models.Track.voicebank.ilike(f"%{voicebank_filter}%"))
+        search_term = f"%{voicebank_filter}%"
+        if locale == "ja":
+            query = query.filter(
+                or_(
+                    models.Track.voicebank.ilike(search_term),
+                    models.Track.voicebank_jp.ilike(search_term),
+                )
+            )
+        else:
+            query = query.filter(models.Track.voicebank.ilike(search_term))
 
     if sort_by:
         sort_column = getattr(models.Track, sort_by, None)
@@ -623,6 +699,7 @@ def get_playlist_tracks_filtered(
     voicebank_filter: Optional[str] = None,
     sort_by: Optional[str] = None,
     sort_dir: str = "asc",
+    locale: str = "en",
 ):
     query = (
         db.query(models.Track)
@@ -639,9 +716,27 @@ def get_playlist_tracks_filtered(
             )
         )
     if producer_filter:
-        query = query.filter(models.Track.producer.ilike(f"%{producer_filter}%"))
+        search_term = f"%{producer_filter}%"
+        if locale == "ja":
+            query = query.filter(
+                or_(
+                    models.Track.producer.ilike(search_term),
+                    models.Track.producer_jp.ilike(search_term),
+                )
+            )
+        else:
+            query = query.filter(models.Track.producer.ilike(search_term))
     if voicebank_filter:
-        query = query.filter(models.Track.voicebank.ilike(f"%{voicebank_filter}%"))
+        search_term = f"%{voicebank_filter}%"
+        if locale == "ja":
+            query = query.filter(
+                or_(
+                    models.Track.voicebank.ilike(search_term),
+                    models.Track.voicebank_jp.ilike(search_term),
+                )
+            )
+        else:
+            query = query.filter(models.Track.voicebank.ilike(search_term))
 
     if sort_by:
         sort_column = getattr(models.Track, sort_by, None)
@@ -663,6 +758,7 @@ def get_playlist_tracks_count(
     title_filter: Optional[str] = None,
     producer_filter: Optional[str] = None,
     voicebank_filter: Optional[str] = None,
+    locale: str = "en",
 ):
     query = (
         db.query(func.count(distinct(models.Track.id)))
@@ -679,9 +775,27 @@ def get_playlist_tracks_count(
             )
         )
     if producer_filter:
-        query = query.filter(models.Track.producer.ilike(f"%{producer_filter}%"))
+        search_term = f"%{producer_filter}%"
+        if locale == "ja":
+            query = query.filter(
+                or_(
+                    models.Track.producer.ilike(search_term),
+                    models.Track.producer_jp.ilike(search_term),
+                )
+            )
+        else:
+            query = query.filter(models.Track.producer.ilike(search_term))
     if voicebank_filter:
-        query = query.filter(models.Track.voicebank.ilike(f"%{voicebank_filter}%"))
+        search_term = f"%{voicebank_filter}%"
+        if locale == "ja":
+            query = query.filter(
+                or_(
+                    models.Track.voicebank.ilike(search_term),
+                    models.Track.voicebank_jp.ilike(search_term),
+                )
+            )
+        else:
+            query = query.filter(models.Track.voicebank.ilike(search_term))
 
     return query.scalar()
 
@@ -695,6 +809,7 @@ def get_playlist_snapshot_for_playlist(
     voicebank_filter: Optional[str] = None,
     sort_by: Optional[str] = None,
     sort_dir: str = "asc",
+    locale: str = "en",
 ) -> list[dict]:
     """
     Gets a sorted list of all track IDs for a specific playlist,
@@ -717,9 +832,27 @@ def get_playlist_snapshot_for_playlist(
             )
         )
     if producer_filter:
-        query = query.filter(models.Track.producer.ilike(f"%{producer_filter}%"))
+        search_term = f"%{producer_filter}%"
+        if locale == "ja":
+            query = query.filter(
+                or_(
+                    models.Track.producer.ilike(search_term),
+                    models.Track.producer_jp.ilike(search_term),
+                )
+            )
+        else:
+            query = query.filter(models.Track.producer.ilike(search_term))
     if voicebank_filter:
-        query = query.filter(models.Track.voicebank.ilike(f"%{voicebank_filter}%"))
+        search_term = f"%{voicebank_filter}%"
+        if locale == "ja":
+            query = query.filter(
+                or_(
+                    models.Track.voicebank.ilike(search_term),
+                    models.Track.voicebank_jp.ilike(search_term),
+                )
+            )
+        else:
+            query = query.filter(models.Track.voicebank.ilike(search_term))
 
     # --- 3. Apply sorting (same as get_playlist_tracks_filtered) ---
     if sort_by:

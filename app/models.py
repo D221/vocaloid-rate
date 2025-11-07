@@ -16,6 +16,8 @@ class Track(Base):
     published_date: Mapped[datetime.datetime] = mapped_column(DateTime)
     link: Mapped[str] = mapped_column(String, unique=True)
     title_jp: Mapped[str | None] = mapped_column(String, nullable=True)
+    producer_jp: Mapped[str | None] = mapped_column(String, nullable=True)
+    voicebank_jp: Mapped[str | None] = mapped_column(String, nullable=True)
     image_url: Mapped[str | None] = mapped_column(String, nullable=True)
     rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
@@ -30,6 +32,8 @@ class Track(Base):
             "voicebank": self.voicebank,
             "link": self.link,
             "title_jp": self.title_jp,
+            "producer_jp": self.producer_jp,
+            "voicebank_jp": self.voicebank_jp,
             "imageUrl": self.image_url,
         }
 
