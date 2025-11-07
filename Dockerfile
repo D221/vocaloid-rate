@@ -1,51 +1,57 @@
 # =================================================================
-# STAGE 1: Frontend Build Environment ("The Builder")
-# We use an official Bun image, which is fast and lightweight.
+# STAGE 1: Unified Build Environment ("The Builder")
+# This stage has both Python and Bun to build all assets:
+# - Frontend (CSS, JS) via Bun/Tailwind/Terser
+# - Translations (.mo files) via Python/PyBabel
 # =================================================================
-FROM oven/bun:1 as builder
+FROM python:3.13 as builder
 
-# Set the working directory for the frontend build
-WORKDIR /app/frontend
+# Install Bun
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:${PATH}"
 
-# Copy package management files first to leverage Docker layer caching
-COPY package.json bun.lock ./
-COPY eslint.config.mjs .
+WORKDIR /app
 
-# Install ALL dependencies (including devDependencies) needed for the build
+# Copy configuration and dependency files first for caching
+COPY requirements.txt package.json bun.lockb babel.cfg ./
+
+# Install both Python and Bun dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 RUN bun install --frozen-lockfile
 
-# Copy the frontend source code that needs to be built
-COPY app/static/css/input.css ./app/static/css/input.css
-COPY app/static/js/ ./app/static/js/
-COPY app/templates/ ./app/templates/
+# Copy the entire application source code
+# This includes /app, /locales, and any other root files needed for the build
+COPY . .
 
-# Run the production build command from your package.json
-# This will create app/static/css/app.css and the *.min.js files
+# Run the unified production build command from your package.json
+# This now correctly runs `i18n:compile`, `build:css`, and `build:js`
 RUN bun run build
 
 
 # =================================================================
 # STAGE 2: Final Python Runtime Environment
+# This stage is a slim Python image containing ONLY what's needed to run.
 # =================================================================
 FROM python:3.13-slim
 
 WORKDIR /app
 
-# Install Python dependencies
-COPY requirements.txt .
+# Copy requirements.txt from the builder and install only runtime dependencies
+COPY --from=builder /app/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the Python application source code
-COPY ./app ./app
+# Copy the Python application source code from the builder
+COPY --from=builder /app/app ./app
 
-# --- This is the crucial step ---
-# Copy ONLY the built static assets from the "builder" stage.
-# This copies the final app.css, *.min.js, and all other static assets
-# like images and the manifest file.
-COPY --from=builder /app/frontend/app/static/ /app/static/
+# Copy the final, compiled static assets from the builder
+COPY --from=builder /app/app/static/ ./app/static/
 
-# Copy the templates (which are also needed at runtime)
-COPY --from=builder /app/frontend/app/templates/ /app/templates/
+# Copy the templates from the builder
+COPY --from=builder /app/app/templates/ ./app/templates/
+
+# --- NEW: Copy the compiled translation files ---
+# This is the crucial step to include your .mo files in the final image
+COPY --from=builder /app/locales/ ./locales/
 
 EXPOSE 8000
 
