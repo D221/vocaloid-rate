@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-11-07 02:51+0200\n"
+"POT-Creation-Date: 2025-11-07 18:04+0200\n"
 "PO-Revision-Date: 2025-11-06 23:59+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -18,15 +18,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: app/templates/base.html:203
+#: app/templates/base.html:216
 msgid "Data sourced from"
 msgstr "データ提供元"
 
-#: app/templates/base.html:208
+#: app/templates/base.html:221
 msgid "Vocaloard"
 msgstr "Vocaloard"
 
-#: app/templates/base.html:209
+#: app/templates/base.html:222
 msgid "This is an independent project."
 msgstr "これは独立したプロジェクトです。"
 
@@ -88,18 +88,30 @@ msgid "Upload and Restore"
 msgstr "アップロードしてリストア"
 
 #: app/templates/options.html:56
+msgid "Display Options"
+msgstr "表示設定"
+
+#: app/templates/options.html:60
 msgid "Default Page Size"
 msgstr "デフォルト表示件数"
 
-#: app/templates/options.html:59
+#: app/templates/options.html:63
 msgid "Set the default number of tracks to display per page on the main list."
 msgstr "メインリストで1ページに表示するトラックのデフォルト件数を設定"
 
-#: app/templates/options.html:65 app/templates/partials/filter_form.html:31
+#: app/templates/options.html:69 app/templates/partials/filter_form.html:31
 #: app/templates/partials/filter_form.html:53
 #: app/templates/partials/filter_form.html:135
 msgid "All"
 msgstr "すべて"
+
+#: app/templates/options.html:78
+msgid "Slim View Mode"
+msgstr "コンパクト表示"
+
+#: app/templates/options.html:81
+msgid "Hides thumbnails and secondary text for a more compact view."
+msgstr "サムネイルや補足情報を非表示にして、表示をよりコンパクトにします。"
 
 #: app/templates/playlist_edit.html:4
 #, python-format
@@ -119,19 +131,19 @@ msgstr "トラック一覧"
 msgid "Search all tracks..."
 msgstr "トラックを検索..."
 
-#: app/templates/playlist_edit.html:43 app/templates/playlist_edit.html:91
+#: app/templates/playlist_edit.html:48 app/templates/playlist_edit.html:101
 msgid "Play track"
 msgstr "トラックを再生"
 
-#: app/templates/playlist_edit.html:72
+#: app/templates/playlist_edit.html:77
 msgid "Playlist Tracks"
 msgstr "プレイリストのトラック"
 
-#: app/templates/playlist_edit.html:74
+#: app/templates/playlist_edit.html:79
 msgid "Drag to reorder, or drag from the left to add."
 msgstr "ドラッグで並び替え、または左のリストから追加"
 
-#: app/templates/playlist_edit.html:116
+#: app/templates/playlist_edit.html:126
 msgid "Remove from playlist"
 msgstr "プレイリストから削除"
 
@@ -375,70 +387,70 @@ msgstr "データベースが%(days)s日間更新されていません。更新�
 msgid "Database not updated yet. Please update."
 msgstr "データベースはまだ更新されていません。更新してください。"
 
-#: app/templates/partials/tracks_table_body.html:11
+#: app/templates/partials/tracks_table_body.html:17
 #: app/templates/partials/tracks_table_head.html:9
 msgid "Image"
 msgstr "サムネイル"
 
-#: app/templates/partials/tracks_table_body.html:25
+#: app/templates/partials/tracks_table_body.html:31
 msgid "Rank"
 msgstr "順位"
 
-#: app/templates/partials/tracks_table_body.html:33
+#: app/templates/partials/tracks_table_body.html:39
 #: app/templates/partials/tracks_table_head.html:20
 msgid "Title"
 msgstr "タイトル"
 
-#: app/templates/partials/tracks_table_body.html:67
+#: app/templates/partials/tracks_table_body.html:80
 msgid "Play this track"
 msgstr "このトラックを再生"
 
-#: app/templates/partials/tracks_table_body.html:73
+#: app/templates/partials/tracks_table_body.html:86
 msgid "Toggle video player"
 msgstr "動画プレイヤーの表示/非表示"
 
-#: app/templates/partials/tracks_table_body.html:99
+#: app/templates/partials/tracks_table_body.html:112
 msgid "Lyrics"
 msgstr "歌詞"
 
-#: app/templates/partials/tracks_table_body.html:109
+#: app/templates/partials/tracks_table_body.html:122
 msgid "Manage playlists"
 msgstr "プレイリストを管理"
 
-#: app/templates/partials/tracks_table_body.html:151
+#: app/templates/partials/tracks_table_body.html:165
 #: app/templates/partials/tracks_table_head.html:27
 msgid "Producer"
 msgstr "プロデューサー"
 
-#: app/templates/partials/tracks_table_body.html:199
+#: app/templates/partials/tracks_table_body.html:215
 msgid "Search producer on VocaDB"
 msgstr "VocaDBでプロデューサーを検索"
 
-#: app/templates/partials/tracks_table_body.html:209
+#: app/templates/partials/tracks_table_body.html:225
 #: app/templates/partials/tracks_table_head.html:34
 msgid "Voicebank"
 msgstr "ボイスバンク"
 
-#: app/templates/partials/tracks_table_body.html:253
-#: app/templates/partials/tracks_table_body.html:259
+#: app/templates/partials/tracks_table_body.html:269
+#: app/templates/partials/tracks_table_body.html:275
 #: app/templates/partials/tracks_table_head.html:41
 msgid "Published"
 msgstr "公開日"
 
-#: app/templates/partials/tracks_table_body.html:265
+#: app/templates/partials/tracks_table_body.html:281
 #: app/templates/partials/tracks_table_head.html:46
 msgid "My Rating"
 msgstr "マイ評価"
 
-#: app/templates/partials/tracks_table_body.html:313
+#: app/templates/partials/tracks_table_body.html:329
 msgid "Edit Note"
 msgstr "メモを編集"
 
-#: app/templates/partials/tracks_table_body.html:313
+#: app/templates/partials/tracks_table_body.html:329
 msgid "Add Note"
 msgstr "メモを追加"
 
-#: app/templates/partials/tracks_table_body.html:318
+#: app/templates/partials/tracks_table_body.html:334
 msgid "Clear my rating for this track"
 msgstr "このトラックの評価をクリア"
 
