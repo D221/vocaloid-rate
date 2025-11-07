@@ -4,9 +4,11 @@ import { defineConfig } from "eslint/config";
 
 export default defineConfig([
   {
+    ignores: ["docs/"],
+  },
+  {
     files: ["**/*.{js,mjs,cjs}"],
-    plugins: { js },
-    extends: ["js/recommended"],
+    ...js.configs.recommended,
     languageOptions: {
       globals: {
         ...globals.browser,
@@ -16,5 +18,11 @@ export default defineConfig([
       },
     },
   },
-  { files: ["**/*.js"], languageOptions: { sourceType: "script" } },
+
+  {
+    files: ["**/*.js"],
+    languageOptions: {
+      sourceType: "script",
+    },
+  },
 ]);
