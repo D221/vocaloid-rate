@@ -2,6 +2,7 @@
 @source "../../app/templates";
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+@custom-variant slim (&:where(.slim-mode-html, .slim-mode-html *));
 
 @theme {
   --color-background: oklch(97% 0.001 106.424);
@@ -54,6 +55,11 @@
 }
 
 @layer components {
+  .slim-hideable-image,
+  .slim-hideable-secondary {
+    @apply slim:hidden!;
+  }
+
   button[data-notes-toggle].has-note {
     @apply border-green-text text-green-text;
   }

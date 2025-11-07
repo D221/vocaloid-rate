@@ -15,7 +15,7 @@
     <!-- Image -->
     <td
       data-label="{{ _('Image') }}"
-      class="border-b border-border p-0 md:table-cell md:border md:p-2 md:whitespace-nowrap"
+      class="slim-hideable-image border-b border-border p-0 md:table-cell md:border md:p-2 md:whitespace-nowrap"
     >
       <a href="{{ track.link }}" target="_blank">
         <img
@@ -39,83 +39,91 @@
       data-label="{{ _('Title') }}"
       class="block border-b border-border p-3 text-center last:border-b-0 md:table-cell md:w-1/3 md:border md:px-3 md:py-2 md:text-left"
     >
-      <a
-        href="{{ track.link }}"
-        target="_blank"
-        class="font-semibold hover:text-sky-text hover:underline"
-        title="{% if locale == 'ja' and track.title_jp %}
-          {{ track.title_jp }}
-          ({{ track.title }})
-        {% else %}
-          {{ track.title }}{% if track.title_jp %}({{ track.title_jp }}){% endif %}
-        {% endif %}"
+      <!-- ACTIONS + TITLE GROUP -->
+      <div
+        class="slim-actions-container flex flex-col items-center md:flex-row md:items-start md:justify-between"
       >
-        {% if locale == 'ja' and track.title_jp %}
-          {{ track.title_jp | truncate(35, True, '...') }}
-          <br /><span class="text-sm text-gray-text"
-            >({{ track.title | truncate(30, True, '...') }})</span
+        <div class="min-w-0 text-center md:text-left">
+          <a
+            href="{{ track.link }}"
+            target="_blank"
+            class="font-semibold hover:text-sky-text hover:underline"
+            title="{% if locale == 'ja' and track.title_jp %}
+              {{ track.title_jp }}
+              ({{ track.title }})
+            {% else %}
+              {{ track.title }}{% if track.title_jp %}({{ track.title_jp }}){% endif %}
+            {% endif %}"
           >
-        {% else %}
-          {{ track.title | truncate(35, True, '...') }}
-          {% if track.title_jp %}
-            <br /><span class="text-sm text-gray-text"
-              >({{ track.title_jp | truncate(30, True, '...') }})</span
-            >
-          {% endif %}
-        {% endif %}
-      </a>
+            {% if locale == 'ja' and track.title_jp %}
+              {{ track.title_jp | truncate(35, True, '...') }}
+              <br /><span class="slim-hideable-secondary text-sm text-gray-text"
+                >({{ track.title | truncate(30, True, '...') }})</span
+              >
+            {% else %}
+              {{ track.title | truncate(35, True, '...') }}
+              {% if track.title_jp %}
+                <br /><span
+                  class="slim-hideable-secondary text-sm text-gray-text"
+                  >({{ track.title_jp | truncate(30, True, '...') }})</span
+                >
+              {% endif %}
+            {% endif %}
+          </a>
+        </div>
 
-      <div class="mt-2 flex justify-center gap-2 md:justify-start">
-        <button
-          data-play-button
-          class="cursor-pointer rounded border border-gray-text px-2 py-1 text-gray-text ease-in-out hover:bg-gray-hover hover:transition-colors hover:duration-200"
-          data-track-id="{{ track.id }}"
-          title="{{ _('Play this track') }}"
-        >
-          {{ icon('play', size="h-4 w-4") }}
-        </button>
-        <button
-          data-embed-button
-          title="{{ _('Toggle video player') }}"
-          class="cursor-pointer rounded border border-cyan-text px-2 py-1 text-cyan-text ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
-          data-youtube-url="{{ track.link }}"
-        >
-          {{ icon('tv', size="h-4 w-4") }}
-        </button>
-        <button
-          data-vocadb-track-button
-          class="cursor-pointer rounded border border-purple-text px-2 py-1 font-semibold text-purple-text ease-in-out hover:bg-purple-hover hover:transition-colors hover:duration-200"
-          data-title-en="{{ track.title }}"
-          data-producer="{{ track.producer.split(',')[0].strip() }}"
-          {% if track.title_jp %}
-            data-title-jp="{{ track.title_jp }}"
-          {% endif %}
-        >
-          VocaDB
-        </button>
-        <button
-          data-lyrics-button
-          class="cursor-pointer rounded border border-green-text px-2 py-1 font-semibold text-green-text ease-in-out hover:bg-green-hover hover:transition-colors hover:duration-200"
-          data-title-en="{{ track.title }}"
-          data-producer="{{ track.producer.split(',')[0].strip() }}"
-          {% if track.title_jp %}
-            data-title-jp="{{ track.title_jp }}"
-          {% endif %}
-        >
-          {{ _('Lyrics') }}
-        </button>
-        <button
-          data-add-to-playlist-button
-          data-track-id="{{ track.id }}"
-          class="{% if track.is_in_playlist %}
-            border-green-text text-green-text hover:bg-green-hover
-          {% else %}
-            border-amber-text text-amber-text hover:bg-amber-hover
-          {% endif %} cursor-pointer rounded border px-2 py-1 shadow-md ease-in-out hover:transition-colors hover:duration-200"
-          title="{{ _('Manage playlists') }}"
-        >
-          {{ icon('plus', size="h-4 w-4") }}
-        </button>
+        <div class="mt-2 flex justify-center gap-2 md:justify-start">
+          <button
+            data-play-button
+            class="cursor-pointer rounded border border-gray-text px-2 py-1 text-gray-text ease-in-out hover:bg-gray-hover hover:transition-colors hover:duration-200"
+            data-track-id="{{ track.id }}"
+            title="{{ _('Play this track') }}"
+          >
+            {{ icon('play', size="h-4 w-4") }}
+          </button>
+          <button
+            data-embed-button
+            title="{{ _('Toggle video player') }}"
+            class="cursor-pointer rounded border border-cyan-text px-2 py-1 text-cyan-text ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
+            data-youtube-url="{{ track.link }}"
+          >
+            {{ icon('tv', size="h-4 w-4") }}
+          </button>
+          <button
+            data-vocadb-track-button
+            class="cursor-pointer rounded border border-purple-text px-2 py-1 font-semibold text-purple-text ease-in-out hover:bg-purple-hover hover:transition-colors hover:duration-200"
+            data-title-en="{{ track.title }}"
+            data-producer="{{ track.producer.split(',')[0].strip() }}"
+            {% if track.title_jp %}
+              data-title-jp="{{ track.title_jp }}"
+            {% endif %}
+          >
+            VocaDB
+          </button>
+          <button
+            data-lyrics-button
+            class="cursor-pointer rounded border border-green-text px-2 py-1 font-semibold text-green-text ease-in-out hover:bg-green-hover hover:transition-colors hover:duration-200"
+            data-title-en="{{ track.title }}"
+            data-producer="{{ track.producer.split(',')[0].strip() }}"
+            {% if track.title_jp %}
+              data-title-jp="{{ track.title_jp }}"
+            {% endif %}
+          >
+            {{ _('Lyrics') }}
+          </button>
+          <button
+            data-add-to-playlist-button
+            data-track-id="{{ track.id }}"
+            class="{% if track.is_in_playlist %}
+              border-green-text text-green-text hover:bg-green-hover
+            {% else %}
+              border-amber-text text-amber-text hover:bg-amber-hover
+            {% endif %} cursor-pointer rounded border px-2 py-1 shadow-md ease-in-out hover:transition-colors hover:duration-200"
+            title="{{ _('Manage playlists') }}"
+          >
+            {{ icon('plus', size="h-4 w-4") }}
+          </button>
+        </div>
       </div>
 
       <div data-notes-container class="mt-2 hidden">
@@ -173,7 +181,7 @@
                 {{ producer.strip() | truncate(35, True, '...') }}</a
               >{% if not loop.last %},{% endif %}
             {% endfor %}
-            <br /><span class="text-sm text-gray-text"
+            <br /><span class="slim-hideable-secondary text-sm text-gray-text"
               >({{ track.producer | truncate(30, True, '...') }})</span
             >
           {% else %}
@@ -189,7 +197,7 @@
               >{% if not loop.last %},{% endif %}
             {% endfor %}
             {% if track.producer_jp %}
-              <br /><span class="text-sm text-gray-text"
+              <br /><span class="slim-hideable-secondary text-sm text-gray-text"
                 >({{ track.producer_jp | truncate(30, True, '...') }})</span
               >
             {% endif %}
@@ -197,7 +205,9 @@
         </div>
 
         <!-- Part 2: The button, with controlled margin -->
-        <div class="mt-2 flex justify-center gap-2 md:justify-start">
+        <div
+          class="slim-hideable-secondary mt-2 flex justify-center gap-2 md:justify-start"
+        >
           <button
             data-vocadb-artist-button
             class="cursor-pointer rounded border border-purple-text px-2 py-1 font-semibold text-purple-text ease-in-out hover:bg-purple-hover hover:transition-colors hover:duration-200"
@@ -229,7 +239,7 @@
             >{% if not loop.last and voicebank.strip() %},{% endif %}
           {% endif %}
         {% endfor %}
-        <br /><span class="text-sm text-gray-text"
+        <br /><span class="slim-hideable-secondary text-sm text-gray-text"
           >({{ track.voicebank }})</span
         >
       {% else %}
@@ -247,7 +257,7 @@
           {% endif %}
         {% endfor %}
         {% if track.voicebank_jp %}
-          <br /><span class="text-sm text-gray-text"
+          <br /><span class="slim-hideable-secondary text-sm text-gray-text"
             >({{ track.voicebank_jp }})</span
           >
         {% endif %}

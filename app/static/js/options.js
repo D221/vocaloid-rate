@@ -127,4 +127,22 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+  const SLIM_MODE_KEY = "viewModeSlim";
+  const slimModeToggle = document.getElementById("slim-mode-toggle");
+
+  if (slimModeToggle) {
+    // 1. Read the current setting from localStorage when the page loads.
+    const isSlim = localStorage.getItem(SLIM_MODE_KEY) === "true";
+
+    // 2. Set the checkbox's state to match the stored setting.
+    slimModeToggle.checked = isSlim;
+
+    // 3. Add the event listener to save changes and reload.
+    slimModeToggle.addEventListener("change", () => {
+      const isChecked = slimModeToggle.checked;
+      localStorage.setItem(SLIM_MODE_KEY, isChecked);
+      window.location.reload();
+    });
+  }
 });

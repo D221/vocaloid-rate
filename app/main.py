@@ -8,13 +8,14 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from gettext import NullTranslations
 from pathlib import Path
-from typing import Optional
+from typing import AsyncGenerator, Optional
 from urllib.parse import quote
 
 import requests
 from babel.support import Translations
 from fastapi import (
     BackgroundTasks,
+    Cookie,
     Depends,
     FastAPI,
     File,
@@ -46,7 +47,7 @@ def resource_path(relative: str) -> Path:
 
 
 @asynccontextmanager
-async def app_lifespan(app: FastAPI):
+async def app_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # --- Code to run on startup ---
     global initial_scrape_in_progress
     db = SessionLocal()
@@ -102,6 +103,10 @@ BASE_DIR = Path(__file__).resolve().parent
 # --- i18n setup ---
 SUPPORTED_LOCALES = ["en", "ja"]
 DEFAULT_LOCALE = "en"
+
+
+async def get_slim_mode(viewModeSlim: Optional[str] = Cookie(None)) -> bool:
+    return viewModeSlim == "true"
 
 
 def get_locale(request: Request) -> str:
@@ -810,6 +815,7 @@ def read_root(
     sort_dir: str = "asc",
     rank_filter: str = "ranked",
     translations: Translations = Depends(get_translations),
+    is_slim_mode: bool = Depends(get_slim_mode),
 ):
     locale = translations.info()["language"]
     global initial_scrape_in_progress
@@ -905,6 +911,7 @@ def read_root(
         {
             "request": request,
             "_": translations.gettext,
+            "is_slim_mode": is_slim_mode,
             "tracks": tracks,
             "tracks_json": tracks_json_string,
             "all_producers": all_producers,

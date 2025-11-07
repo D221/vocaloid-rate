@@ -51,22 +51,46 @@
       <p id="restore-status" style="margin-top: 1rem; font-weight: bold;"></p>
     </div>
 
-    <div class="m-4 rounded border border-border bg-card-bg p-4 shadow-md">
-      <h3 class="text-1xl mt-0 border-b border-border pb-1 font-semibold">
-        {{ _('Default Page Size') }}
+    <div class="mt-8 border-t border-border pt-6">
+      <h3 class="text-xl font-semibold text-header">
+        {{ _('Display Options') }}
       </h3>
-      <label for="default-page-size-select" class="mb-2 block">
-        {{ _('Set the default number of tracks to display per page on the main list.') }}
-      </label>
-      <select
-        id="default-page-size-select"
-        class="rounded border border-border bg-card-bg p-2 text-foreground shadow-md"
-      >
-        <option value="all">{{ _('All') }}</option>
-        <option value="25">25</option>
-        <option value="50">50</option>
-        <option value="100">100</option>
-      </select>
+      <div class="m-4 rounded border border-border bg-card-bg p-4 shadow-md">
+        <h3 class="text-1xl mt-0 border-b border-border pb-1 font-semibold">
+          {{ _('Default Page Size') }}
+        </h3>
+        <p class="mb-2 block">
+          {{ _('Set the default number of tracks to display per page on the main list.') }}
+        </p>
+        <select
+          id="default-page-size-select"
+          class="rounded border border-border bg-card-bg p-2 text-foreground shadow-md"
+        >
+          <option value="all">{{ _('All') }}</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </div>
+      <div class="m-4 rounded border border-border bg-card-bg p-4 shadow-md">
+        <div>
+          <h3 class="text-1xl mt-0 border-b border-border pb-1 font-semibold">
+            {{ _('Slim View Mode') }}
+          </h3>
+          <p class="mb-2 block">
+            {{ _('Hides thumbnails and secondary text for a more compact view.') }}
+          </p>
+        </div>
+        <label
+          for="slim-mode-toggle"
+          class="relative inline-flex cursor-pointer items-center"
+        >
+          <input type="checkbox" id="slim-mode-toggle" class="peer sr-only" />
+          <div
+            class="h-6 w-11 rounded-full bg-border peer-checked:bg-cyan-text peer-focus:ring-4 peer-focus:ring-cyan-hover peer-focus:outline-none after:absolute after:start-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white"
+          ></div>
+        </label>
+      </div>
     </div>
   </div>
 
