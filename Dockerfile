@@ -13,7 +13,7 @@ ENV PATH="/root/.bun/bin:${PATH}"
 WORKDIR /app
 
 # Copy configuration and dependency files first for caching
-COPY requirements.txt package.json bun.lockb babel.cfg ./
+COPY requirements.txt package.json bun.lock babel.cfg ./
 
 # Install both Python and Bun dependencies
 RUN pip install --no-cache-dir -r requirements.txt
