@@ -2128,7 +2128,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       fetch("/scrape", { method: "POST" })
         .then((res) => res.json())
         .then((data) => {
-          scrapeStatus.textContent = data.message;
+          scrapeStatus.textContent = _(data.message);
           const interval = setInterval(() => {
             fetch("/api/scrape-status")
               .then((res) => res.json())
