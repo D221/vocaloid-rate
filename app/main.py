@@ -1081,7 +1081,7 @@ def search_vocadb(producer: str, title_en: str, title_jp: str | None = None):
 
 
 @app.get("/api/vocadb_lyrics/{song_id}")
-def get_vocadb_lyrics(song_id: int):
+def get_vocadb_lyrics(song_id: int, locale: str = Depends(get_locale)):
     headers = {"Accept": "application/json"}
     try:
         api_url = f"https://vocadb.net/api/songs/{song_id}?fields=Lyrics"
@@ -1118,12 +1118,21 @@ def get_vocadb_lyrics(song_id: int):
             )
 
         def sort_key(lyric):
-            if "English" in lyric["label"]:
-                return 0
-            if "Romaji" in lyric["label"]:
-                return 1
-            if "Japanese" in lyric["label"]:
-                return 2
+            # New logic based on locale
+            if locale == "ja":
+                if "Japanese" in lyric["label"]:
+                    return 0
+                if "Romaji" in lyric["label"]:
+                    return 1
+                if "English" in lyric["label"]:
+                    return 2
+            else:  # Default to English first
+                if "English" in lyric["label"]:
+                    return 0
+                if "Romaji" in lyric["label"]:
+                    return 1
+                if "Japanese" in lyric["label"]:
+                    return 2
             return 3
 
         available_lyrics.sort(key=sort_key)
