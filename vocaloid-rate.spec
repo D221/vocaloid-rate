@@ -6,7 +6,10 @@ a = Analysis(
     binaries=[],
     datas=[
         ('app/static', 'static'),
-        ('app/templates', 'templates')
+        ('app/templates', 'templates'),
+        ('alembic.ini', '.'),
+        ('alembic', 'alembic'),
+        ('locales', 'locales')
     ],
     hiddenimports=[
         'uvicorn.lifespan.on',

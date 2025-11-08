@@ -1,3 +1,4 @@
+import gettext
 import json
 import logging
 import os
@@ -39,20 +40,24 @@ from app.database import SessionLocal
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
 
-
-def resource_path(relative: str) -> Path:
-    if getattr(sys, "frozen", False):
-        base_path = Path(sys._MEIPASS)  # type: ignore
-    else:
-        base_path = Path(__file__).resolve().parent
-    return base_path / relative
+# Global variable to store the base path for resources
+RESOURCE_BASE_PATH: Optional[Path] = None
 
 
 @asynccontextmanager
 async def app_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    # --- Code to run on startup ---
+    global RESOURCE_BASE_PATH
+    # Determine the base path for resources, handling PyInstaller freezing
+    if getattr(sys, "frozen", False):
+        # Running in a PyInstaller bundle
+        RESOURCE_BASE_PATH = Path(sys._MEIPASS)  # type: ignore
+    else:
+        # Running in a development environment
+        RESOURCE_BASE_PATH = Path(__file__).resolve().parent.parent  # Project root
+
     # Run alembic migrations
-    alembic_cfg = Config("alembic.ini")
+    alembic_ini_path = RESOURCE_BASE_PATH / "alembic.ini"
+    alembic_cfg = Config(str(alembic_ini_path))
     command.upgrade(alembic_cfg, "head")
 
     global initial_scrape_in_progress
@@ -134,38 +139,34 @@ def get_translations(
     Load translations and ensure .info() contains a 'language' key so callers
     can safely do translations.info()['language'].
     """
+    if RESOURCE_BASE_PATH is None:
+        current_base_path = Path(__file__).resolve().parent.parent
+        logging.warning(
+            "RESOURCE_BASE_PATH was None, re-evaluating for dev environment."
+        )
+    else:
+        current_base_path = RESOURCE_BASE_PATH
+
+    locales_path = current_base_path / "locales"
+
     try:
-        t = Translations.load("locales", [locale])
-    except Exception:
-        t = NullTranslations()
+        logging.info(
+            f"Attempting to load translations from: {locales_path} for locale {locale}"
+        )
+        t = gettext.translation(
+            "messages", localedir=str(locales_path), languages=[locale]
+        )
+        logging.info(f"gettext.translation successful for locale {locale}.")
+        # The TranslationProxy class is now always available.
+        return TranslationProxy(t, locale)
 
-    info = t.info() if hasattr(t, "info") else {}
-    if "language" in info:
-        return t
-
-    # Wrap the translations so .info() always includes 'language'
-    class SafeTranslations(NullTranslations):
-        def __init__(self, inner, language):
-            super().__init__()
-            self._inner = inner
-            self._language = language
-
-        def gettext(self, message: str) -> str:
-            if hasattr(self._inner, "gettext"):
-                return self._inner.gettext(message)
-            return message
-
-        def info(self):
-            d = {}
-            if hasattr(self._inner, "info"):
-                try:
-                    d.update(self._inner.info())
-                except Exception:
-                    d = {}
-            d.setdefault("language", self._language)
-            return d
-
-    return SafeTranslations(t, locale)
+    except Exception as e:
+        logging.error(
+            f"Error loading translations from {locales_path} for {locale}: {e}",
+            exc_info=True,
+        )
+        # On failure, wrap NullTranslations to uphold the .info()['language'] contract.
+        return TranslationProxy(NullTranslations(), locale)
 
 
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
@@ -189,6 +190,42 @@ class SinglePlaylistImport(BaseModel):
     tracks: list[str]  # List of track URLs
 
 
+class TranslationProxy(Translations):
+    """
+    A proxy for a translation object that ensures the .info() dictionary
+    always contains a 'language' key. All other methods are passed through
+    to the wrapped translation object.
+    """
+
+    def __init__(
+        self, inner_translation: Translations | NullTranslations, language: str
+    ):
+        # We don't call super().__init__() because Translations doesn't have a standard one.
+        self._inner = inner_translation
+        self._language = language
+
+    def gettext(self, message: str) -> str:
+        return self._inner.gettext(message)
+
+    def ngettext(self, msgid1: str, msgid2: str, n: int) -> str:
+        return self._inner.ngettext(msgid1, msgid2, n)
+
+    def info(self) -> dict:
+        d = {}
+        # Ensure we don't crash if the inner .info() method fails
+        if hasattr(self._inner, "info"):
+            try:
+                d.update(self._inner.info())
+            except Exception:
+                d = {}  # Reset on failure
+        d.setdefault("language", self._language)
+        return d
+
+    def __getattr__(self, name):
+        """Pass through any other attribute/method calls to the inner object."""
+        return getattr(self._inner, name)
+
+
 # Dependency
 def get_db():
     db = SessionLocal()
@@ -204,6 +241,7 @@ def initial_scrape_task():
         logging.info("Initial Scrape: Starting full scrape.")
         final_status = "completed"
         try:
+            new_tracks_count = 0
             all_scraped_tracks = []
             for page in range(1, 7):
                 with open(SCRAPE_STATUS_FILE, "w") as f:
@@ -215,24 +253,27 @@ def initial_scrape_task():
             )
 
             for track_data in all_scraped_tracks:
-                db_track = models.Track(**track_data)
-                db.add(db_track)
+                existing_track = crud.get_track_by_link(db, track_data["link"])
+                if existing_track:
+                    logging.info(
+                        f"Track with link {track_data['link']} already exists. Skipping."
+                    )
+                else:
+                    db_track = models.Track(**track_data)
+                    db.add(db_track)
+                    new_tracks_count += 1
 
-            logging.info(f"Added {len(all_scraped_tracks)} new tracks.")
+            logging.info(f"Added {new_tracks_count} new tracks.")
             logging.info("Committing all changes to the database...")
             db.commit()
             crud.create_update_log(db)
             logging.info("Database commit successful and update time logged.")
 
-        except Exception as e:
-            final_status = "error"
-            logging.error(
-                f"An error occurred in the initial scrape task: {e}", exc_info=True
-            )
-            db.rollback()
         finally:
             with open(SCRAPE_STATUS_FILE, "w") as f:
                 f.write(final_status)
+            global initial_scrape_in_progress
+            initial_scrape_in_progress = False
     finally:
         db.close()
 
@@ -864,12 +905,6 @@ def read_root(
 ):
     locale = translations.info()["language"]
     global initial_scrape_in_progress
-    if initial_scrape_in_progress:
-        if os.path.exists(SCRAPE_STATUS_FILE):
-            with open(SCRAPE_STATUS_FILE, "r") as f:
-                status = f.read().strip()
-                if status in ["completed", "no_changes"]:
-                    initial_scrape_in_progress = False
 
     if initial_scrape_in_progress:
         return templates.TemplateResponse(
@@ -945,8 +980,12 @@ def read_root(
     update_age_days = None
     is_db_outdated = False
     if last_update:
-        # Assuming updated_at is a naive datetime stored in UTC
-        update_age = datetime.utcnow() - last_update.updated_at
+        # Ensure last_update.updated_at is timezone-aware
+        if last_update.updated_at.tzinfo is None:
+            # Assume it's UTC if naive, as per previous comment/intent
+            last_update.updated_at = last_update.updated_at.replace(tzinfo=timezone.utc)
+
+        update_age = datetime.now(timezone.utc) - last_update.updated_at
         update_age_days = update_age.days
         if update_age.total_seconds() > 24 * 3600:
             is_db_outdated = True
@@ -980,7 +1019,11 @@ def read_root(
 
 @app.get("/api/translations")
 def get_js_translations(locale: str = Depends(get_locale)):
-    with open("locales/js_translations.json", "r", encoding="utf-8") as f:
+    if RESOURCE_BASE_PATH is None:
+        raise HTTPException(status_code=500, detail="Resource path not configured.")
+
+    js_translations_path = RESOURCE_BASE_PATH / "locales" / "js_translations.json"
+    with open(js_translations_path, "r", encoding="utf-8") as f:
         all_translations = json.load(f)
     return all_translations.get(locale, all_translations["en"])
 
