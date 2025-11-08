@@ -2172,6 +2172,29 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  const randomPlayBtn = document.getElementById("play-random-btn");
+  if (randomPlayBtn) {
+    randomPlayBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      if (
+        !playerState.masterPlaylist ||
+        playerState.masterPlaylist.length === 0
+      ) {
+        showToast(_("No tracks to choose from."), "error");
+        return;
+      }
+      // Select a random track from the master list
+      const randomTrack =
+        playerState.masterPlaylist[
+          Math.floor(Math.random() * playerState.masterPlaylist.length)
+        ];
+
+      // Use the existing navigation and play logic
+      await navigateToTrack(randomTrack.id, loadAndPlayTrack);
+      scrollToPlayingTrack();
+    });
+  }
+
   // --- Initial Page Load Logic ---
   if (document.getElementById("tracks-table-body")) {
     const urlParams = new URLSearchParams(window.location.search);

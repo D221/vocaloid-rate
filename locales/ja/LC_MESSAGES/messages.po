@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-11-07 18:04+0200\n"
+"POT-Creation-Date: 2025-11-08 23:30+0200\n"
 "PO-Revision-Date: 2025-11-06 23:59+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -343,10 +343,14 @@ msgid "Items per page:"
 msgstr "表示件数:"
 
 #: app/templates/partials/filter_form.html:164
+msgid "Play Random"
+msgstr "シャッフル再生"
+
+#: app/templates/partials/filter_form.html:172
 msgid "Clear"
 msgstr "クリア"
 
-#: app/templates/partials/filter_form.html:173
+#: app/templates/partials/filter_form.html:181
 msgid "Update Tracks"
 msgstr "トラックを更新"
 

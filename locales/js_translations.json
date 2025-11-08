@@ -34,7 +34,8 @@
     "Track added!": "Track added!",
     "Track not found on VocaDB.": "Track not found on VocaDB.",
     "Track removed.": "Track removed.",
-    "Update Tracks": "Update Tracks"
+    "Update Tracks": "Update Tracks",
+    "No tracks to choose from.": "No tracks to choose from."
   },
   "ja": {
     "Add Note": "メモを追加",
@@ -71,6 +72,7 @@
     "Track added!": "トラックを追加しました！",
     "Track not found on VocaDB.": "VocaDBでトラックが見つかりませんでした。",
     "Track removed.": "トラックを削除しました。",
-    "Update Tracks": "トラックを更新"
+    "Update Tracks": "トラックを更新",
+    "No tracks to choose from.": "利用可能なトラックはありません。"
   }
 }
