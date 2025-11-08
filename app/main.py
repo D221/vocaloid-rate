@@ -12,6 +12,7 @@ from typing import AsyncGenerator, Optional
 from urllib.parse import quote
 
 import requests
+from alembic.config import Config
 from babel.support import Translations
 from fastapi import (
     BackgroundTasks,
@@ -32,8 +33,9 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from alembic import command
 from app import crud, models, schemas, scraper
-from app.database import SessionLocal, engine
+from app.database import SessionLocal
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
 
@@ -49,6 +51,10 @@ def resource_path(relative: str) -> Path:
 @asynccontextmanager
 async def app_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # --- Code to run on startup ---
+    # Run alembic migrations
+    alembic_cfg = Config("alembic.ini")
+    command.upgrade(alembic_cfg, "head")
+
     global initial_scrape_in_progress
     db = SessionLocal()
     track_count = db.query(models.Track).count()
@@ -61,7 +67,7 @@ async def app_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             os.makedirs(DATA_DIR)
         with open(SCRAPE_STATUS_FILE, "w") as f:
             f.write("in_progress")
-        scrape_thread = threading.Thread(target=scrape_and_populate_task)
+        scrape_thread = threading.Thread(target=initial_scrape_task)
         scrape_thread.start()
 
     def is_running_in_pyinstaller():
@@ -95,7 +101,7 @@ async def add_cache_control_header(request: Request, call_next):
     return response
 
 
-models.Base.metadata.create_all(bind=engine)
+# models.Base.metadata.create_all(bind=engine) # This is now handled by Alembic
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -188,6 +194,45 @@ def get_db():
     db = SessionLocal()
     try:
         yield db
+    finally:
+        db.close()
+
+
+def initial_scrape_task():
+    db = SessionLocal()
+    try:
+        logging.info("Initial Scrape: Starting full scrape.")
+        final_status = "completed"
+        try:
+            all_scraped_tracks = []
+            for page in range(1, 7):
+                with open(SCRAPE_STATUS_FILE, "w") as f:
+                    f.write(f"in_progress:{page}/6")
+                all_scraped_tracks.extend(scraper._scrape_single_page(page))
+
+            logging.info(
+                f"Full scrape finished. Found {len(all_scraped_tracks)} tracks. Adding to database..."
+            )
+
+            for track_data in all_scraped_tracks:
+                db_track = models.Track(**track_data)
+                db.add(db_track)
+
+            logging.info(f"Added {len(all_scraped_tracks)} new tracks.")
+            logging.info("Committing all changes to the database...")
+            db.commit()
+            crud.create_update_log(db)
+            logging.info("Database commit successful and update time logged.")
+
+        except Exception as e:
+            final_status = "error"
+            logging.error(
+                f"An error occurred in the initial scrape task: {e}", exc_info=True
+            )
+            db.rollback()
+        finally:
+            with open(SCRAPE_STATUS_FILE, "w") as f:
+                f.write(final_status)
     finally:
         db.close()
 
