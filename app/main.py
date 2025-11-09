@@ -169,6 +169,27 @@ def get_translations(
         return TranslationProxy(NullTranslations(), locale)
 
 
+def LocaleTemplateResponse(
+    template_name: str,
+    context: dict,
+    request: Request,
+    translations: Translations,
+):
+    """
+    A helper that automatically adds locale to the context
+    and sets the language cookie on the response.
+    """
+    # 1. Automatically add the locale to the context
+    context["locale"] = translations.info()["language"]
+
+    # 2. Create the response object
+    response = templates.TemplateResponse(template_name, context)
+
+    # 3. Automatically set the language cookie
+    response.set_cookie(key="language", value=get_locale(request))
+    return response
+
+
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
@@ -512,25 +533,28 @@ def read_rated_tracks(
     tracks_for_json = [track.to_dict() for track in tracks]
     tracks_json_string = json.dumps(tracks_for_json)
 
-    return templates.TemplateResponse(
-        "rated.html",
-        {
-            "request": request,
-            "_": translations.gettext,
-            "tracks": tracks,
-            "tracks_json": tracks_json_string,
-            "all_producers": all_producers,
-            "all_voicebanks": all_voicebanks,
-            "stats": stats,
-            "filters": filters,
-            "locale": translations.info()["language"],
-            "pagination": {
-                "page": page,
-                "limit": limit,
-                "total_pages": total_pages,
-                "total_tracks": total_tracks,
-            },
+    context = {
+        "request": request,
+        "_": translations.gettext,
+        "tracks": tracks,
+        "tracks_json": tracks_json_string,
+        "all_producers": all_producers,
+        "all_voicebanks": all_voicebanks,
+        "stats": stats,
+        "filters": filters,
+        "pagination": {
+            "page": page,
+            "limit": limit,
+            "total_pages": total_pages,
+            "total_tracks": total_tracks,
         },
+    }
+
+    return LocaleTemplateResponse(
+        "rated.html",
+        context,
+        request=request,
+        translations=translations,
     )
 
 
@@ -541,9 +565,13 @@ def view_playlists_page(
     translations: Translations = Depends(get_translations),
 ):
     playlists = crud.get_playlists(db)
-    return templates.TemplateResponse(
+    context = {"request": request, "_": translations.gettext, "playlists": playlists}
+
+    return LocaleTemplateResponse(
         "playlists.html",
-        {"request": request, "_": translations.gettext, "playlists": playlists},
+        context,
+        request=request,
+        translations=translations,
     )
 
 
@@ -611,25 +639,28 @@ def view_playlist_detail_page(
     tracks_for_json = [track.to_dict() for track in tracks_in_playlist]
     tracks_json_string = json.dumps(tracks_for_json)
 
-    return templates.TemplateResponse(
-        "playlist_view.html",
-        {
-            "request": request,
-            "_": translations.gettext,
-            "playlist": db_playlist,
-            "tracks": tracks_in_playlist,  # This now contains the paginated list
-            "tracks_json": tracks_json_string,
-            "all_producers": all_producers,
-            "all_voicebanks": all_voicebanks,
-            "filters": filters,
-            "locale": translations.info()["language"],
-            "pagination": {
-                "page": page,
-                "limit": limit,
-                "total_pages": total_pages,
-                "total_tracks": total_tracks,
-            },
+    context = {
+        "request": request,
+        "_": translations.gettext,
+        "playlist": db_playlist,
+        "tracks": tracks_in_playlist,
+        "tracks_json": tracks_json_string,
+        "all_producers": all_producers,
+        "all_voicebanks": all_voicebanks,
+        "filters": filters,
+        "pagination": {
+            "page": page,
+            "limit": limit,
+            "total_pages": total_pages,
+            "total_tracks": total_tracks,
         },
+    }
+
+    return LocaleTemplateResponse(
+        "playlist_view.html",
+        context,
+        request=request,
+        translations=translations,
     )
 
 
@@ -652,15 +683,19 @@ def edit_playlist_page(
     tracks_for_json = [track.to_dict() for track in all_tracks]
     tracks_json_string = json.dumps(tracks_for_json)
 
-    return templates.TemplateResponse(
+    context = {
+        "request": request,
+        "_": translations.gettext,
+        "playlist": db_playlist,
+        "all_tracks": all_tracks,
+        "tracks_json": tracks_json_string,
+    }
+
+    return LocaleTemplateResponse(
         "playlist_edit.html",
-        {
-            "request": request,
-            "_": translations.gettext,
-            "playlist": db_playlist,
-            "all_tracks": all_tracks,
-            "tracks_json": tracks_json_string,
-        },
+        context,
+        request=request,
+        translations=translations,
     )
 
 
@@ -868,8 +903,13 @@ def get_recently_added_tracks_partial(
 def read_options(
     request: Request, translations: Translations = Depends(get_translations)
 ):
-    return templates.TemplateResponse(
-        "options.html", {"request": request, "_": translations.gettext}
+    context = {"request": request, "_": translations.gettext}
+
+    return LocaleTemplateResponse(
+        "options.html",
+        context,
+        request=request,
+        translations=translations,
     )
 
 
@@ -959,8 +999,11 @@ def read_root(
     global initial_scrape_in_progress
 
     if initial_scrape_in_progress:
-        return templates.TemplateResponse(
-            "scraping.html", {"request": request, "_": translations.gettext}
+        return LocaleTemplateResponse(
+            "scraping.html",
+            {"request": request, "_": translations.gettext},
+            request=request,
+            translations=translations,
         )
 
     filters = {
@@ -1042,31 +1085,32 @@ def read_root(
         if update_age.total_seconds() > 24 * 3600:
             is_db_outdated = True
 
-    response = templates.TemplateResponse(
-        "index.html",
-        {
-            "request": request,
-            "_": translations.gettext,
-            "is_slim_mode": is_slim_mode,
-            "tracks": tracks,
-            "tracks_json": tracks_json_string,
-            "all_producers": all_producers,
-            "all_voicebanks": all_voicebanks,
-            "last_update": last_update,
-            "is_db_outdated": is_db_outdated,
-            "update_age_days": update_age_days,
-            "filters": filters,
-            "locale": translations.info()["language"],
-            "pagination": {
-                "page": page,
-                "limit": limit,
-                "total_pages": total_pages,
-                "total_tracks": total_tracks,
-            },
+    context = {
+        "request": request,
+        "_": translations.gettext,
+        "is_slim_mode": is_slim_mode,
+        "tracks": tracks,
+        "tracks_json": tracks_json_string,
+        "all_producers": all_producers,
+        "all_voicebanks": all_voicebanks,
+        "last_update": last_update,
+        "is_db_outdated": is_db_outdated,
+        "update_age_days": update_age_days,
+        "filters": filters,
+        "pagination": {
+            "page": page,
+            "limit": limit,
+            "total_pages": total_pages,
+            "total_tracks": total_tracks,
         },
+    }
+
+    return LocaleTemplateResponse(
+        "index.html",
+        context,
+        request=request,
+        translations=translations,
     )
-    response.set_cookie(key="language", value=get_locale(request))
-    return response
 
 
 @app.get("/recently_added")
@@ -1123,24 +1167,28 @@ def read_recently_added(
     all_producers = sorted(list(set(producers_flat)))
     all_voicebanks = sorted(list(set(voicebanks_flat)))
 
-    return templates.TemplateResponse(
-        "recently_added.html",
-        {
-            "request": request,
-            "_": translations.gettext,
-            "tracks": tracks,
-            "tracks_json": tracks_json_string,
-            "all_producers": all_producers,
-            "all_voicebanks": all_voicebanks,
-            "filters": filters,
-            "locale": translations.info()["language"],
-            "pagination": {
-                "page": page,
-                "total_pages": 1,  # Always 1 page
-                "total_tracks": total_tracks,
-            },
-            "is_recently_added_page": True,
+    context = {
+        "request": request,
+        "_": translations.gettext,
+        "tracks": tracks,
+        "tracks_json": tracks_json_string,
+        "all_producers": all_producers,
+        "all_voicebanks": all_voicebanks,
+        "filters": filters,
+        "pagination": {
+            "page": page,
+            "total_pages": 1,
+            "total_tracks": total_tracks,
         },
+        "is_recently_added_page": True,
+    }
+
+    # --- REPLACED THIS ---
+    return LocaleTemplateResponse(
+        "recently_added.html",
+        context,
+        request=request,
+        translations=translations,
     )
 
 
@@ -1161,34 +1209,27 @@ def read_recommendations(
     db: Session = Depends(get_db),
     translations: Translations = Depends(get_translations),
 ):
-    try:
-        logging.info("Accessing /recommendations endpoint.")
-        stats = crud.get_rating_statistics(db, locale=translations.info()["language"])
-        logging.info(
-            f"Fetched rating statistics: {stats['total_ratings']} total ratings."
-        )
-        recommended_tracks = crud.get_recommended_tracks(
-            db, locale=translations.info()["language"]
-        )
-        logging.info(f"Fetched {len(recommended_tracks)} recommended tracks.")
-        tracks_for_json = [track.to_dict() for track in recommended_tracks]
-        tracks_json_string = json.dumps(tracks_for_json)
-        return templates.TemplateResponse(
-            "recommendations.html",
-            {
-                "request": request,
-                "_": translations.gettext,
-                "stats": stats,
-                "recommended_tracks": recommended_tracks,
-                "tracks_json": tracks_json_string,
-                "locale": translations.info()["language"],
-            },
-        )
-    except Exception as e:
-        logging.error(f"Error in /recommendations endpoint: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500, detail="Internal Server Error in recommendations."
-        )
+    stats = crud.get_rating_statistics(db, locale=translations.info()["language"])
+    recommended_tracks = crud.get_recommended_tracks(
+        db, locale=translations.info()["language"]
+    )
+    tracks_for_json = [track.to_dict() for track in recommended_tracks]
+    tracks_json_string = json.dumps(tracks_for_json)
+
+    context = {
+        "request": request,
+        "_": translations.gettext,
+        "stats": stats,
+        "recommended_tracks": recommended_tracks,
+        "tracks_json": tracks_json_string,
+    }
+
+    return LocaleTemplateResponse(
+        "recommendations.html",
+        context,
+        request=request,
+        translations=translations,
+    )
 
 
 @app.post("/rate/{track_id}/delete")

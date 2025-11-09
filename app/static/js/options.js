@@ -42,7 +42,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     defaultPageSizeSelect.addEventListener("change", () => {
       localStorage.setItem("defaultPageSize", defaultPageSizeSelect.value);
-      alert("Default page size saved!");
     });
   }
 

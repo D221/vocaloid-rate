@@ -263,14 +263,13 @@
       </a>
 
       <!-- Language Switcher -->
-      <a
-        href="{% if locale == 'ja' %}?lang=en{% else %}?lang=ja{% endif %}"
-        class="cursor-pointer rounded border border-gray-text p-3 font-bold text-gray-text shadow-md ease-in-out hover:bg-gray-hover hover:transition-colors hover:duration-200"
+      <button
+        id="language-switcher"
+        class="inline-flex cursor-pointer rounded border border-gray-text p-3 font-bold text-gray-text shadow-md ease-in-out hover:bg-gray-hover hover:transition-colors hover:duration-200"
         title="Switch Language"
       >
-        {{ icon("globe", size="h-5 w-5") }}
         <span>{% if locale == 'ja' %}English{% else %}日本語{% endif %}</span>
-      </a>
+      </button>
     </div>
   </div>
 </div>
