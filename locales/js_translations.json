@@ -35,7 +35,8 @@
     "Track not found on VocaDB.": "Track not found on VocaDB.",
     "Track removed.": "Track removed.",
     "Update Tracks": "Update Tracks",
-    "No tracks to choose from.": "No tracks to choose from."
+    "No tracks to choose from.": "No tracks to choose from.",
+    "Playback is not available while offline.": "Playback is not available while offline."
   },
   "ja": {
     "Add Note": "メモを追加",
@@ -73,6 +74,7 @@
     "Track not found on VocaDB.": "VocaDBでトラックが見つかりませんでした。",
     "Track removed.": "トラックを削除しました。",
     "Update Tracks": "トラックを更新",
-    "No tracks to choose from.": "利用可能なトラックはありません。"
+    "No tracks to choose from.": "利用可能なトラックはありません。",
+    "Playback is not available while offline.": "オフライン中は再生できません。"
   }
 }

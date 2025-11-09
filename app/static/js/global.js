@@ -30,7 +30,6 @@ window.initializeTheme = function () {
 };
 
 // TRANSLATION LOGIC
-
 let translations = {};
 
 window._ = function (key, ...args) {
@@ -41,9 +40,19 @@ window._ = function (key, ...args) {
   return translated;
 };
 
-// =======================================
+// PWA SERVICE WORKER REGISTRATION
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("/static/sw.js", { scope: "/" })
+      .catch((err) => {
+        console.error("ServiceWorker registration failed: ", err);
+      });
+  });
+}
+
 // GLOBAL INITIALIZATION
-// =======================================
+
 document.addEventListener("DOMContentLoaded", async () => {
   // Initialize the visual theme on every page load.
   window.initializeTheme();

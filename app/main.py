@@ -190,6 +190,25 @@ def LocaleTemplateResponse(
     return response
 
 
+@app.get("/static/sw.js")
+async def serve_sw(request: Request):
+    """
+    Serves the service worker file with the required Service-Worker-Allowed header.
+    """
+    sw_path = BASE_DIR / "static" / "sw.js"
+    if not sw_path.exists():
+        raise HTTPException(status_code=404, detail="Service worker not found.")
+
+    with open(sw_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    return Response(
+        content=content,
+        media_type="application/javascript",
+        headers={"Service-Worker-Allowed": "/"},
+    )
+
+
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
 templates = Jinja2Templates(directory=BASE_DIR / "templates")

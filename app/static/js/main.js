@@ -247,6 +247,14 @@ function cleanupPreviousEmbed(trackId) {
   }
 }
 
+function checkOnlineStatus() {
+  if (!navigator.onLine) {
+    showToast(window._("Playback is not available while offline."), "error");
+    return false;
+  }
+  return true;
+}
+
 // ===================================================================
 // UI & DOM MANIPULATION FUNCTIONS
 // ===================================================================
@@ -570,6 +578,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const scrapeButton = document.getElementById("scrape-button");
 
   function loadAndPlayTrack(trackId) {
+    if (!checkOnlineStatus()) {
+      return;
+    }
+
     const trackIndex = playerState.playlist.findIndex((t) => t.id === trackId);
     if (trackIndex === -1) {
       // This can happen if the track is on another page, but the page hasn't loaded yet.
@@ -1493,6 +1505,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       if (embedButton.classList.toggle("is-open")) {
+        if (!checkOnlineStatus()) {
+          embedButton.classList.remove("is-open");
+          stopPlayer();
+          return;
+        }
         const videoId = getYouTubeVideoId(embedButton.dataset.youtubeUrl);
         if (!videoId) {
           window.open(embedButton.dataset.youtubeUrl, "_blank");
