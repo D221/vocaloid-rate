@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Recommendations') }} - {{ _('Vocaloid Rater') }}{% endblock %}
+
+{% block content %}
+  {% include "partials/header.html" %}
+
+  <h1 class="mb-6 text-4xl font-bold text-header">
+    {{ _('Recommendations for You') }}
+  </h1>
+
+  {% if recommended_tracks %}
+    <div
+      class="overflow-x-visible rounded border border-none border-border bg-card-bg shadow-md md:overflow-x-auto"
+    >
+      <table class="w-full border-collapse">
+        {% include "partials/tracks_table_head.html" %}
+        <tbody
+          id="recommended-tracks-table-body"
+          class="tracks-table-body playlist-source bg-background"
+          data-tracks-json="{{ tracks_json | tojson | forceescape }}"
+          data-update-url="/api/playlist-snapshot"
+        >
+          {% set tracks = recommended_tracks %}
+          {% include "partials/tracks_table_body.html" %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="detail">
+      {{ _('No track recommendations available. Rate more tracks to get personalized recommendations!') }}
+    </p>
+  {% endif %}
+
+  <script src="{{ url_for('static', path='js/main.min.js') }}"></script>
+{% endblock %}

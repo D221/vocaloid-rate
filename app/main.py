@@ -1028,6 +1028,42 @@ def get_js_translations(locale: str = Depends(get_locale)):
     return all_translations.get(locale, all_translations["en"])
 
 
+@app.get("/recommendations")
+def read_recommendations(
+    request: Request,
+    db: Session = Depends(get_db),
+    translations: Translations = Depends(get_translations),
+):
+    try:
+        logging.info("Accessing /recommendations endpoint.")
+        stats = crud.get_rating_statistics(db, locale=translations.info()["language"])
+        logging.info(
+            f"Fetched rating statistics: {stats['total_ratings']} total ratings."
+        )
+        recommended_tracks = crud.get_recommended_tracks(
+            db, locale=translations.info()["language"]
+        )
+        logging.info(f"Fetched {len(recommended_tracks)} recommended tracks.")
+        tracks_for_json = [track.to_dict() for track in recommended_tracks]
+        tracks_json_string = json.dumps(tracks_for_json)
+        return templates.TemplateResponse(
+            "recommendations.html",
+            {
+                "request": request,
+                "_": translations.gettext,
+                "stats": stats,
+                "recommended_tracks": recommended_tracks,
+                "tracks_json": tracks_json_string,
+                "locale": translations.info()["language"],
+            },
+        )
+    except Exception as e:
+        logging.error(f"Error in /recommendations endpoint: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500, detail="Internal Server Error in recommendations."
+        )
+
+
 @app.post("/rate/{track_id}/delete")
 def delete_rating_endpoint(track_id: int, db: Session = Depends(get_db)):
     crud.delete_rating(db, track_id=track_id)

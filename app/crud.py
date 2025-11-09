@@ -1,6 +1,6 @@
 from collections import defaultdict
 from statistics import median
-from typing import Optional
+from typing import List, Optional
 
 from sqlalchemy import desc, distinct, func, nullslast, or_
 from sqlalchemy.orm import Session, joinedload
@@ -881,3 +881,128 @@ def get_playlist_snapshot_for_playlist(
             snapshot.append({"id": str(track_id), "page": page_num})
 
     return snapshot
+
+
+def get_recommended_tracks(
+    db: Session, locale: str = "en", limit: int = 25
+) -> List[models.Track]:
+    """
+    Generates track recommendations based on user's rated producers and voicebanks.
+    Producers have 3x the weight of voicebanks.
+    """
+
+    MINIMUM_SCORE_THRESHOLD = 0.3
+
+    # 1. Get all user ratings and calculate average ratings for producers and voicebanks
+    all_ratings_query = db.query(models.Rating.rating).all()
+    if not all_ratings_query:
+        return []
+
+    all_ratings_values = [r for (r,) in all_ratings_query]
+    global_avg_rating = sum(all_ratings_values) / len(all_ratings_values)
+
+    rated_tracks_data = (
+        db.query(
+            models.Track.producer,
+            models.Track.voicebank,
+            models.Track.producer_jp,
+            models.Track.voicebank_jp,
+            models.Rating.rating,
+        )
+        .join(models.Rating)
+        .all()
+    )
+
+    # <<< FIX: Use separate dictionaries for accumulation and final averages
+    producer_data = defaultdict(lambda: {"sum_ratings": 0, "count": 0})
+    voicebank_data = defaultdict(lambda: {"sum_ratings": 0, "count": 0})
+
+    for (
+        producer_en_str,
+        voicebank_en_str,
+        producer_jp_str,
+        voicebank_jp_str,
+        rating,
+    ) in rated_tracks_data:
+        producers = []
+        if locale == "ja" and producer_jp_str:
+            producers.extend([p.strip() for p in producer_jp_str.split(",")])
+        else:
+            producers.extend([p.strip() for p in producer_en_str.split(",")])
+
+        voicebanks = []
+        if locale == "ja" and voicebank_jp_str:
+            voicebanks.extend([v.strip() for v in voicebank_jp_str.split(",")])
+        else:
+            voicebanks.extend([v.strip() for v in voicebank_en_str.split(",")])
+
+        for p in producers:
+            producer_data[p]["sum_ratings"] += rating
+            producer_data[p]["count"] += 1
+        for v in voicebanks:
+            voicebank_data[v]["sum_ratings"] += rating
+            voicebank_data[v]["count"] += 1
+
+    # <<< FIX: Calculate averages into new, correctly-typed dictionaries
+    producer_avg_ratings: dict[str, float] = {
+        p: data["sum_ratings"] / data["count"] for p, data in producer_data.items()
+    }
+    voicebank_avg_ratings: dict[str, float] = {
+        v: data["sum_ratings"] / data["count"] for v, data in voicebank_data.items()
+    }
+
+    # 2. Get all unrated tracks
+    rated_track_ids = db.query(models.Rating.track_id).distinct().all()
+    rated_track_ids = [t_id for (t_id,) in rated_track_ids]
+
+    unrated_tracks = (
+        db.query(models.Track).filter(models.Track.id.notin_(rated_track_ids)).all()
+    )
+
+    # 3. Calculate recommendation score for each unrated track
+    track_scores = []
+    producer_weight = 3
+    voicebank_weight = 1
+
+    for track in unrated_tracks:
+        score = 0.0
+
+        track_producers = []
+        if locale == "ja" and track.producer_jp:
+            track_producers.extend([p.strip() for p in track.producer_jp.split(",")])
+        else:
+            track_producers.extend([p.strip() for p in track.producer.split(",")])
+
+        track_voicebanks = []
+        if locale == "ja" and track.voicebank_jp:
+            track_voicebanks.extend([v.strip() for v in track.voicebank.split(",")])
+        else:
+            track_voicebanks.extend([v.strip() for v in track.voicebank.split(",")])
+
+        # Score from producers
+        producer_scores = []
+        for p in track_producers:
+            if p in producer_avg_ratings:
+                # <<< FIX: This is now a valid float - float operation
+                producer_scores.append(producer_avg_ratings[p] - global_avg_rating)
+        if producer_scores:
+            score += producer_weight * (sum(producer_scores) / len(producer_scores))
+
+        # Score from voicebanks
+        voicebank_scores = []
+        for v in track_voicebanks:
+            if v in voicebank_avg_ratings:
+                # <<< FIX: This is now a valid float - float operation
+                voicebank_scores.append(voicebank_avg_ratings[v] - global_avg_rating)
+        if voicebank_scores:
+            score += voicebank_weight * (sum(voicebank_scores) / len(voicebank_scores))
+
+        if score > MINIMUM_SCORE_THRESHOLD:
+            track_scores.append((track, score))
+
+    # 4. Sort and return top N tracks
+    track_scores.sort(key=lambda x: x[1], reverse=True)
+
+    recommended_tracks = [track for track, _ in track_scores[:limit]]
+
+    return recommended_tracks

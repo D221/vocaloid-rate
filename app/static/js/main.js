@@ -176,6 +176,13 @@ const loadPlaylistFromTemplate = () => {
   }
 };
 
+const recBody = document.getElementById("recommended-tracks-table-body");
+if (recBody) {
+  const rows = Array.from(recBody.querySelectorAll("tr[data-track-id]"));
+  playerState.playlist = rows.map(buildTrackObjectFromRow).filter(Boolean);
+  playerState.masterPlaylist = playerState.playlist;
+}
+
 function generateShuffledPlaylist() {
   // Create a shuffled copy of the MASTER playlist
   playerState.shuffledMasterPlaylist = [...playerState.masterPlaylist];
@@ -665,7 +672,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     let pageDidChange = false;
-    if (String(trackData.page) !== String(currentPage)) {
+    if (trackData.page && String(trackData.page) !== String(currentPage)) {
       currentPage = trackData.page;
       pageDidChange = true; // We changed the page!
       showSkeleton();

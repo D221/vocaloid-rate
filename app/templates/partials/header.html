@@ -56,6 +56,13 @@
             >{{ _('Rated Tracks') }}</a
           >
         {% endif %}
+        {% if request.url.path != '/recommendations' %}
+          <a
+            href="/recommendations"
+            class="block rounded px-4 py-2 hover:bg-gray-hover"
+            >{{ _('Recommendations') }}</a
+          >
+        {% endif %}
         {% if request.url.path != '/options' %}
           <a href="/options" class="block rounded px-4 py-2 hover:bg-gray-hover"
             >{{ _('Options') }}</a
@@ -193,6 +200,15 @@
           class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
         >
           {{ _('Rated Tracks') }}
+        </a>
+      {% endif %}
+
+      {% if request.url.path != '/recommendations' %}
+        <a
+          href="/recommendations"
+          class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
+        >
+          {{ _('Recommendations') }}
         </a>
       {% endif %}
 

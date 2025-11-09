@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-11-08 23:30+0200\n"
+"POT-Creation-Date: 2025-11-09 20:14+0200\n"
 "PO-Revision-Date: 2025-11-06 23:59+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -45,12 +45,12 @@ msgid "Next"
 msgstr "次へ"
 
 #: app/templates/options.html:3 app/templates/options.html:6
-#: app/templates/partials/header.html:61 app/templates/partials/header.html:205
+#: app/templates/partials/header.html:68 app/templates/partials/header.html:221
 msgid "Options"
 msgstr "設定"
 
 #: app/templates/options.html:3 app/templates/rated.html:3
-#: app/templates/scraping.html:3
+#: app/templates/recommendations.html:3 app/templates/scraping.html:3
 #, fuzzy
 msgid "Vocaloid Rater"
 msgstr "Vocaloid Rate"
@@ -156,7 +156,7 @@ msgstr "%(playlist_name)s - プレイリスト"
 msgid "My Playlists"
 msgstr "マイプレイリスト"
 
-#: app/templates/partials/header.html:33 app/templates/partials/header.html:159
+#: app/templates/partials/header.html:33 app/templates/partials/header.html:166
 #: app/templates/playlists.html:7
 msgid "Playlists"
 msgstr "プレイリスト"
@@ -218,7 +218,7 @@ msgstr "JSONファイルをアップロードして、プレイリストを復�
 msgid "Import from File"
 msgstr "ファイルからインポート"
 
-#: app/templates/partials/header.html:56 app/templates/partials/header.html:195
+#: app/templates/partials/header.html:56 app/templates/partials/header.html:202
 #: app/templates/rated.html:3
 msgid "Rated Tracks"
 msgstr "評価済みトラック"
@@ -259,6 +259,21 @@ msgstr "中央値"
 #: app/templates/rated.html:102
 msgid "Rating Distribution"
 msgstr "評価の分布"
+
+#: app/templates/partials/header.html:63 app/templates/partials/header.html:211
+#: app/templates/recommendations.html:3
+msgid "Recommendations"
+msgstr "おすすめ"
+
+#: app/templates/recommendations.html:9
+msgid "Recommendations for You"
+msgstr "あなたへのおすすめ"
+
+#: app/templates/recommendations.html:31
+msgid ""
+"No track recommendations available. Rate more tracks to get personalized "
+"recommendations!"
+msgstr "おすすめのトラックはありません。トラックをさらに評価して、あなたに合ったおすすめを見つけましょう！"
 
 #: app/templates/scraping.html:3
 msgid "Scraping Tracks"
@@ -358,36 +373,36 @@ msgstr "トラックを更新"
 msgid "Toggle menu"
 msgstr "メニューを開閉"
 
-#: app/templates/partials/header.html:26 app/templates/partials/header.html:149
+#: app/templates/partials/header.html:26 app/templates/partials/header.html:156
 msgid "Main Chart"
 msgstr "メインチャート"
 
-#: app/templates/partials/header.html:42 app/templates/partials/header.html:174
+#: app/templates/partials/header.html:42 app/templates/partials/header.html:181
 msgid "View Playlist"
 msgstr "プレイリストを表示"
 
-#: app/templates/partials/header.html:48 app/templates/partials/header.html:184
+#: app/templates/partials/header.html:48 app/templates/partials/header.html:191
 msgid "Edit Details"
 msgstr "詳細を編集"
 
-#: app/templates/partials/header.html:86
+#: app/templates/partials/header.html:93
 msgid "Edit playlist name"
 msgstr "プレイリスト名を編集"
 
-#: app/templates/partials/header.html:109
+#: app/templates/partials/header.html:116
 msgid "Edit playlist description"
 msgstr "プレイリストの説明を編集"
 
-#: app/templates/partials/header.html:128
+#: app/templates/partials/header.html:135
 msgid "Last updated:"
 msgstr "最終更新日時:"
 
-#: app/templates/partials/header.html:131
+#: app/templates/partials/header.html:138
 #, python-format
 msgid "Your database is %(days)s day(s) old, please update."
 msgstr "データベースが%(days)s日間更新されていません。更新してください。"
 
-#: app/templates/partials/header.html:134
+#: app/templates/partials/header.html:141
 msgid "Database not updated yet. Please update."
 msgstr "データベースはまだ更新されていません。更新してください。"
 

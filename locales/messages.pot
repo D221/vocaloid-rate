@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-11-08 23:30+0200\n"
+"POT-Creation-Date: 2025-11-09 20:14+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -44,12 +44,12 @@ msgid "Next"
 msgstr ""
 
 #: app/templates/options.html:3 app/templates/options.html:6
-#: app/templates/partials/header.html:61 app/templates/partials/header.html:205
+#: app/templates/partials/header.html:68 app/templates/partials/header.html:221
 msgid "Options"
 msgstr ""
 
 #: app/templates/options.html:3 app/templates/rated.html:3
-#: app/templates/scraping.html:3
+#: app/templates/recommendations.html:3 app/templates/scraping.html:3
 msgid "Vocaloid Rater"
 msgstr ""
 
@@ -154,7 +154,7 @@ msgstr ""
 msgid "My Playlists"
 msgstr ""
 
-#: app/templates/partials/header.html:33 app/templates/partials/header.html:159
+#: app/templates/partials/header.html:33 app/templates/partials/header.html:166
 #: app/templates/playlists.html:7
 msgid "Playlists"
 msgstr ""
@@ -215,7 +215,7 @@ msgstr ""
 msgid "Import from File"
 msgstr ""
 
-#: app/templates/partials/header.html:56 app/templates/partials/header.html:195
+#: app/templates/partials/header.html:56 app/templates/partials/header.html:202
 #: app/templates/rated.html:3
 msgid "Rated Tracks"
 msgstr ""
@@ -255,6 +255,21 @@ msgstr ""
 
 #: app/templates/rated.html:102
 msgid "Rating Distribution"
+msgstr ""
+
+#: app/templates/partials/header.html:63 app/templates/partials/header.html:211
+#: app/templates/recommendations.html:3
+msgid "Recommendations"
+msgstr ""
+
+#: app/templates/recommendations.html:9
+msgid "Recommendations for You"
+msgstr ""
+
+#: app/templates/recommendations.html:31
+msgid ""
+"No track recommendations available. Rate more tracks to get personalized "
+"recommendations!"
 msgstr ""
 
 #: app/templates/scraping.html:3
@@ -355,36 +370,36 @@ msgstr ""
 msgid "Toggle menu"
 msgstr ""
 
-#: app/templates/partials/header.html:26 app/templates/partials/header.html:149
+#: app/templates/partials/header.html:26 app/templates/partials/header.html:156
 msgid "Main Chart"
 msgstr ""
 
-#: app/templates/partials/header.html:42 app/templates/partials/header.html:174
+#: app/templates/partials/header.html:42 app/templates/partials/header.html:181
 msgid "View Playlist"
 msgstr ""
 
-#: app/templates/partials/header.html:48 app/templates/partials/header.html:184
+#: app/templates/partials/header.html:48 app/templates/partials/header.html:191
 msgid "Edit Details"
 msgstr ""
 
-#: app/templates/partials/header.html:86
+#: app/templates/partials/header.html:93
 msgid "Edit playlist name"
 msgstr ""
 
-#: app/templates/partials/header.html:109
+#: app/templates/partials/header.html:116
 msgid "Edit playlist description"
 msgstr ""
 
-#: app/templates/partials/header.html:128
+#: app/templates/partials/header.html:135
 msgid "Last updated:"
 msgstr ""
 
-#: app/templates/partials/header.html:131
+#: app/templates/partials/header.html:138
 #, python-format
 msgid "Your database is %(days)s day(s) old, please update."
 msgstr ""
 
-#: app/templates/partials/header.html:134
+#: app/templates/partials/header.html:141
 msgid "Database not updated yet. Please update."
 msgstr ""
 
