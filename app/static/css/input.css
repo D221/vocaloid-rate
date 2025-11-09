@@ -2,6 +2,8 @@
 @source "../../app/templates";
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+@custom-variant night (&:where([data-theme=night], [data-theme=night] *));
+@custom-variant black (&:where([data-theme=black], [data-theme=black] *));
 @custom-variant slim (&:where(.slim-mode-html, .slim-mode-html *));
 
 @theme {
@@ -19,7 +21,7 @@
   --color-green-hover: oklch(98.2% 0.018 155.826);
   --color-purple-text: oklch(55.8% 0.288 302.321);
   --color-purple-hover: oklch(97.7% 0.014 308.299);
-  --color-sky-text: oklch(60.9% 0.126 221.723);
+  --color-sky-text: oklch(58.8% 0.158 241.966);
   --color-sky-hover: oklch(97.7% 0.013 236.62);
   --color-red-text: oklch(57.7% 0.245 27.325);
   --color-red-hover: oklch(97.1% 0.013 17.38);
@@ -30,12 +32,63 @@
 @layer theme {
   :root {
     @variant dark {
+      /* bg-stone-900 */
       --color-background: oklch(21.6% 0.006 56.043);
+      /* bg-stone-100 */
       --color-foreground: oklch(97% 0.001 106.424);
+      /* bg-stone-800 */
       --color-card-bg: oklch(26.8% 0.007 34.298);
+      /* bg-stone-700 */
       --color-border: oklch(37.4% 0.01 67.558);
+      /* bg-stone-700 */
       --color-table-header: oklch(37.4% 0.01 67.558);
+      /* bg-stone-200 */
       --color-header: oklch(92.3% 0.003 48.717);
+      --color-cyan-text: oklch(78.9% 0.154 211.53);
+      --color-cyan-hover: oklch(30.2% 0.056 229.695);
+      --color-gray-text: oklch(70.8% 0 0);
+      --color-gray-hover: oklch(26.9% 0 0);
+      --color-green-text: oklch(79.2% 0.209 151.711);
+      --color-green-hover: oklch(26.6% 0.065 152.934);
+      --color-purple-text: oklch(71.4% 0.203 305.504);
+      --color-purple-hover: oklch(29.1% 0.149 302.717);
+      --color-sky-text: oklch(74.6% 0.16 232.661);
+      --color-sky-hover: oklch(29.3% 0.066 243.157);
+      --color-red-text: oklch(70.4% 0.191 22.216);
+      --color-red-hover: oklch(25.8% 0.092 26.042);
+      --color-amber-text: oklch(82.8% 0.189 84.429);
+      --color-amber-hover: oklch(27.9% 0.077 45.635);
+    }
+    @variant night {
+      --color-background: oklch(10% 0.028 261.692);
+      --color-foreground: oklch(92.2% 0.028 261.692);
+      --color-card-bg: oklch(12% 0.028 261.692);
+      --color-border: oklch(20% 0.028 261.692);
+      --color-table-header: oklch(12% 0.028 261.692);
+      --color-header: oklch(95% 0.028 261.692);
+      --color-cyan-text: oklch(78.9% 0.154 211.53);
+      --color-cyan-hover: oklch(30.2% 0.056 229.695);
+      --color-gray-text: oklch(70.8% 0 0);
+      --color-gray-hover: oklch(26.9% 0 0);
+      --color-green-text: oklch(79.2% 0.209 151.711);
+      --color-green-hover: oklch(26.6% 0.065 152.934);
+      --color-purple-text: oklch(71.4% 0.203 305.504);
+      --color-purple-hover: oklch(29.1% 0.149 302.717);
+      --color-sky-text: oklch(74.6% 0.16 232.661);
+      --color-sky-hover: oklch(29.3% 0.066 243.157);
+      --color-red-text: oklch(70.4% 0.191 22.216);
+      --color-red-hover: oklch(25.8% 0.092 26.042);
+      --color-amber-text: oklch(82.8% 0.189 84.429);
+      --color-amber-hover: oklch(27.9% 0.077 45.635);
+    }
+    @variant black {
+      --color-background: black;
+      /* bg-neutral-200 */
+      --color-foreground: oklch(92.2% 0 0);
+      --color-card-bg: oklch(10% 0 0);
+      --color-border: oklch(20% 0 0);
+      --color-table-header: oklch(12% 0 0);
+      --color-header: oklch(95% 0 0);
       --color-cyan-text: oklch(78.9% 0.154 211.53);
       --color-cyan-hover: oklch(30.2% 0.056 229.695);
       --color-gray-text: oklch(70.8% 0 0);

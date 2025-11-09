@@ -7,9 +7,9 @@
   {% include "partials/header.html" %}
 
   <div class="mx-auto my-8 max-w-3xl p-4">
-    <h2 class="mt-0 border-b border-border pb-1 text-2xl font-semibold">
+    <h3 class="text-xl font-semibold text-header">
       {{ _('Backup & Restore') }}
-    </h2>
+    </h3>
 
     <div class="m-4 rounded border border-border bg-card-bg p-4 shadow-md">
       <h3 class="text-1xl mt-0 border-b border-border pb-1 font-semibold">
@@ -57,6 +57,52 @@
       </h3>
       <div class="m-4 rounded border border-border bg-card-bg p-4 shadow-md">
         <h3 class="text-1xl mt-0 border-b border-border pb-1 font-semibold">
+          {{ _('Theme Selection') }}
+        </h3>
+        <p class="mb-2 block">
+          {{ _('Choose your preferred theme for the application.') }}
+        </p>
+        <div class="flex space-x-4">
+          <label class="inline-flex items-center">
+            <input
+              type="radio"
+              name="theme-select"
+              value="light"
+              class="form-radio h-4 w-4 text-cyan-text"
+            />
+            <span class="ml-2 text-foreground">{{ _('Light') }}</span>
+          </label>
+          <label class="inline-flex items-center">
+            <input
+              type="radio"
+              name="theme-select"
+              value="dark"
+              class="form-radio h-4 w-4 text-cyan-text"
+            />
+            <span class="ml-2 text-foreground">{{ _('Dark') }}</span>
+          </label>
+          <label class="inline-flex items-center">
+            <input
+              type="radio"
+              name="theme-select"
+              value="night"
+              class="form-radio h-4 w-4 text-cyan-text"
+            />
+            <span class="ml-2 text-foreground">{{ _('Night') }}</span>
+          </label>
+          <label class="inline-flex items-center">
+            <input
+              type="radio"
+              name="theme-select"
+              value="black"
+              class="form-radio h-4 w-4 text-cyan-text"
+            />
+            <span class="ml-2 text-foreground">{{ _('Black') }}</span>
+          </label>
+        </div>
+      </div>
+      <div class="m-4 rounded border border-border bg-card-bg p-4 shadow-md">
+        <h3 class="text-1xl mt-0 border-b border-border pb-1 font-semibold">
           {{ _('Default Page Size') }}
         </h3>
         <p class="mb-2 block">
@@ -94,8 +140,5 @@
     </div>
   </div>
 
-  <script
-    src="{{ url_for('static', path='js/options.min.js') }}"
-    defer
-  ></script>
+  <script src="{{ url_for('static', path='js/options.min.js') }}"></script>
 {% endblock %}

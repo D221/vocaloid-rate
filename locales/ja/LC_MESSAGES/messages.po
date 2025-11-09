@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-11-09 20:43+0200\n"
+"POT-Creation-Date: 2025-11-09 23:03+0200\n"
 "PO-Revision-Date: 2025-11-06 23:59+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -18,15 +18,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: app/templates/base.html:216
+#: app/templates/base.html:224
 msgid "Data sourced from"
 msgstr "データ提供元"
 
-#: app/templates/base.html:221
+#: app/templates/base.html:229
 msgid "Vocaloard"
 msgstr "Vocaloard"
 
-#: app/templates/base.html:222
+#: app/templates/base.html:230
 msgid "This is an independent project."
 msgstr "これは独立したプロジェクトです。"
 
@@ -45,7 +45,7 @@ msgid "Next"
 msgstr "次へ"
 
 #: app/templates/options.html:3 app/templates/options.html:6
-#: app/templates/partials/header.html:75 app/templates/partials/header.html:237
+#: app/templates/partials/header.html:75 app/templates/partials/header.html:262
 msgid "Options"
 msgstr "設定"
 
@@ -92,24 +92,48 @@ msgid "Display Options"
 msgstr "表示設定"
 
 #: app/templates/options.html:60
+msgid "Theme Selection"
+msgstr "テーマ選択"
+
+#: app/templates/options.html:63
+msgid "Choose your preferred theme for the application."
+msgstr "お好みのテーマを選択してください。"
+
+#: app/templates/options.html:73
+msgid "Light"
+msgstr "ライト"
+
+#: app/templates/options.html:82
+msgid "Dark"
+msgstr "ダーク"
+
+#: app/templates/options.html:91
+msgid "Night"
+msgstr "ナイト"
+
+#: app/templates/options.html:100
+msgid "Black"
+msgstr "ブラック"
+
+#: app/templates/options.html:106
 msgid "Default Page Size"
 msgstr "デフォルト表示件数"
 
-#: app/templates/options.html:63
+#: app/templates/options.html:109
 msgid "Set the default number of tracks to display per page on the main list."
 msgstr "メインリストで1ページに表示するトラックのデフォルト件数を設定"
 
-#: app/templates/options.html:69 app/templates/partials/filter_form.html:31
+#: app/templates/options.html:115 app/templates/partials/filter_form.html:31
 #: app/templates/partials/filter_form.html:53
 #: app/templates/partials/filter_form.html:135
 msgid "All"
 msgstr "すべて"
 
-#: app/templates/options.html:78
+#: app/templates/options.html:124
 msgid "Slim View Mode"
 msgstr "コンパクト表示"
 
-#: app/templates/options.html:81
+#: app/templates/options.html:127
 msgid "Hides thumbnails and secondary text for a more compact view."
 msgstr "サムネイルや補足情報を非表示にして、表示をよりコンパクトにします。"
 
@@ -156,7 +180,7 @@ msgstr "%(playlist_name)s - プレイリスト"
 msgid "My Playlists"
 msgstr "マイプレイリスト"
 
-#: app/templates/partials/header.html:40 app/templates/partials/header.html:182
+#: app/templates/partials/header.html:40 app/templates/partials/header.html:195
 #: app/templates/playlists.html:7
 msgid "Playlists"
 msgstr "プレイリスト"
@@ -218,7 +242,7 @@ msgstr "JSONファイルをアップロードして、プレイリストを復�
 msgid "Import from File"
 msgstr "ファイルからインポート"
 
-#: app/templates/partials/header.html:63 app/templates/partials/header.html:218
+#: app/templates/partials/header.html:63 app/templates/partials/header.html:235
 #: app/templates/rated.html:3
 msgid "Rated Tracks"
 msgstr "評価済みトラック"
@@ -264,7 +288,7 @@ msgstr "評価の分布"
 msgid "Recently Added Tracks"
 msgstr "新着トラック"
 
-#: app/templates/partials/header.html:70 app/templates/partials/header.html:227
+#: app/templates/partials/header.html:70 app/templates/partials/header.html:248
 #: app/templates/recommendations.html:3
 msgid "Recommendations"
 msgstr "おすすめ"
@@ -377,19 +401,19 @@ msgstr "トラックを更新"
 msgid "Toggle menu"
 msgstr "メニューを開閉"
 
-#: app/templates/partials/header.html:26 app/templates/partials/header.html:163
+#: app/templates/partials/header.html:26 app/templates/partials/header.html:168
 msgid "Main Chart"
 msgstr "メインチャート"
 
-#: app/templates/partials/header.html:33 app/templates/partials/header.html:172
+#: app/templates/partials/header.html:33 app/templates/partials/header.html:181
 msgid "Recently Added"
 msgstr "新着"
 
-#: app/templates/partials/header.html:49 app/templates/partials/header.html:197
+#: app/templates/partials/header.html:49 app/templates/partials/header.html:209
 msgid "View Playlist"
 msgstr "プレイリストを表示"
 
-#: app/templates/partials/header.html:55 app/templates/partials/header.html:207
+#: app/templates/partials/header.html:55 app/templates/partials/header.html:219
 msgid "Edit Details"
 msgstr "詳細を編集"
 
@@ -424,8 +448,8 @@ msgid "Rank"
 msgstr "順位"
 
 #: app/templates/partials/tracks_table_body.html:39
-#: app/templates/partials/tracks_table_head.html:25
 #: app/templates/partials/tracks_table_head.html:28
+#: app/templates/partials/tracks_table_head.html:31
 msgid "Title"
 msgstr "タイトル"
 
@@ -446,8 +470,8 @@ msgid "Manage playlists"
 msgstr "プレイリストを管理"
 
 #: app/templates/partials/tracks_table_body.html:165
-#: app/templates/partials/tracks_table_head.html:36
 #: app/templates/partials/tracks_table_head.html:39
+#: app/templates/partials/tracks_table_head.html:42
 msgid "Producer"
 msgstr "プロデューサー"
 
@@ -456,21 +480,21 @@ msgid "Search producer on VocaDB"
 msgstr "VocaDBでプロデューサーを検索"
 
 #: app/templates/partials/tracks_table_body.html:225
-#: app/templates/partials/tracks_table_head.html:47
 #: app/templates/partials/tracks_table_head.html:50
+#: app/templates/partials/tracks_table_head.html:53
 msgid "Voicebank"
 msgstr "ボイスバンク"
 
 #: app/templates/partials/tracks_table_body.html:269
 #: app/templates/partials/tracks_table_body.html:275
-#: app/templates/partials/tracks_table_head.html:58
 #: app/templates/partials/tracks_table_head.html:61
+#: app/templates/partials/tracks_table_head.html:64
 msgid "Published"
 msgstr "公開日"
 
 #: app/templates/partials/tracks_table_body.html:281
-#: app/templates/partials/tracks_table_head.html:67
 #: app/templates/partials/tracks_table_head.html:70
+#: app/templates/partials/tracks_table_head.html:73
 msgid "My Rating"
 msgstr "マイ評価"
 

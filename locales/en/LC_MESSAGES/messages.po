@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-11-09 20:43+0200\n"
+"POT-Creation-Date: 2025-11-09 23:03+0200\n"
 "PO-Revision-Date: 2025-11-06 23:59+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -18,15 +18,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: app/templates/base.html:216
+#: app/templates/base.html:224
 msgid "Data sourced from"
 msgstr ""
 
-#: app/templates/base.html:221
+#: app/templates/base.html:229
 msgid "Vocaloard"
 msgstr ""
 
-#: app/templates/base.html:222
+#: app/templates/base.html:230
 msgid "This is an independent project."
 msgstr ""
 
@@ -45,7 +45,7 @@ msgid "Next"
 msgstr ""
 
 #: app/templates/options.html:3 app/templates/options.html:6
-#: app/templates/partials/header.html:75 app/templates/partials/header.html:237
+#: app/templates/partials/header.html:75 app/templates/partials/header.html:262
 msgid "Options"
 msgstr ""
 
@@ -92,24 +92,48 @@ msgid "Display Options"
 msgstr ""
 
 #: app/templates/options.html:60
-msgid "Default Page Size"
+msgid "Theme Selection"
 msgstr ""
 
 #: app/templates/options.html:63
+msgid "Choose your preferred theme for the application."
+msgstr ""
+
+#: app/templates/options.html:73
+msgid "Light"
+msgstr ""
+
+#: app/templates/options.html:82
+msgid "Dark"
+msgstr ""
+
+#: app/templates/options.html:91
+msgid "Night"
+msgstr ""
+
+#: app/templates/options.html:100
+msgid "Black"
+msgstr ""
+
+#: app/templates/options.html:106
+msgid "Default Page Size"
+msgstr ""
+
+#: app/templates/options.html:109
 msgid "Set the default number of tracks to display per page on the main list."
 msgstr ""
 
-#: app/templates/options.html:69 app/templates/partials/filter_form.html:31
+#: app/templates/options.html:115 app/templates/partials/filter_form.html:31
 #: app/templates/partials/filter_form.html:53
 #: app/templates/partials/filter_form.html:135
 msgid "All"
 msgstr ""
 
-#: app/templates/options.html:78
+#: app/templates/options.html:124
 msgid "Slim View Mode"
 msgstr ""
 
-#: app/templates/options.html:81
+#: app/templates/options.html:127
 msgid "Hides thumbnails and secondary text for a more compact view."
 msgstr ""
 
@@ -156,7 +180,7 @@ msgstr ""
 msgid "My Playlists"
 msgstr ""
 
-#: app/templates/partials/header.html:40 app/templates/partials/header.html:182
+#: app/templates/partials/header.html:40 app/templates/partials/header.html:195
 #: app/templates/playlists.html:7
 msgid "Playlists"
 msgstr ""
@@ -217,7 +241,7 @@ msgstr ""
 msgid "Import from File"
 msgstr ""
 
-#: app/templates/partials/header.html:63 app/templates/partials/header.html:218
+#: app/templates/partials/header.html:63 app/templates/partials/header.html:235
 #: app/templates/rated.html:3
 msgid "Rated Tracks"
 msgstr ""
@@ -263,7 +287,7 @@ msgstr ""
 msgid "Recently Added Tracks"
 msgstr ""
 
-#: app/templates/partials/header.html:70 app/templates/partials/header.html:227
+#: app/templates/partials/header.html:70 app/templates/partials/header.html:248
 #: app/templates/recommendations.html:3
 msgid "Recommendations"
 msgstr ""
@@ -376,19 +400,19 @@ msgstr ""
 msgid "Toggle menu"
 msgstr ""
 
-#: app/templates/partials/header.html:26 app/templates/partials/header.html:163
+#: app/templates/partials/header.html:26 app/templates/partials/header.html:168
 msgid "Main Chart"
 msgstr ""
 
-#: app/templates/partials/header.html:33 app/templates/partials/header.html:172
+#: app/templates/partials/header.html:33 app/templates/partials/header.html:181
 msgid "Recently Added"
 msgstr ""
 
-#: app/templates/partials/header.html:49 app/templates/partials/header.html:197
+#: app/templates/partials/header.html:49 app/templates/partials/header.html:209
 msgid "View Playlist"
 msgstr ""
 
-#: app/templates/partials/header.html:55 app/templates/partials/header.html:207
+#: app/templates/partials/header.html:55 app/templates/partials/header.html:219
 msgid "Edit Details"
 msgstr ""
 
@@ -423,8 +447,8 @@ msgid "Rank"
 msgstr ""
 
 #: app/templates/partials/tracks_table_body.html:39
-#: app/templates/partials/tracks_table_head.html:25
 #: app/templates/partials/tracks_table_head.html:28
+#: app/templates/partials/tracks_table_head.html:31
 msgid "Title"
 msgstr ""
 
@@ -445,8 +469,8 @@ msgid "Manage playlists"
 msgstr ""
 
 #: app/templates/partials/tracks_table_body.html:165
-#: app/templates/partials/tracks_table_head.html:36
 #: app/templates/partials/tracks_table_head.html:39
+#: app/templates/partials/tracks_table_head.html:42
 msgid "Producer"
 msgstr ""
 
@@ -455,21 +479,21 @@ msgid "Search producer on VocaDB"
 msgstr ""
 
 #: app/templates/partials/tracks_table_body.html:225
-#: app/templates/partials/tracks_table_head.html:47
 #: app/templates/partials/tracks_table_head.html:50
+#: app/templates/partials/tracks_table_head.html:53
 msgid "Voicebank"
 msgstr ""
 
 #: app/templates/partials/tracks_table_body.html:269
 #: app/templates/partials/tracks_table_body.html:275
-#: app/templates/partials/tracks_table_head.html:58
 #: app/templates/partials/tracks_table_head.html:61
+#: app/templates/partials/tracks_table_head.html:64
 msgid "Published"
 msgstr ""
 
 #: app/templates/partials/tracks_table_body.html:281
-#: app/templates/partials/tracks_table_head.html:67
 #: app/templates/partials/tracks_table_head.html:70
+#: app/templates/partials/tracks_table_head.html:73
 msgid "My Rating"
 msgstr ""
 

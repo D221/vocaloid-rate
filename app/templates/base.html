@@ -42,17 +42,23 @@
     <script>
       // Apply theme immediately to prevent flashing
       (function () {
-        const savedTheme = localStorage.getItem("theme");
-        if (savedTheme) {
-          document.documentElement.dataset.theme = savedTheme;
-        } else {
-          const prefersDark =
-            window.matchMedia &&
-            window.matchMedia("(prefers-color-scheme: dark)").matches;
-          document.documentElement.dataset.theme = prefersDark
+        const THEME_KEY = "theme";
+        const THEMES = ["light", "dark", "night", "black"];
+
+        function getSystemTheme() {
+          return window.matchMedia("(prefers-color-scheme: dark)").matches
             ? "dark"
             : "light";
         }
+
+        const storedTheme = localStorage.getItem(THEME_KEY);
+        const systemTheme = getSystemTheme();
+
+        let initialTheme = systemTheme;
+        if (storedTheme && THEMES.includes(storedTheme)) {
+          initialTheme = storedTheme;
+        }
+        document.documentElement.dataset.theme = initialTheme;
       })();
 
       (function () {
@@ -68,6 +74,8 @@
         }
       })();
     </script>
+
+    <script src="{{ url_for('static', path='js/theme.min.js') }}"></script>
     {% block head_extra %}{% endblock %}
   </head>
 

@@ -115,9 +115,9 @@
             data-add-to-playlist-button
             data-track-id="{{ track.id }}"
             class="{% if track.is_in_playlist %}
-              border-green-text text-green-text hover:bg-green-hover
+              border-cyan-text text-cyan-text hover:bg-cyan-hover
             {% else %}
-              border-amber-text text-amber-text hover:bg-amber-hover
+              border-gray-text text-gray-text hover:bg-gray-hover
             {% endif %} cursor-pointer rounded border px-2 py-1 shadow-md ease-in-out hover:transition-colors hover:duration-200"
             title="{{ _('Manage playlists') }}"
           >
@@ -321,7 +321,7 @@
             type="button"
             data-notes-toggle
             class="{% if has_note %}
-              border-green-text text-green-text hover:bg-green-hover
+              border-cyan-text text-cyan-text hover:bg-green-hover
             {% else %}
               text-gray-text hover:bg-gray-hover
             {% endif %} cursor-pointer rounded border px-2 py-1 font-bold shadow-md ease-in-out hover:transition-colors hover:duration-200"

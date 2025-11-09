@@ -394,17 +394,6 @@ const updateSortIndicators = () => {
   });
 };
 
-const updateThemeUI = () => {
-  const themeIcon = document.getElementById("theme-icon");
-  if (!themeIcon) return;
-  const currentTheme = document.documentElement.dataset.theme;
-  if (currentTheme === "dark") {
-    themeIcon.innerHTML = getIconSVG("sun");
-  } else {
-    themeIcon.innerHTML = getIconSVG("moon");
-  }
-};
-
 const updateActiveFilterDisplay = () => {
   const container = document.getElementById(
     "rating-filter-indicator-container",
@@ -575,6 +564,7 @@ const openPlaylistModal = async (trackId, buttonElement) => {
 // INITIALIZATION & EVENT LISTENERS (The "Entry Point")
 // ===================================================================
 document.addEventListener("DOMContentLoaded", async () => {
+  window.initializeTheme(); // Initialize theme on page load
   const lang = document.documentElement.lang || "en";
   try {
     const response = await fetch(`/api/translations?lang=${lang}`);
@@ -1163,7 +1153,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   updateSortIndicators();
-  updateThemeUI();
   updateActiveFilterDisplay();
   upgradeThumbnails();
   renderRatingChart();
@@ -1904,8 +1893,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 notesBtn.textContent = _("Saved!");
 
                 // Update button style based on whether there's a note
-                notesBtn.classList.toggle("border-green-text", hasNote);
-                notesBtn.classList.toggle("text-green-text", hasNote);
+                notesBtn.classList.toggle("border-cyan-text", hasNote);
+                notesBtn.classList.toggle("text-cyan-text", hasNote);
                 notesBtn.classList.toggle("border-gray-text", !hasNote);
                 notesBtn.classList.toggle("text-gray-text", !hasNote);
 
@@ -1943,15 +1932,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     },
     true,
   );
-
-  document.getElementById("theme-switcher")?.addEventListener("click", () => {
-    const doc = document.documentElement;
-    const newTheme = doc.dataset.theme === "dark" ? "light" : "dark";
-    doc.dataset.theme = newTheme;
-    localStorage.setItem("theme", newTheme);
-    updateThemeUI();
-    renderRatingChart();
-  });
 
   const menuToggle = document.getElementById("menu-toggle");
   const navLinks = document.getElementById("nav-links");

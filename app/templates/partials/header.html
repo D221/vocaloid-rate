@@ -85,7 +85,7 @@
     data-playlist-id="{{ playlist.id if playlist else '' }}"
   >
     <!-- View Mode for Title -->
-    <h1 class="group text-4xl font-bold text-cyan-text">
+    <h1 class="group text-4xl font-bold text-header">
       <span class="view-mode">{{ title }}</span>
       <input
         type="text"
@@ -133,9 +133,9 @@
       <span
         id="last-updated"
         class="{% if is_db_outdated %}
-          text-red-500
+          text-red-text
         {% else %}
-          text-gray-500 dark:text-gray-400
+          text-gray-text
         {% endif %} text-sm"
       >
         {% if last_update %}
@@ -155,33 +155,45 @@
   <div class="order-3 flex shrink-0 items-center gap-4 md:order-2">
     <!-- Desktop Navigation (hidden on mobile) -->
     <div class="hidden items-center gap-4 md:flex">
-      {% if request.url.path != '/' %}
-        <a
-          href="/"
-          class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
-        >
-          {{ _('Main Chart') }}
-        </a>
-      {% endif %}
+      {% set is_active = request.url.path == '/' %}
+      <a
+        href="/"
+        class="{% if is_active %}
+          border-gray-text text-gray-text hover:bg-gray-hover cursor-default
+          pointer-events-none
+        {% else %}
+          border-cyan-text text-cyan-text
+        {% endif %} rounded border p-3 font-bold shadow-md transition-colors duration-200 ease-in-out"
+      >
+        {{ _('Main Chart') }}
+      </a>
 
-      {% if request.url.path != '/recently_added' %}
-        <a
-          href="/recently_added"
-          class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
-        >
-          {{ _('Recently Added') }}
-        </a>
-      {% endif %}
+      {% set is_active = request.url.path == '/recently_added' %}
+      <a
+        href="/recently_added"
+        class="{% if is_active %}
+          border-gray-text text-gray-text hover:bg-gray-hover cursor-default
+          pointer-events-none
+        {% else %}
+          border-cyan-text text-cyan-text
+        {% endif %} rounded border p-3 font-bold shadow-md transition-colors duration-200 ease-in-out"
+      >
+        {{ _('Recently Added') }}
+      </a>
 
       {# Show "Playlists" if we are NOT on the playlists page #}
-      {% if request.url.path != '/playlists' %}
-        <a
-          href="/playlists"
-          class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
-        >
-          {{ _('Playlists') }}
-        </a>
-      {% endif %}
+      {% set is_active = request.url.path == '/playlists' %}
+      <a
+        href="/playlists"
+        class="{% if is_active %}
+          border-gray-text text-gray-text hover:bg-gray-hover cursor-default
+          pointer-events-none
+        {% else %}
+          border-cyan-text text-cyan-text
+        {% endif %} rounded border p-3 font-bold shadow-md transition-colors duration-200 ease-in-out"
+      >
+        {{ _('Playlists') }}
+      </a>
 
       {% if request.url.path.startswith('/playlist/') %}
 
@@ -210,56 +222,55 @@
       {% endif %}
 
       {# Show "View Rated" if we are NOT on the rated tracks page #}
-      {% if request.url.path != '/rated_tracks' %}
-        <a
-          href="/rated_tracks"
-          class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
-        >
-          {{ _('Rated Tracks') }}
-        </a>
-      {% endif %}
+      {% set is_active = request.url.path =='/rated_tracks' %}
+      <a
+        href="/rated_tracks"
+        class="{% if is_active %}
+          border-gray-text text-gray-text hover:bg-gray-hover cursor-default
+          pointer-events-none
+        {% else %}
+          border-cyan-text text-cyan-text
+        {% endif %} rounded border p-3 font-bold shadow-md transition-colors duration-200 ease-in-out"
+      >
+        {{ _('Rated Tracks') }}
+      </a>
 
-      {% if request.url.path != '/recommendations' %}
-        <a
-          href="/recommendations"
-          class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
-        >
-          {{ _('Recommendations') }}
-        </a>
-      {% endif %}
+      {% set is_active = request.url.path == '/recommendations' %}
+      <a
+        href="/recommendations"
+        class="{% if is_active %}
+          border-gray-text text-gray-text hover:bg-gray-hover cursor-default
+          pointer-events-none
+        {% else %}
+          border-cyan-text text-cyan-text
+        {% endif %} rounded border p-3 font-bold shadow-md transition-colors duration-200 ease-in-out"
+      >
+        {{ _('Recommendations') }}
+      </a>
 
       {# Show "Options" if we are NOT on the rated tracks page #}
-      {% if request.url.path != '/options' %}
-        <a
-          href="/options"
-          class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
-        >
-          {{ _('Options') }}
-        </a>
-      {% endif %}
-    </div>
+      {% set is_active = request.url.path == '/options' %}
+      <a
+        href="/options"
+        class="{% if is_active %}
+          border-gray-text text-gray-text hover:bg-gray-hover cursor-default
+          pointer-events-none
+        {% else %}
+          border-cyan-text text-cyan-text
+        {% endif %} rounded border p-3 font-bold shadow-md transition-colors duration-200 ease-in-out"
+      >
+        {{ _('Options') }}
+      </a>
 
-    <!-- Theme Switcher & Language Toggle -->
-    <div class="flex items-center gap-2">
       <!-- Language Switcher -->
       <a
         href="{% if locale == 'ja' %}?lang=en{% else %}?lang=ja{% endif %}"
-        class="flex cursor-pointer items-center gap-2 rounded border border-cyan-text px-3 py-2 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
+        class="cursor-pointer rounded border border-gray-text p-3 font-bold text-gray-text shadow-md ease-in-out hover:bg-gray-hover hover:transition-colors hover:duration-200"
         title="Switch Language"
       >
         {{ icon("globe", size="h-5 w-5") }}
         <span>{% if locale == 'ja' %}English{% else %}日本語{% endif %}</span>
       </a>
-
-      <!-- Theme Switcher -->
-      <div
-        id="theme-switcher"
-        class="cursor-pointer rounded border border-border p-2 shadow-md"
-      >
-        <span id="theme-icon" class="inline-block h-6 w-6 text-foreground">
-          {{ icon('moon') }}
-        </span>
-      </div>
     </div>
   </div>
 </div>
