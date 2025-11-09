@@ -812,6 +812,58 @@ def get_playlist_tracks_partial(
     )
 
 
+@app.get("/_/get_recently_added_tracks_partial", response_class=JSONResponse)
+def get_recently_added_tracks_partial(
+    request: Request,
+    db: Session = Depends(get_db),
+    title_filter: Optional[str] = None,
+    producer_filter: Optional[str] = None,
+    voicebank_filter: Optional[str] = None,
+    translations: Translations = Depends(get_translations),
+):
+    locale = translations.info()["language"]
+
+    # For recently added, we always want to display all tracks on one "page"
+    # so we set the limit to a large number and simplify pagination.
+    limit_val = 10000
+    page = 1  # Always treat as page 1 since there's no pagination
+
+    tracks = crud.get_recently_added_tracks(
+        db,
+        skip=0,  # Always skip 0 as we're getting all
+        limit=limit_val,
+        title_filter=title_filter,
+        producer_filter=producer_filter,
+        voicebank_filter=voicebank_filter,
+        locale=locale,
+    )
+    total_tracks = len(tracks)  # Get actual count after filtering
+
+    tracks_for_json = [track.to_dict() for track in tracks]
+    tracks_json_string = json.dumps(tracks_for_json)
+
+    table_body_html = templates.get_template("partials/tracks_table_body.html").render(
+        {
+            "request": request,
+            "_": translations.gettext,
+            "tracks": tracks,
+            "tracks_json": tracks_json_string,
+            "locale": translations.info()["language"],
+        }
+    )
+
+    return JSONResponse(
+        content={
+            "table_body_html": table_body_html,
+            "pagination": {
+                "page": page,
+                "total_pages": 1,  # Always 1 page
+                "total_tracks": total_tracks,
+            },
+        }
+    )
+
+
 @app.get("/options")
 def read_options(
     request: Request, translations: Translations = Depends(get_translations)
@@ -1015,6 +1067,81 @@ def read_root(
     )
     response.set_cookie(key="language", value=get_locale(request))
     return response
+
+
+@app.get("/recently_added")
+def read_recently_added(
+    request: Request,
+    db: Session = Depends(get_db),
+    title_filter: Optional[str] = None,
+    producer_filter: Optional[str] = None,
+    voicebank_filter: Optional[str] = None,
+    translations: Translations = Depends(get_translations),
+):
+    locale = translations.info()["language"]
+
+    filters = {
+        "title_filter": title_filter,
+        "producer_filter": producer_filter,
+        "voicebank_filter": voicebank_filter,
+    }
+
+    # For recently added, we always want to display all tracks on one "page"
+    # so we set the limit to a large number and simplify pagination.
+    limit_val = 10000
+    page = 1  # Always treat as page 1 since there's no pagination
+
+    tracks = crud.get_recently_added_tracks(
+        db,
+        skip=0,  # Always skip 0 as we're getting all
+        limit=limit_val,
+        title_filter=title_filter,
+        producer_filter=producer_filter,
+        voicebank_filter=voicebank_filter,
+        locale=locale,
+    )
+    total_tracks = len(tracks)  # Get actual count after filtering
+
+    tracks_for_json = [track.to_dict() for track in tracks]
+    tracks_json_string = json.dumps(tracks_for_json)
+
+    all_db_tracks = crud.get_tracks(db, limit=1000)  # For filter dropdowns
+
+    producers_flat = []
+    voicebanks_flat = []
+    for t in all_db_tracks:
+        if locale == "ja" and t.producer_jp:
+            producers_flat.extend([p.strip() for p in t.producer_jp.split(",")])
+        else:
+            producers_flat.extend([p.strip() for p in t.producer.split(",")])
+
+        if locale == "ja" and t.voicebank_jp:
+            voicebanks_flat.extend([v.strip() for v in t.voicebank_jp.split(",")])
+        else:
+            voicebanks_flat.extend([v.strip() for v in t.voicebank.split(",")])
+
+    all_producers = sorted(list(set(producers_flat)))
+    all_voicebanks = sorted(list(set(voicebanks_flat)))
+
+    return templates.TemplateResponse(
+        "recently_added.html",
+        {
+            "request": request,
+            "_": translations.gettext,
+            "tracks": tracks,
+            "tracks_json": tracks_json_string,
+            "all_producers": all_producers,
+            "all_voicebanks": all_voicebanks,
+            "filters": filters,
+            "locale": translations.info()["language"],
+            "pagination": {
+                "page": page,
+                "total_pages": 1,  # Always 1 page
+                "total_tracks": total_tracks,
+            },
+            "is_recently_added_page": True,
+        },
+    )
 
 
 @app.get("/api/translations")
@@ -1423,6 +1550,29 @@ def get_playlist_snapshot_for_playlist_endpoint(
         voicebank_filter=voicebank_filter,
         sort_by=sort_by,
         sort_dir=sort_dir,
+        locale=locale,
+    )
+
+
+@app.get("/api/recently-added-snapshot", response_class=JSONResponse)
+def get_recently_added_snapshot_endpoint(
+    db: Session = Depends(get_db),
+    title_filter: Optional[str] = None,
+    producer_filter: Optional[str] = None,
+    voicebank_filter: Optional[str] = None,
+    translations: Translations = Depends(get_translations),
+):
+    locale = translations.info()["language"]
+    """
+    Provides a complete, ordered list of all track IDs for recently added tracks
+    that match the current filters, along with the page number each track belongs on.
+    """
+    return crud.get_recently_added_snapshot(
+        db=db,
+        limit="10000",  # Always fetch all for snapshot
+        title_filter=title_filter,
+        producer_filter=producer_filter,
+        voicebank_filter=voicebank_filter,
         locale=locale,
     )
 

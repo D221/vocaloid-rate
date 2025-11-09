@@ -11,40 +11,67 @@
     <th
       class="w-1 min-w-0 border border-border p-0 px-3 py-2 text-left whitespace-nowrap"
     >
-      <a href="{{ request.url.path }}?sort_by=rank" data-sort="rank">#</a>
+      {% if not is_recently_added_page %}
+        <a href="{{ request.url.path }}?sort_by=rank" data-sort="rank">#</a>
+      {% else %}
+        #
+      {% endif %}
     </th>
     <th
       class="w-1/3 max-w-64 overflow-hidden border border-border px-3 py-2 text-left text-ellipsis whitespace-nowrap"
     >
-      <a class="" href="{{ request.url.path }}?sort_by=title" data-sort="title"
-        >{{ _('Title') }}</a
-      >
+      {% if not is_recently_added_page %}
+        <a
+          class=""
+          href="{{ request.url.path }}?sort_by=title"
+          data-sort="title"
+          >{{ _('Title') }}</a
+        >
+      {% else %}
+        {{ _('Title') }}
+      {% endif %}
     </th>
     <th
       class="max-w-64 overflow-hidden border border-border px-3 py-2 text-left text-ellipsis"
     >
-      <a href=" {{ request.url.path }}?sort_by=producer" data-sort="producer"
-        >{{ _('Producer') }}</a
-      >
+      {% if not is_recently_added_page %}
+        <a href=" {{ request.url.path }}?sort_by=producer" data-sort="producer"
+          >{{ _('Producer') }}</a
+        >
+      {% else %}
+        {{ _('Producer') }}
+      {% endif %}
     </th>
     <th
       class="max-w-64 overflow-hidden border border-border px-3 py-2 text-left text-ellipsis"
     >
-      <a href="{{ request.url.path }}?sort_by=voicebank" data-sort="voicebank"
-        >{{ _('Voicebank') }}</a
-      >
+      {% if not is_recently_added_page %}
+        <a href="{{ request.url.path }}?sort_by=voicebank" data-sort="voicebank"
+          >{{ _('Voicebank') }}</a
+        >
+      {% else %}
+        {{ _('Voicebank') }}
+      {% endif %}
     </th>
     <th class="w-1 min-w-0 border border-border px-3 py-2 text-left">
-      <a
-        href="{{ request.url.path }}?sort_by=published_date"
-        data-sort="published_date"
-        >{{ _('Published') }}</a
-      >
+      {% if not is_recently_added_page %}
+        <a
+          href="{{ request.url.path }}?sort_by=published_date"
+          data-sort="published_date"
+          >{{ _('Published') }}</a
+        >
+      {% else %}
+        {{ _('Published') }}
+      {% endif %}
     </th>
     <th class="w-1 min-w-0 border border-border px-3 py-2 text-left">
-      <a href="{{ request.url.path }}?sort_by=rating" data-sort="rating"
-        >{{ _('My Rating') }}</a
-      >
+      {% if not is_recently_added_page %}
+        <a href="{{ request.url.path }}?sort_by=rating" data-sort="rating"
+          >{{ _('My Rating') }}</a
+        >
+      {% else %}
+        {{ _('My Rating') }}
+      {% endif %}
     </th>
   </tr>
 </thead>

@@ -26,6 +26,13 @@
             >{{ _('Main Chart') }}</a
           >
         {% endif %}
+        {% if request.url.path != '/recently_added' %}
+          <a
+            href="/recently_added"
+            class="block rounded px-4 py-2 hover:bg-gray-hover"
+            >{{ _('Recently Added') }}</a
+          >
+        {% endif %}
         {% if request.url.path != '/playlists' %}
           <a
             href="/playlists"
@@ -154,6 +161,15 @@
           class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
         >
           {{ _('Main Chart') }}
+        </a>
+      {% endif %}
+
+      {% if request.url.path != '/recently_added' %}
+        <a
+          href="/recently_added"
+          class="cursor-pointer rounded border border-cyan-text p-3 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
+        >
+          {{ _('Recently Added') }}
         </a>
       {% endif %}
 

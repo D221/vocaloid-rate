@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-11-09 20:14+0200\n"
+"POT-Creation-Date: 2025-11-09 20:43+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -44,7 +44,7 @@ msgid "Next"
 msgstr ""
 
 #: app/templates/options.html:3 app/templates/options.html:6
-#: app/templates/partials/header.html:68 app/templates/partials/header.html:221
+#: app/templates/partials/header.html:75 app/templates/partials/header.html:237
 msgid "Options"
 msgstr ""
 
@@ -154,7 +154,7 @@ msgstr ""
 msgid "My Playlists"
 msgstr ""
 
-#: app/templates/partials/header.html:33 app/templates/partials/header.html:166
+#: app/templates/partials/header.html:40 app/templates/partials/header.html:182
 #: app/templates/playlists.html:7
 msgid "Playlists"
 msgstr ""
@@ -215,7 +215,7 @@ msgstr ""
 msgid "Import from File"
 msgstr ""
 
-#: app/templates/partials/header.html:56 app/templates/partials/header.html:202
+#: app/templates/partials/header.html:63 app/templates/partials/header.html:218
 #: app/templates/rated.html:3
 msgid "Rated Tracks"
 msgstr ""
@@ -257,7 +257,11 @@ msgstr ""
 msgid "Rating Distribution"
 msgstr ""
 
-#: app/templates/partials/header.html:63 app/templates/partials/header.html:211
+#: app/templates/recently_added.html:3 app/templates/recently_added.html:6
+msgid "Recently Added Tracks"
+msgstr ""
+
+#: app/templates/partials/header.html:70 app/templates/partials/header.html:227
 #: app/templates/recommendations.html:3
 msgid "Recommendations"
 msgstr ""
@@ -370,36 +374,40 @@ msgstr ""
 msgid "Toggle menu"
 msgstr ""
 
-#: app/templates/partials/header.html:26 app/templates/partials/header.html:156
+#: app/templates/partials/header.html:26 app/templates/partials/header.html:163
 msgid "Main Chart"
 msgstr ""
 
-#: app/templates/partials/header.html:42 app/templates/partials/header.html:181
+#: app/templates/partials/header.html:33 app/templates/partials/header.html:172
+msgid "Recently Added"
+msgstr ""
+
+#: app/templates/partials/header.html:49 app/templates/partials/header.html:197
 msgid "View Playlist"
 msgstr ""
 
-#: app/templates/partials/header.html:48 app/templates/partials/header.html:191
+#: app/templates/partials/header.html:55 app/templates/partials/header.html:207
 msgid "Edit Details"
 msgstr ""
 
-#: app/templates/partials/header.html:93
+#: app/templates/partials/header.html:100
 msgid "Edit playlist name"
 msgstr ""
 
-#: app/templates/partials/header.html:116
+#: app/templates/partials/header.html:123
 msgid "Edit playlist description"
 msgstr ""
 
-#: app/templates/partials/header.html:135
+#: app/templates/partials/header.html:142
 msgid "Last updated:"
 msgstr ""
 
-#: app/templates/partials/header.html:138
+#: app/templates/partials/header.html:145
 #, python-format
 msgid "Your database is %(days)s day(s) old, please update."
 msgstr ""
 
-#: app/templates/partials/header.html:141
+#: app/templates/partials/header.html:148
 msgid "Database not updated yet. Please update."
 msgstr ""
 
@@ -413,7 +421,8 @@ msgid "Rank"
 msgstr ""
 
 #: app/templates/partials/tracks_table_body.html:39
-#: app/templates/partials/tracks_table_head.html:20
+#: app/templates/partials/tracks_table_head.html:25
+#: app/templates/partials/tracks_table_head.html:28
 msgid "Title"
 msgstr ""
 
@@ -434,7 +443,8 @@ msgid "Manage playlists"
 msgstr ""
 
 #: app/templates/partials/tracks_table_body.html:165
-#: app/templates/partials/tracks_table_head.html:27
+#: app/templates/partials/tracks_table_head.html:36
+#: app/templates/partials/tracks_table_head.html:39
 msgid "Producer"
 msgstr ""
 
@@ -443,18 +453,21 @@ msgid "Search producer on VocaDB"
 msgstr ""
 
 #: app/templates/partials/tracks_table_body.html:225
-#: app/templates/partials/tracks_table_head.html:34
+#: app/templates/partials/tracks_table_head.html:47
+#: app/templates/partials/tracks_table_head.html:50
 msgid "Voicebank"
 msgstr ""
 
 #: app/templates/partials/tracks_table_body.html:269
 #: app/templates/partials/tracks_table_body.html:275
-#: app/templates/partials/tracks_table_head.html:41
+#: app/templates/partials/tracks_table_head.html:58
+#: app/templates/partials/tracks_table_head.html:61
 msgid "Published"
 msgstr ""
 
 #: app/templates/partials/tracks_table_body.html:281
-#: app/templates/partials/tracks_table_head.html:46
+#: app/templates/partials/tracks_table_head.html:67
+#: app/templates/partials/tracks_table_head.html:70
 msgid "My Rating"
 msgstr ""
 

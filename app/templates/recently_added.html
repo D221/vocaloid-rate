@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Recently Added Tracks') }}{% endblock %}
+
+{% block content %}
+  {% set title = _("Recently Added Tracks") %}
+  {% include "partials/header.html" %}
+
+  {%
+    set context = {
+        "filters": filters,
+        "all_producers": all_producers,
+        "all_voicebanks": all_voicebanks,
+        "pagination": pagination,
+        "show_pagination_limit_filter": false,
+    }
+  %}
+  {% include "partials/filter_form.html" %}
+
+  <div
+    class="overflow-x-visible rounded border border-none border-border bg-card-bg shadow-md md:overflow-x-auto"
+  >
+    <table class="w-full border-collapse">
+      {% include "partials/tracks_table_head.html" with context %}
+      <tbody
+        id="tracks-table-body"
+        class="bg-background"
+        data-update-url="/_/get_recently_added_tracks_partial"
+        data-snapshot-url="/api/recently-added-snapshot"
+      >
+        {% include "partials/tracks_table_body.html" %}
+      </tbody>
+    </table>
+  </div>
+
+  <script src="{{ url_for('static', path='js/main.min.js') }}"></script>
+{% endblock %}

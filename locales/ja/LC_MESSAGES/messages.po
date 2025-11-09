@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-11-09 20:14+0200\n"
+"POT-Creation-Date: 2025-11-09 20:43+0200\n"
 "PO-Revision-Date: 2025-11-06 23:59+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -45,7 +45,7 @@ msgid "Next"
 msgstr "次へ"
 
 #: app/templates/options.html:3 app/templates/options.html:6
-#: app/templates/partials/header.html:68 app/templates/partials/header.html:221
+#: app/templates/partials/header.html:75 app/templates/partials/header.html:237
 msgid "Options"
 msgstr "設定"
 
@@ -156,7 +156,7 @@ msgstr "%(playlist_name)s - プレイリスト"
 msgid "My Playlists"
 msgstr "マイプレイリスト"
 
-#: app/templates/partials/header.html:33 app/templates/partials/header.html:166
+#: app/templates/partials/header.html:40 app/templates/partials/header.html:182
 #: app/templates/playlists.html:7
 msgid "Playlists"
 msgstr "プレイリスト"
@@ -218,7 +218,7 @@ msgstr "JSONファイルをアップロードして、プレイリストを復�
 msgid "Import from File"
 msgstr "ファイルからインポート"
 
-#: app/templates/partials/header.html:56 app/templates/partials/header.html:202
+#: app/templates/partials/header.html:63 app/templates/partials/header.html:218
 #: app/templates/rated.html:3
 msgid "Rated Tracks"
 msgstr "評価済みトラック"
@@ -260,7 +260,11 @@ msgstr "中央値"
 msgid "Rating Distribution"
 msgstr "評価の分布"
 
-#: app/templates/partials/header.html:63 app/templates/partials/header.html:211
+#: app/templates/recently_added.html:3 app/templates/recently_added.html:6
+msgid "Recently Added Tracks"
+msgstr "新着トラック"
+
+#: app/templates/partials/header.html:70 app/templates/partials/header.html:227
 #: app/templates/recommendations.html:3
 msgid "Recommendations"
 msgstr "おすすめ"
@@ -373,36 +377,40 @@ msgstr "トラックを更新"
 msgid "Toggle menu"
 msgstr "メニューを開閉"
 
-#: app/templates/partials/header.html:26 app/templates/partials/header.html:156
+#: app/templates/partials/header.html:26 app/templates/partials/header.html:163
 msgid "Main Chart"
 msgstr "メインチャート"
 
-#: app/templates/partials/header.html:42 app/templates/partials/header.html:181
+#: app/templates/partials/header.html:33 app/templates/partials/header.html:172
+msgid "Recently Added"
+msgstr "新着"
+
+#: app/templates/partials/header.html:49 app/templates/partials/header.html:197
 msgid "View Playlist"
 msgstr "プレイリストを表示"
 
-#: app/templates/partials/header.html:48 app/templates/partials/header.html:191
+#: app/templates/partials/header.html:55 app/templates/partials/header.html:207
 msgid "Edit Details"
 msgstr "詳細を編集"
 
-#: app/templates/partials/header.html:93
+#: app/templates/partials/header.html:100
 msgid "Edit playlist name"
 msgstr "プレイリスト名を編集"
 
-#: app/templates/partials/header.html:116
+#: app/templates/partials/header.html:123
 msgid "Edit playlist description"
 msgstr "プレイリストの説明を編集"
 
-#: app/templates/partials/header.html:135
+#: app/templates/partials/header.html:142
 msgid "Last updated:"
 msgstr "最終更新日時:"
 
-#: app/templates/partials/header.html:138
+#: app/templates/partials/header.html:145
 #, python-format
 msgid "Your database is %(days)s day(s) old, please update."
 msgstr "データベースが%(days)s日間更新されていません。更新してください。"
 
-#: app/templates/partials/header.html:141
+#: app/templates/partials/header.html:148
 msgid "Database not updated yet. Please update."
 msgstr "データベースはまだ更新されていません。更新してください。"
 
@@ -416,7 +424,8 @@ msgid "Rank"
 msgstr "順位"
 
 #: app/templates/partials/tracks_table_body.html:39
-#: app/templates/partials/tracks_table_head.html:20
+#: app/templates/partials/tracks_table_head.html:25
+#: app/templates/partials/tracks_table_head.html:28
 msgid "Title"
 msgstr "タイトル"
 
@@ -437,7 +446,8 @@ msgid "Manage playlists"
 msgstr "プレイリストを管理"
 
 #: app/templates/partials/tracks_table_body.html:165
-#: app/templates/partials/tracks_table_head.html:27
+#: app/templates/partials/tracks_table_head.html:36
+#: app/templates/partials/tracks_table_head.html:39
 msgid "Producer"
 msgstr "プロデューサー"
 
@@ -446,18 +456,21 @@ msgid "Search producer on VocaDB"
 msgstr "VocaDBでプロデューサーを検索"
 
 #: app/templates/partials/tracks_table_body.html:225
-#: app/templates/partials/tracks_table_head.html:34
+#: app/templates/partials/tracks_table_head.html:47
+#: app/templates/partials/tracks_table_head.html:50
 msgid "Voicebank"
 msgstr "ボイスバンク"
 
 #: app/templates/partials/tracks_table_body.html:269
 #: app/templates/partials/tracks_table_body.html:275
-#: app/templates/partials/tracks_table_head.html:41
+#: app/templates/partials/tracks_table_head.html:58
+#: app/templates/partials/tracks_table_head.html:61
 msgid "Published"
 msgstr "公開日"
 
 #: app/templates/partials/tracks_table_body.html:281
-#: app/templates/partials/tracks_table_head.html:46
+#: app/templates/partials/tracks_table_head.html:67
+#: app/templates/partials/tracks_table_head.html:70
 msgid "My Rating"
 msgstr "マイ評価"
 

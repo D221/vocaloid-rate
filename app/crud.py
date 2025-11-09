@@ -1,5 +1,6 @@
 from collections import defaultdict
 from statistics import median
+from datetime import datetime, timedelta
 from typing import List, Optional
 
 from sqlalchemy import desc, distinct, func, nullslast, or_
@@ -201,6 +202,57 @@ def get_tracks_count(
             query = query.filter(models.Track.voicebank.ilike(search_term))
 
     return query.scalar()
+
+
+def get_recently_added_tracks(
+    db: Session,
+    skip: int = 0,
+    limit: int = 300,
+    title_filter: Optional[str] = None,
+    producer_filter: Optional[str] = None,
+    voicebank_filter: Optional[str] = None,
+    locale: str = "en",
+):
+    query = db.query(models.Track)
+
+    # Filter for tracks published within the last month
+    one_month_ago = datetime.now() - timedelta(days=30)
+    query = query.filter(models.Track.published_date >= one_month_ago)
+
+    if title_filter:
+        search_term = f"%{title_filter}%"
+        query = query.filter(
+            or_(
+                models.Track.title.ilike(search_term),
+                models.Track.title_jp.ilike(search_term),
+            )
+        )
+    if producer_filter:
+        search_term = f"%{producer_filter}%"
+        if locale == "ja":
+            query = query.filter(
+                or_(
+                    models.Track.producer.ilike(search_term),
+                    models.Track.producer_jp.ilike(search_term),
+                )
+            )
+        else:
+            query = query.filter(models.Track.producer.ilike(search_term))
+    if voicebank_filter:
+        search_term = f"%{voicebank_filter}%"
+        if locale == "ja":
+            query = query.filter(
+                or_(
+                    models.Track.voicebank.ilike(search_term),
+                    models.Track.voicebank_jp.ilike(search_term),
+                )
+            )
+        else:
+            query = query.filter(models.Track.voicebank.ilike(search_term))
+
+    query = query.order_by(models.Track.published_date.desc())
+
+    return query.offset(skip).limit(limit).all()
 
 
 def create_rating(
@@ -867,6 +919,74 @@ def get_playlist_snapshot_for_playlist(
         query = query.order_by(models.PlaylistTrack.position.asc())
 
     # --- 4. Execute query and calculate pages (same as global snapshot) ---
+    all_track_ids_tuples = query.all()
+    all_track_ids = [id_tuple[0] for id_tuple in all_track_ids_tuples]
+
+    limit_val = len(all_track_ids)
+    if limit.isdigit() and int(limit) > 0:
+        limit_val = int(limit)
+
+    snapshot = []
+    if limit_val > 0:
+        for i, track_id in enumerate(all_track_ids):
+            page_num = (i // limit_val) + 1
+            snapshot.append({"id": str(track_id), "page": page_num})
+
+    return snapshot
+
+
+def get_recently_added_snapshot(
+    db: Session,
+    limit: str = "all",
+    title_filter: Optional[str] = None,
+    producer_filter: Optional[str] = None,
+    voicebank_filter: Optional[str] = None,
+    locale: str = "en",
+) -> list[dict]:
+    """
+    Gets a sorted list of all track IDs for recently added tracks,
+    annotated with the page number they would appear on.
+    """
+    query = db.query(models.Track.id)
+
+    # Filter for tracks published within the last month
+    one_month_ago = datetime.now() - timedelta(days=30)
+    query = query.filter(models.Track.published_date >= one_month_ago)
+
+    if title_filter:
+        search_term = f"%{title_filter}%"
+        query = query.filter(
+            or_(
+                models.Track.title.ilike(search_term),
+                models.Track.title_jp.ilike(search_term),
+            )
+        )
+    if producer_filter:
+        search_term = f"%{producer_filter}%"
+        if locale == "ja":
+            query = query.filter(
+                or_(
+                    models.Track.producer.ilike(search_term),
+                    models.Track.producer_jp.ilike(search_term),
+                )
+            )
+        else:
+            query = query.filter(models.Track.producer.ilike(search_term))
+    if voicebank_filter:
+        search_term = f"%{voicebank_filter}%"
+        if locale == "ja":
+            query = query.filter(
+                or_(
+                    models.Track.voicebank.ilike(search_term),
+                    models.Track.voicebank_jp.ilike(search_term),
+                )
+            )
+        else:
+            query = query.filter(models.Track.voicebank.ilike(search_term))
+
+    # Always sort by published_date descending for recently added
+    query = query.order_by(models.Track.published_date.desc())
+
     all_track_ids_tuples = query.all()
     all_track_ids = [id_tuple[0] for id_tuple in all_track_ids_tuples]
 
