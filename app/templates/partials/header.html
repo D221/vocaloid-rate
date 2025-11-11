@@ -21,25 +21,36 @@
     >
       <!-- MODIFIED LINE IS HERE -->
       <div class="flex flex-col divide-y divide-border">
-        {% if request.url.path != '/' %}
-          <a href="/" class="block rounded px-4 py-2 hover:bg-gray-hover"
-            >{{ _('Main Chart') }}</a
-          >
-        {% endif %}
-        {% if request.url.path != '/recently_added' %}
-          <a
-            href="/recently_added"
-            class="block rounded px-4 py-2 hover:bg-gray-hover"
-            >{{ _('Recently Added') }}</a
-          >
-        {% endif %}
-        {% if request.url.path != '/playlists' %}
-          <a
-            href="/playlists"
-            class="block rounded px-4 py-2 hover:bg-gray-hover"
-            >{{ _('Playlists') }}</a
-          >
-        {% endif %}
+        {% set is_active = request.url.path == '/' %}
+        <a
+          href="/"
+          class="{% if is_active %}
+            text-cyan-text font-bold pointer-events-none
+          {% else %}
+            text-foreground
+          {% endif %} block rounded px-4 py-2"
+          >{{ _('Main Chart') }}</a
+        >
+        {% set is_active = request.url.path == '/recently_added' %}
+        <a
+          href="/recently_added"
+          class="{% if is_active %}
+            text-cyan-text font-bold pointer-events-none
+          {% else %}
+            text-foreground
+          {% endif %} block rounded px-4 py-2"
+          >{{ _('Recently Added') }}</a
+        >
+        {% set is_active = request.url.path == '/playlists' %}
+        <a
+          href="/playlists"
+          class="{% if is_active %}
+            text-cyan-text font-bold pointer-events-none
+          {% else %}
+            text-foreground
+          {% endif %} block rounded px-4 py-2"
+          >{{ _('Playlists') }}</a
+        >
         {% if request.url.path.startswith('/playlist/') %}
           {% set playlist_id = request.url.path.split('/')[-1] %}
           {% if request.url.path.startswith('/playlist/edit/') %}
@@ -56,25 +67,43 @@
             >
           {% endif %}
         {% endif %}
-        {% if request.url.path != '/rated_tracks' %}
-          <a
-            href="/rated_tracks"
-            class="block rounded px-4 py-2 hover:bg-gray-hover"
-            >{{ _('Rated Tracks') }}</a
-          >
-        {% endif %}
-        {% if request.url.path != '/recommendations' %}
-          <a
-            href="/recommendations"
-            class="block rounded px-4 py-2 hover:bg-gray-hover"
-            >{{ _('Recommendations') }}</a
-          >
-        {% endif %}
-        {% if request.url.path != '/options' %}
-          <a href="/options" class="block rounded px-4 py-2 hover:bg-gray-hover"
-            >{{ _('Options') }}</a
-          >
-        {% endif %}
+        {% set is_active = request.url.path == '/rated_tracks' %}
+        <a
+          href="/rated_tracks"
+          class="{% if is_active %}
+            text-cyan-text font-bold pointer-events-none
+          {% else %}
+            text-foreground
+          {% endif %} block rounded px-4 py-2"
+          >{{ _('Rated Tracks') }}</a
+        >
+        {% set is_active = request.url.path == '/recommendations' %}
+        <a
+          href="/recommendations"
+          class="{% if is_active %}
+            text-cyan-text font-bold pointer-events-none
+          {% else %}
+            text-foreground
+          {% endif %} block rounded px-4 py-2"
+          >{{ _('Recommendations') }}</a
+        >
+        {% set is_active = request.url.path == '/options' %}
+        <a
+          href="/options"
+          class="{% if is_active %}
+            text-cyan-text font-bold pointer-events-none
+          {% else %}
+            text-foreground
+          {% endif %} block rounded px-4 py-2"
+          >{{ _('Options') }}</a
+        >
+        <a
+          href="{% if locale == 'ja' %}?lang=en{% else %}?lang=ja{% endif %}"
+          class="block rounded px-4 py-2 text-foreground"
+          title="Switch Language"
+        >
+          <span>{% if locale == 'ja' %}English{% else %}日本語{% endif %}</span>
+        </a>
       </div>
     </div>
   </div>
