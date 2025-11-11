@@ -121,15 +121,27 @@ async def get_slim_mode(viewModeSlim: Optional[str] = Cookie(None)) -> bool:
 
 
 def get_locale(request: Request) -> str:
-    lang = request.query_params.get("lang")
-    if lang and lang in SUPPORTED_LOCALES:
-        return lang
-    if (
-        "language" in request.cookies
-        and request.cookies["language"] in SUPPORTED_LOCALES
-    ):
-        return request.cookies["language"]
-    return request.headers.get("accept-language", DEFAULT_LOCALE).split(",")[0]
+    lang_query = request.query_params.get("lang")
+    if lang_query and lang_query in SUPPORTED_LOCALES:
+        return lang_query
+
+    lang_cookie = request.cookies.get("language")
+    if lang_cookie and lang_cookie in SUPPORTED_LOCALES:
+        return lang_cookie
+
+    accept_language = request.headers.get("accept-language")
+    if accept_language:
+        for lang_code in accept_language.split(","):
+            lang_code_clean = lang_code.strip().split(";")[0].lower()
+
+            if lang_code_clean in SUPPORTED_LOCALES:
+                return lang_code_clean
+
+            base_lang = lang_code_clean.split("-")[0]
+            if base_lang in SUPPORTED_LOCALES:
+                return base_lang
+
+    return DEFAULT_LOCALE
 
 
 def get_translations(
