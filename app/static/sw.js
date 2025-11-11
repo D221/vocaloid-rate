@@ -38,33 +38,67 @@ self.addEventListener("install", (event) => {
 // Add an 'activate' event listener
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    // Take control of all open pages for this site immediately.
-    self.clients.claim(),
+    caches
+      .keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME) {
+              return caches.delete(cacheName);
+            }
+          }),
+        );
+      })
+      .then(() => self.clients.claim()),
   );
 });
 
-// 2. Fetch Event: Serve from cache first
 self.addEventListener("fetch", (event) => {
-  // We only want to intercept API calls for data modification
-  const isApiMutation =
-    event.request.url.includes("/api/") || event.request.url.includes("/rate/");
-  const isGetRequest = event.request.method === "GET";
+  const { request } = event;
 
-  if (isApiMutation && !isGetRequest) {
-    event.respondWith(
-      fetch(event.request.clone()).catch(() => {
-        // Network failed! Save the request and register for a background sync.
-        return saveRequestAndSync(event.request);
-      }),
-    );
-  } else {
-    // For GET requests or non-API calls, use the cache-first strategy
-    event.respondWith(
-      caches.match(event.request).then((response) => {
-        return response || fetch(event.request);
-      }),
-    );
+  // If the request is for a YouTube thumbnail, ALWAYS go to the network.
+  // Do not attempt to cache it or serve it from the cache.
+  if (request.url.includes("i.ytimg.com")) {
+    event.respondWith(fetch(request));
+    return;
   }
+
+  // Strategy 1: For API mutations (POST, etc.), try network, then queue for sync.
+  const isApiMutation =
+    request.url.includes("/api/") || request.url.includes("/rate/");
+  if (request.method !== "GET" && isApiMutation) {
+    event.respondWith(
+      fetch(request.clone()).catch(() => saveRequestAndSync(request)),
+    );
+    return;
+  }
+
+  // Strategy 2: For page navigation (HTML), use Network-First.
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // If network is successful, cache the new response and return it.
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, responseClone);
+          });
+          return response;
+        })
+        .catch(() => {
+          // If network fails, serve the page from the cache.
+          return caches.match(request);
+        }),
+    );
+    return;
+  }
+
+  // Strategy 3: For everything else (CSS, JS, images), use Cache-First.
+  event.respondWith(
+    caches.match(request).then((cachedResponse) => {
+      return cachedResponse || fetch(request);
+    }),
+  );
 });
 
 async function saveRequestAndSync(request) {
