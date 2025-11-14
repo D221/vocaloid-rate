@@ -68,7 +68,7 @@ def generate_api_docs():
     """Run Docusaurus API doc generation."""
     print(f"Running Docusaurus command in: {DOCS_DIR}")
     subprocess.run(
-        ["bunx", "docusaurus", "gen-api-docs", "openapi"],
+        ["npm", "run", "gen-api-docs"],
         # Use the robust, absolute path for cwd
         cwd=DOCS_DIR,
         check=True,

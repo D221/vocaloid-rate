@@ -811,7 +811,9 @@ def get_tracks_partial(
     )
 
 
-@app.get("/api/playlist/{playlist_id}/get_tracks", response_class=JSONResponse, tags=["Data"])
+@app.get(
+    "/api/playlist/{playlist_id}/get_tracks", response_class=JSONResponse, tags=["Data"]
+)
 def get_playlist_tracks_partial(
     playlist_id: int,
     request: Request,
@@ -878,7 +880,9 @@ def get_playlist_tracks_partial(
     )
 
 
-@app.get("/_/get_recently_added_tracks_partial", response_class=JSONResponse, tags=["Data"])
+@app.get(
+    "/_/get_recently_added_tracks_partial", response_class=JSONResponse, tags=["Data"]
+)
 def get_recently_added_tracks_partial(
     request: Request,
     db: Session = Depends(get_db),
@@ -1429,7 +1433,9 @@ def get_vocadb_lyrics(song_id: int, locale: str = Depends(get_locale)):
         raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 
-@app.get("/api/playlists", response_model=list[schemas.PlaylistSimple], tags=["Playlists"])
+@app.get(
+    "/api/playlists", response_model=list[schemas.PlaylistSimple], tags=["Playlists"]
+)
 def get_user_playlists(db: Session = Depends(get_db)):
     """Get a simple list of all playlists (id and name)."""
     return crud.get_playlists(db)
@@ -1474,7 +1480,11 @@ def reorder_a_playlist(
     return Response(status_code=200, content="Playlist reordered successfully")
 
 
-@app.put("/api/playlists/{playlist_id}", response_model=schemas.PlaylistSimple, tags=["Playlists"])
+@app.put(
+    "/api/playlists/{playlist_id}",
+    response_model=schemas.PlaylistSimple,
+    tags=["Playlists"],
+)
 def update_playlist_details(
     playlist_id: int, playlist_update: PlaylistUpdate, db: Session = Depends(get_db)
 ):
@@ -1596,7 +1606,11 @@ def get_playlist_snapshot_endpoint(
     )
 
 
-@app.get("/api/playlist/{playlist_id}/playlist-snapshot", response_class=JSONResponse, tags=["Data"])
+@app.get(
+    "/api/playlist/{playlist_id}/playlist-snapshot",
+    response_class=JSONResponse,
+    tags=["Data"],
+)
 def get_playlist_snapshot_for_playlist_endpoint(
     playlist_id: int,
     db: Session = Depends(get_db),

@@ -54,11 +54,12 @@ def generate_readme_docs(readme_path: Path, output_dir: Path):
     intro_content = extract_intro(readme_content)
     if intro_content:
         intro_frontmatter = "---\ntitle: Welcome\n---\n\n"
-        (output_dir / "intro.md").write_text(intro_frontmatter + intro_content, encoding="utf-8")
+        (output_dir / "intro.md").write_text(
+            intro_frontmatter + intro_content, encoding="utf-8"
+        )
         print("Generated intro.md from README.md")
     else:
         print("Warning: Intro section not found in README.md")
-
 
     sections_to_extract = {
         "Features": "features.md",
