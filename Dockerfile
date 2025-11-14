@@ -49,9 +49,14 @@ COPY --from=builder /app/app/static/ ./app/static/
 # Copy the templates from the builder
 COPY --from=builder /app/app/templates/ ./app/templates/
 
-# --- NEW: Copy the compiled translation files ---
+# Copy the compiled translation files ---
 # This is the crucial step to include your .mo files in the final image
 COPY --from=builder /app/locales/ ./locales/
+
+# Copy Alembic configuration ---
+COPY --from=builder /app/alembic.ini .
+COPY --from=builder /app/alembic/ ./alembic/
+
 
 EXPOSE 8000
 
