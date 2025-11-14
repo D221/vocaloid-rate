@@ -17,9 +17,20 @@ jobs:
           cache: npm
           cache-dependency-path: docs/package-lock.json # Use package-lock.json from the docs directory
 
-      - name: Install dependencies
+      - name: Install Node.js dependencies
         run: npm install
         working-directory: ./docs # Run npm install in the docs directory
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13" # Or your preferred Python version
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt # Install all Python dependencies
+
+      - name: Generate all documentation
+        run: python scripts/update_docs.py
 
       - name: Build Docusaurus website
         run: npm run build

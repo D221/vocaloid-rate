@@ -202,7 +202,7 @@ def LocaleTemplateResponse(
     return response
 
 
-@app.get("/static/sw.js")
+@app.get("/static/sw.js", tags=["Internal"])
 async def serve_sw(request: Request):
     """
     Serves the service worker file with the required Service-Worker-Allowed header.
@@ -468,7 +468,7 @@ def time_ago_filter(date: datetime):
 templates.env.filters["time_ago"] = time_ago_filter
 
 
-@app.post("/scrape")
+@app.post("/scrape", tags=["Scraping"])
 def scrape_and_populate(background_tasks: BackgroundTasks):
     # Reset status before starting
     with open(SCRAPE_STATUS_FILE, "w") as f:
@@ -477,7 +477,7 @@ def scrape_and_populate(background_tasks: BackgroundTasks):
     return {"message": "Scraping has been started in the background."}
 
 
-@app.get("/api/scrape-status")
+@app.get("/api/scrape-status", tags=["Scraping"])
 def get_scrape_status():
     if os.path.exists(SCRAPE_STATUS_FILE):
         with open(SCRAPE_STATUS_FILE, "r") as f:
@@ -486,7 +486,7 @@ def get_scrape_status():
     return {"status": "idle"}
 
 
-@app.get("/rated_tracks")
+@app.get("/rated_tracks", tags=["Pages"])
 def read_rated_tracks(
     request: Request,
     db: Session = Depends(get_db),
@@ -589,7 +589,7 @@ def read_rated_tracks(
     )
 
 
-@app.get("/playlists")
+@app.get("/playlists", tags=["Pages"])
 def view_playlists_page(
     request: Request,
     db: Session = Depends(get_db),
@@ -606,7 +606,7 @@ def view_playlists_page(
     )
 
 
-@app.get("/playlist/{playlist_id}")
+@app.get("/playlist/{playlist_id}", tags=["Pages"])
 def view_playlist_detail_page(
     playlist_id: int,
     request: Request,
@@ -695,7 +695,7 @@ def view_playlist_detail_page(
     )
 
 
-@app.get("/playlist/edit/{playlist_id}")
+@app.get("/playlist/edit/{playlist_id}", tags=["Pages"])
 def edit_playlist_page(
     playlist_id: int,
     request: Request,
@@ -730,7 +730,7 @@ def edit_playlist_page(
     )
 
 
-@app.get("/_/get_tracks", response_class=JSONResponse)
+@app.get("/_/get_tracks", response_class=JSONResponse, tags=["Data"])
 def get_tracks_partial(
     request: Request,
     db: Session = Depends(get_db),
@@ -811,7 +811,7 @@ def get_tracks_partial(
     )
 
 
-@app.get("/api/playlist/{playlist_id}/get_tracks", response_class=JSONResponse)
+@app.get("/api/playlist/{playlist_id}/get_tracks", response_class=JSONResponse, tags=["Data"])
 def get_playlist_tracks_partial(
     playlist_id: int,
     request: Request,
@@ -878,7 +878,7 @@ def get_playlist_tracks_partial(
     )
 
 
-@app.get("/_/get_recently_added_tracks_partial", response_class=JSONResponse)
+@app.get("/_/get_recently_added_tracks_partial", response_class=JSONResponse, tags=["Data"])
 def get_recently_added_tracks_partial(
     request: Request,
     db: Session = Depends(get_db),
@@ -930,7 +930,7 @@ def get_recently_added_tracks_partial(
     )
 
 
-@app.get("/options")
+@app.get("/options", tags=["Pages"])
 def read_options(
     request: Request, translations: Translations = Depends(get_translations)
 ):
@@ -944,7 +944,7 @@ def read_options(
     )
 
 
-@app.get("/api/backup/ratings")
+@app.get("/api/backup/ratings", tags=["Backup & Restore"])
 def backup_ratings(db: Session = Depends(get_db)):
     rated_tracks = db.query(models.Track).join(models.Rating).all()
     backup_data = []
@@ -967,7 +967,7 @@ def backup_ratings(db: Session = Depends(get_db)):
     return backup_data
 
 
-@app.post("/api/restore/ratings")
+@app.post("/api/restore/ratings", tags=["Backup & Restore"])
 async def restore_ratings(file: UploadFile = File(...), db: Session = Depends(get_db)):
     filename = getattr(file, "filename", "") or ""
     if not filename.lower().endswith(".json"):
@@ -1010,7 +1010,7 @@ async def restore_ratings(file: UploadFile = File(...), db: Session = Depends(ge
     return {"created": created_count, "updated": updated_count}
 
 
-@app.get("/")
+@app.get("/", tags=["Pages"])
 def read_root(
     request: Request,
     db: Session = Depends(get_db),
@@ -1144,7 +1144,7 @@ def read_root(
     )
 
 
-@app.get("/recently_added")
+@app.get("/recently_added", tags=["Pages"])
 def read_recently_added(
     request: Request,
     db: Session = Depends(get_db),
@@ -1223,7 +1223,7 @@ def read_recently_added(
     )
 
 
-@app.get("/api/translations")
+@app.get("/api/translations", tags=["Internal"])
 def get_js_translations(locale: str = Depends(get_locale)):
     if RESOURCE_BASE_PATH is None:
         raise HTTPException(status_code=500, detail="Resource path not configured.")
@@ -1234,7 +1234,7 @@ def get_js_translations(locale: str = Depends(get_locale)):
     return all_translations.get(locale, all_translations["en"])
 
 
-@app.get("/recommendations")
+@app.get("/recommendations", tags=["Pages"])
 def read_recommendations(
     request: Request,
     db: Session = Depends(get_db),
@@ -1263,14 +1263,14 @@ def read_recommendations(
     )
 
 
-@app.post("/rate/{track_id}/delete")
+@app.post("/rate/{track_id}/delete", tags=["Ratings"])
 def delete_rating_endpoint(track_id: int, db: Session = Depends(get_db)):
     crud.delete_rating(db, track_id=track_id)
     # Return a 204 No Content response, which is standard for successful actions with no body
     return Response(status_code=204)
 
 
-@app.post("/rate/{track_id}")
+@app.post("/rate/{track_id}", tags=["Ratings"])
 def rate_track(
     track_id: int,
     rating: int = Form(...),
@@ -1281,7 +1281,7 @@ def rate_track(
     return Response(status_code=204)
 
 
-@app.get("/api/vocadb_artist_search")
+@app.get("/api/vocadb_artist_search", tags=["VocaDB"])
 def search_vocadb_artist(producer: str):
     headers = {"Accept": "application/json"}
     try:
@@ -1310,7 +1310,7 @@ def search_vocadb_artist(producer: str):
         raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 
-@app.get("/api/vocadb_search")
+@app.get("/api/vocadb_search", tags=["VocaDB"])
 def search_vocadb(producer: str, title_en: str, title_jp: str | None = None):
     headers = {"Accept": "application/json"}
     try:
@@ -1358,7 +1358,7 @@ def search_vocadb(producer: str, title_en: str, title_jp: str | None = None):
         raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 
-@app.get("/api/vocadb_lyrics/{song_id}")
+@app.get("/api/vocadb_lyrics/{song_id}", tags=["VocaDB"])
 def get_vocadb_lyrics(song_id: int, locale: str = Depends(get_locale)):
     headers = {"Accept": "application/json"}
     try:
@@ -1429,13 +1429,13 @@ def get_vocadb_lyrics(song_id: int, locale: str = Depends(get_locale)):
         raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 
-@app.get("/api/playlists", response_model=list[schemas.PlaylistSimple])
+@app.get("/api/playlists", response_model=list[schemas.PlaylistSimple], tags=["Playlists"])
 def get_user_playlists(db: Session = Depends(get_db)):
     """Get a simple list of all playlists (id and name)."""
     return crud.get_playlists(db)
 
 
-@app.post("/api/playlists", response_model=schemas.PlaylistSimple)
+@app.post("/api/playlists", response_model=schemas.PlaylistSimple, tags=["Playlists"])
 def create_new_playlist(
     playlist: schemas.PlaylistCreate, db: Session = Depends(get_db)
 ):
@@ -1443,7 +1443,7 @@ def create_new_playlist(
     return crud.create_playlist(db, playlist)
 
 
-@app.post("/api/playlists/{playlist_id}/tracks/{track_id}")
+@app.post("/api/playlists/{playlist_id}/tracks/{track_id}", tags=["Playlists"])
 def add_track_to_a_playlist(
     playlist_id: int, track_id: int, db: Session = Depends(get_db)
 ):
@@ -1456,7 +1456,7 @@ def add_track_to_a_playlist(
     return Response(status_code=200, content="Track added successfully")
 
 
-@app.delete("/api/playlists/{playlist_id}/tracks/{track_id}")
+@app.delete("/api/playlists/{playlist_id}/tracks/{track_id}", tags=["Playlists"])
 def remove_track_from_a_playlist(
     playlist_id: int, track_id: int, db: Session = Depends(get_db)
 ):
@@ -1465,7 +1465,7 @@ def remove_track_from_a_playlist(
     return Response(status_code=200, content="Track removed successfully")
 
 
-@app.post("/api/playlists/{playlist_id}/reorder")
+@app.post("/api/playlists/{playlist_id}/reorder", tags=["Playlists"])
 def reorder_a_playlist(
     playlist_id: int, track_ids: list[int], db: Session = Depends(get_db)
 ):
@@ -1474,7 +1474,7 @@ def reorder_a_playlist(
     return Response(status_code=200, content="Playlist reordered successfully")
 
 
-@app.put("/api/playlists/{playlist_id}", response_model=schemas.PlaylistSimple)
+@app.put("/api/playlists/{playlist_id}", response_model=schemas.PlaylistSimple, tags=["Playlists"])
 def update_playlist_details(
     playlist_id: int, playlist_update: PlaylistUpdate, db: Session = Depends(get_db)
 ):
@@ -1490,13 +1490,13 @@ def update_playlist_details(
     return db_playlist
 
 
-@app.get("/api/playlists/export")
+@app.get("/api/playlists/export", tags=["Backup & Restore"])
 def export_all_playlists(db: Session = Depends(get_db)):
     """Exports all playlists and their tracks to a JSON format."""
     return crud.export_playlists(db)
 
 
-@app.post("/api/playlists/import-single")
+@app.post("/api/playlists/import-single", tags=["Backup & Restore"])
 async def import_single_playlist(
     file: UploadFile = File(...), db: Session = Depends(get_db)
 ):
@@ -1526,7 +1526,7 @@ async def import_single_playlist(
         raise HTTPException(status_code=500, detail=f"An error occurred: {e}")
 
 
-@app.get("/api/playlists/{playlist_id}/export")
+@app.get("/api/playlists/{playlist_id}/export", tags=["Backup & Restore"])
 def export_single_playlist(playlist_id: int, db: Session = Depends(get_db)):
     """Exports a single playlist and its tracks to a JSON format."""
     playlist = crud.export_single_playlist(db, playlist_id)
@@ -1535,7 +1535,7 @@ def export_single_playlist(playlist_id: int, db: Session = Depends(get_db)):
     return playlist
 
 
-@app.delete("/api/playlists/{playlist_id}")
+@app.delete("/api/playlists/{playlist_id}", tags=["Playlists"])
 def delete_a_playlist(playlist_id: int, db: Session = Depends(get_db)):
     """Deletes a playlist and all its track associations."""
     success = crud.delete_playlist(db, playlist_id=playlist_id)
@@ -1544,7 +1544,7 @@ def delete_a_playlist(playlist_id: int, db: Session = Depends(get_db)):
     return Response(status_code=200, content="Playlist deleted successfully")
 
 
-@app.get("/api/tracks/{track_id}/playlist-status")
+@app.get("/api/tracks/{track_id}/playlist-status", tags=["Data"])
 def get_track_playlist_status(track_id: int, db: Session = Depends(get_db)):
     """
     For a given track, returns two lists of playlists:
@@ -1554,7 +1554,7 @@ def get_track_playlist_status(track_id: int, db: Session = Depends(get_db)):
     return crud.get_track_playlist_membership(db, track_id=track_id)
 
 
-@app.get("/api/playlist-snapshot", response_class=JSONResponse)
+@app.get("/api/playlist-snapshot", response_class=JSONResponse, tags=["Data"])
 def get_playlist_snapshot_endpoint(
     db: Session = Depends(get_db),
     limit: str = "all",
@@ -1596,7 +1596,7 @@ def get_playlist_snapshot_endpoint(
     )
 
 
-@app.get("/api/playlist/{playlist_id}/playlist-snapshot", response_class=JSONResponse)
+@app.get("/api/playlist/{playlist_id}/playlist-snapshot", response_class=JSONResponse, tags=["Data"])
 def get_playlist_snapshot_for_playlist_endpoint(
     playlist_id: int,
     db: Session = Depends(get_db),
@@ -1626,7 +1626,7 @@ def get_playlist_snapshot_for_playlist_endpoint(
     )
 
 
-@app.get("/api/recently-added-snapshot", response_class=JSONResponse)
+@app.get("/api/recently-added-snapshot", response_class=JSONResponse, tags=["Data"])
 def get_recently_added_snapshot_endpoint(
     db: Session = Depends(get_db),
     title_filter: Optional[str] = None,

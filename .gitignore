@@ -20,3 +20,6 @@ build/
 
 # Language files
 *.mo
+
+# Docs
+docs/docs/

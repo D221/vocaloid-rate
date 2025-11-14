@@ -41,6 +41,8 @@ const config: Config = {
       {
         docs: {
           sidebarPath: "./src/sidebars.ts",
+          docRootComponent: "@theme/DocRoot",
+          docItemComponent: "@theme/ApiItem",
         },
         blog: false,
         theme: {
@@ -102,6 +104,28 @@ const config: Config = {
       darkTheme: prismThemes.dracula,
     },
   } satisfies Preset.ThemeConfig,
+
+  themes: ["docusaurus-theme-openapi-docs"],
+
+  plugins: [
+    [
+      "docusaurus-plugin-openapi-docs",
+      {
+        id: "openapi",
+        docsPluginId: "classic",
+        config: {
+          openapi: {
+            specPath: "static/openapi.json",
+            outputDir: "docs/api",
+            sidebarOptions: {
+              groupPathsBy: "tag",
+              categoryLinkSource: "tag",
+            },
+          },
+        },
+      },
+    ],
+  ],
 };
 
 export default config;

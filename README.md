@@ -221,3 +221,13 @@ This fully automated process will:
 2.  Use `PyInstaller` to bundle the FastAPI application and a Python interpreter into a single executable.
 3.  Clean up unnecessary source files (like `input.css` and non-minified `.js` files) from the final package.
 4.  Create a `vocaloid-rate-release.zip` file in dist directory, containing the executable and all necessary files for an end-user to run the application.
+
+## APIs Used
+
+This project integrates with several external APIs to provide its features.
+
+- **[Vocaloard](https://vocaloard.injpok.tokyo/en/):** The primary source of song data. The application scrapes the Top 300 rankings directly from this site.
+
+- **[VocaDB](https://vocadb.net/):** Used to fetch lyrics for the songs. The application makes API calls to VocaDB to retrieve lyrics based on the song title and artist.
+
+- **[YouTube](https://www.youtube.com/):** Used for the embedded video player. The application embeds the YouTube player to stream the music videos for the songs.
