@@ -57,8 +57,14 @@ COPY --from=builder /app/locales/ ./locales/
 COPY --from=builder /app/alembic.ini .
 COPY --from=builder /app/alembic/ ./alembic/
 
+# Copy the entrypoint script and make it executable
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 8000
 
-# The command to run the application
+# Set the entrypoint to our script
+ENTRYPOINT ["entrypoint.sh"]
+
+# The command to run. This gets passed as arguments ("$@") to entrypoint.sh
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
