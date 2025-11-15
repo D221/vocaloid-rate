@@ -27,7 +27,7 @@
         fetch("/api/scrape-status")
           .then((res) => res.json())
           .then((data) => {
-            if (data.status === "completed" || data.status === "no_changes") {
+            if (data.status === "completed") {
               clearInterval(interval);
               scrapeStatusText.textContent =
                 "{{ _('Completed! Reloading...') }}";
@@ -36,6 +36,11 @@
               clearInterval(interval);
               scrapeStatusText.textContent =
                 "{{ _('An error occurred. Please check the server logs and restart the application.') }}";
+            } else if (data.status.startsWith("in_progress")) {
+              const pageNumber = data.status.split(":")[1];
+              scrapeStatusText.textContent = pageNumber
+                ? `{{ _('Scraping page %s...') }}`.replace("%s", pageNumber)
+                : "{{ _('Scraping...') }}";
             } else {
               scrapeStatusText.textContent =
                 "{{ _('Scraping... please wait.') }}";
