@@ -43,7 +43,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='app/static/android-chrome-512x512.png',
+    icon='app/static/favicon.ico',
 )
 coll = COLLECT(
     exe,
