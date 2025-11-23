@@ -437,32 +437,24 @@ def scrape_and_populate_task():
         db.close()
 
 
-def time_ago_filter(date: datetime):
-    """Calculates 'time ago' string from a datetime object."""
+def time_ago_filter(date: datetime) -> str:
+    """Simplified 'time ago' that omits seconds/minutes/hours; uses today, days, months, years."""
     now = datetime.now(timezone.utc)
-    # Ensure the date from DB is timezone-aware
     if date.tzinfo is None:
         date = date.replace(tzinfo=timezone.utc)
 
     diff = now - date
-    seconds = diff.total_seconds()
+    days = diff.days
 
-    if seconds < 60:
-        return f"{int(seconds)} seconds ago"
-    minutes = seconds / 60
-    if minutes < 60:
-        return f"{int(minutes)} minutes ago"
-    hours = minutes / 60
-    if hours < 24:
-        return f"{int(hours)} hours ago"
-    days = hours / 24
+    if days == 0:
+        return "Today"
     if days < 30:
-        return f"{int(days)} days ago"
-    months = days / 30
+        return f"{days} day{'s' if days != 1 else ''} ago"
+    months = days // 30
     if months < 12:
-        return f"{int(months)} months ago"
-    years = days / 365
-    return f"{int(years)} years ago"
+        return f"{months} month{'s' if months != 1 else ''} ago"
+    years = days // 365
+    return f"{years} year{'s' if years != 1 else ''} ago"
 
 
 templates.env.filters["time_ago"] = time_ago_filter
