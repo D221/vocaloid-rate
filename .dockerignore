@@ -22,5 +22,8 @@ build/
 *.mo
 
 # Docs
-docs/docs/
-docs/static/openapi.json
+docs/
+
+# Git
+.git
+.gitignore

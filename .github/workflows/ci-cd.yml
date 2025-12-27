@@ -18,11 +18,12 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with: { python-version: "3.13" }
-      - name: Install and run Ruff
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Run Ruff
         run: |
-          pip install ruff
-          ruff check .
-          ruff format --check .
+          uvx ruff check .
+          uvx ruff format --check .
 
       # --- Frontend Checks ---
       - name: Set up Bun

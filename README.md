@@ -132,7 +132,7 @@ This project uses a Python/FastAPI backend and a JavaScript frontend with a full
 
 ### Prerequisites
 
-- **Python 3.8+** and `pip`.
+- **Python 3.8+** and **uv**.
 - **Node.js & npm** or **Bun**.
 
 ### 1. Clone the Repository
@@ -147,16 +147,14 @@ cd vocaloid-rate
 First, create a Python virtual environment and install the required packages.
 
 ```bash
-# Create and activate a virtual environment (macOS/Linux)
-python3 -m venv venv
-source venv/bin/activate
+# Install uv (macOS/Linux)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Create and activate a virtual environment (Windows)
-python -m venv venv
-.\venv\Scripts\activate
+# Install uv (Windows)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 
 # Install Python packages
-pip install -r requirements.txt
+uv sync
 ```
 
 Next, install the Node.js development dependencies. This will also set up the pre-commit hooks via Husky.

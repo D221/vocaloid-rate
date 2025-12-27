@@ -4,19 +4,22 @@
 # - Frontend (CSS, JS) via Bun/Tailwind/Terser
 # - Translations (.mo files) via Python/PyBabel
 # =================================================================
-FROM python:3.13 AS builder
+FROM python:3.13-slim AS builder
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Install Bun
-RUN curl -fsSL https://bun.sh/install | bash
-ENV PATH="/root/.bun/bin:${PATH}"
+COPY --from=oven/bun:latest /usr/local/bin/bun /usr/local/bin/bun
+
 
 WORKDIR /app
 
 # Copy configuration and dependency files first for caching
-COPY requirements.txt package.json bun.lock babel.cfg ./
+COPY pyproject.toml uv.lock package.json bun.lock babel.cfg ./
 
 # Install both Python and Bun dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN uv sync --locked
 RUN bun install --frozen-lockfile
 
 # Copy the entire application source code
@@ -34,11 +37,14 @@ RUN bun run build
 # =================================================================
 FROM python:3.13-slim
 
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 WORKDIR /app
 
-# Copy requirements.txt from the builder and install only runtime dependencies
-COPY --from=builder /app/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy pyproject.toml from the builder and install only runtime dependencies
+COPY --from=builder /app/uv.lock /app/pyproject.toml ./
+RUN uv sync --locked
 
 # Copy the Python application source code from the builder
 COPY --from=builder /app/app ./app
@@ -67,4 +73,4 @@ EXPOSE 8000
 ENTRYPOINT ["entrypoint.sh"]
 
 # The command to run. This gets passed as arguments ("$@") to entrypoint.sh
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
