@@ -43,6 +43,7 @@ class Rating(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     track_id: Mapped[int] = mapped_column(ForeignKey("tracks.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False) # New
     rating: Mapped[float] = mapped_column(Float, index=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         default=datetime.datetime.now(datetime.timezone.utc)
@@ -53,6 +54,7 @@ class Rating(Base):
     )
     notes: Mapped[str | None] = mapped_column(String, nullable=True)
     track: Mapped["Track"] = relationship("Track", back_populates="ratings")
+    user: Mapped["User"] = relationship("User") # New
 
 
 class UpdateLog(Base):
@@ -80,6 +82,7 @@ class Playlist(Base):
     __tablename__ = "playlists"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False) # New
     name: Mapped[str] = mapped_column(String(100))
     description: Mapped[str | None] = mapped_column(String(500))
     is_public: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -90,3 +93,16 @@ class Playlist(Base):
     playlist_tracks: Mapped[list["PlaylistTrack"]] = relationship(
         order_by=PlaylistTrack.position, cascade="all, delete-orphan"
     )
+    user: Mapped["User"] = relationship("User") # New
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    email: Mapped[str] = mapped_column(String, unique=True, index=True)
+    hashed_password: Mapped[str] = mapped_column(String)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False) # New admin flag
+
+

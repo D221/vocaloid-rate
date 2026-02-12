@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 class RatingBase(BaseModel):
     rating: float
+    user_id: int  # New
 
 
 class Rating(RatingBase):
@@ -36,6 +37,7 @@ class Track(BaseModel):
 class PlaylistBase(BaseModel):
     name: str
     description: Optional[str] = None
+    user_id: int  # New
 
 
 class PlaylistCreate(PlaylistBase):
@@ -60,3 +62,28 @@ class Playlist(PlaylistBase):
 
     class Config:
         from_attributes = True
+
+
+class UserBase(BaseModel):
+    email: str
+
+
+class UserCreate(UserBase):
+    password: str
+
+
+class User(UserBase):
+    id: int
+    is_active: bool
+
+    class Config:
+        from_attributes = True
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
