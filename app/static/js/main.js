@@ -575,7 +575,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const limitFilter = document.getElementById("limit_filter");
   const paginationContainer = document.getElementById("pagination-container");
   const filterForm = document.getElementById("filter-form");
-  const scrapeButton = document.getElementById("scrape-button");
 
   function loadAndPlayTrack(trackId) {
     if (!checkOnlineStatus()) {
@@ -2096,63 +2095,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     filterForm
       .querySelectorAll('input[type="text"], input[type="search"]')
       .forEach(toggleClearButton);
-  }
-
-  if (scrapeButton) {
-    scrapeButton.addEventListener("click", (e) => {
-      e.preventDefault();
-      const scrapeStatus = document.getElementById("scrape-status");
-      scrapeButton.disabled = true;
-      scrapeButton.textContent = window._("Checking...");
-      fetch("/scrape", { method: "POST" })
-        .then((res) => res.json())
-        .then((data) => {
-          scrapeStatus.textContent = window._(data.message);
-          const interval = setInterval(() => {
-            fetch("/api/scrape-status")
-              .then((res) => res.json())
-              .then((statusData) => {
-                if (statusData.status === "no_changes") {
-                  clearInterval(interval);
-                  scrapeStatus.textContent = window._(
-                    "Ranking is already up-to-date.",
-                  );
-                  scrapeButton.disabled = false;
-                  scrapeButton.textContent = window._("Update Tracks");
-                  setTimeout(() => {
-                    scrapeStatus.textContent = "";
-                  }, 4000);
-                } else if (statusData.status === "completed") {
-                  clearInterval(interval);
-                  scrapeStatus.textContent = window._(
-                    "Completed! Reloading...",
-                  );
-                  window.location.reload();
-                } else if (statusData.status === "error") {
-                  clearInterval(interval);
-                  scrapeStatus.textContent = window._(
-                    "An error occurred. Check server logs.",
-                  );
-                  scrapeButton.disabled = false;
-                  scrapeButton.textContent = window._("Update Tracks");
-                } else if (statusData.status.startsWith("in_progress")) {
-                  scrapeButton.textContent = window._("Scraping...");
-                  const progress = statusData.status.split(":")[1];
-                  if (progress) {
-                    scrapeStatus.textContent = window._(
-                      `Scraping page %s...`,
-                      progress,
-                    );
-                  } else {
-                    scrapeStatus.textContent = window._(
-                      "Changes found, updating...",
-                    );
-                  }
-                }
-              });
-          }, 2000);
-        });
-    });
   }
 
   const randomPlayBtn = document.getElementById("play-random-btn");
