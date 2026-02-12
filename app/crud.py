@@ -1,13 +1,14 @@
 from collections import defaultdict
-from statistics import median
 from datetime import datetime, timedelta
+from statistics import median
 from typing import List, Optional
 
-from sqlalchemy import desc, distinct, func, nullslast, or_
+from sqlalchemy import desc, distinct, func, nullslast, or_, select
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.sql.expression import exists
 
 from app import models, schemas
+from app.auth import get_password_hash
 
 
 def get_track_by_link(db: Session, link: str):
@@ -32,6 +33,7 @@ def update_track(db: Session, db_track: models.Track, track: dict):
 
 def get_tracks(
     db: Session,
+    user_id: Optional[int] = None,
     skip: int = 0,
     limit: int = 300,
     rated_filter: Optional[str] = None,
@@ -71,16 +73,21 @@ def get_tracks(
     if exact_rating_filter is not None:
         # If we have an exact filter, it takes priority.
         query = query.join(models.Rating).filter(
-            models.Rating.rating == exact_rating_filter
+            models.Rating.rating == exact_rating_filter,
+            models.Rating.user_id == user_id,
         )
         rating_join_applied = True
     elif rated_filter == "rated":
         # This only runs if there's NO exact_rating_filter
-        query = query.join(models.Rating)
+        query = query.join(models.Rating).filter(models.Rating.user_id == user_id)
         rating_join_applied = True
     elif rated_filter == "unrated":
-        query = query.outerjoin(models.Rating).filter(models.Rating.id.is_(None))
-        rating_join_applied = True
+        # Tracks where THIS user has no rating
+        user_ratings = select(models.Rating.track_id).where(
+            models.Rating.user_id == user_id
+        )
+        query = query.filter(models.Track.id.notin_(user_ratings))
+        rating_join_applied = False  # No join needed for this unrated logic
 
     if producer_filter:
         search_term = f"%{producer_filter}%"
@@ -129,9 +136,10 @@ def get_tracks(
             # Default to rank for on-chart view
             query = query.order_by(models.Track.rank.asc())
 
-    # distinct() is important for any query that joins with ratings
-    if rating_join_applied:
-        query = query.distinct()
+    # distinct() is no longer necessary as we filter by user_id, 
+    # and it causes errors with ORDER BY on joined columns in PostgreSQL.
+    # if rating_join_applied:
+    #     query = query.distinct()
 
     results = query.offset(skip).limit(limit).all()
 
@@ -145,6 +153,7 @@ def get_tracks(
 
 def get_tracks_count(
     db: Session,
+    user_id: Optional[int] = None,
     rated_filter: Optional[str] = None,
     title_filter: Optional[str] = None,
     producer_filter: Optional[str] = None,
@@ -171,12 +180,16 @@ def get_tracks_count(
 
     if exact_rating_filter is not None:
         query = query.join(models.Rating).filter(
-            models.Rating.rating == exact_rating_filter
+            models.Rating.rating == exact_rating_filter,
+            models.Rating.user_id == user_id,
         )
     elif rated_filter == "rated":
-        query = query.join(models.Rating)
+        query = query.join(models.Rating).filter(models.Rating.user_id == user_id)
     elif rated_filter == "unrated":
-        query = query.outerjoin(models.Rating).filter(models.Rating.id.is_(None))
+        user_ratings = select(models.Rating.track_id).where(
+            models.Rating.user_id == user_id
+        )
+        query = query.filter(models.Track.id.notin_(user_ratings))
 
     if producer_filter:
         search_term = f"%{producer_filter}%"
@@ -256,33 +269,45 @@ def get_recently_added_tracks(
 
 
 def create_rating(
-    db: Session, track_id: int, rating: float, notes: Optional[str] = None
+    db: Session, track_id: int, user_id: int, rating: float, notes: Optional[str] = None
 ):
     db_rating = (
-        db.query(models.Rating).filter(models.Rating.track_id == track_id).first()
+        db.query(models.Rating)
+        .filter(
+            models.Rating.track_id == track_id, models.Rating.user_id == user_id
+        )  # Filter by user_id
+        .first()
     )
     if db_rating:
         db_rating.rating = rating
         db_rating.notes = notes
     else:
-        db_rating = models.Rating(track_id=track_id, rating=rating)
+        db_rating = models.Rating(
+            track_id=track_id, user_id=user_id, rating=rating
+        )  # Store user_id
         db.add(db_rating)
     db.commit()
     db.refresh(db_rating)
     return db_rating
 
 
-def delete_rating(db: Session, track_id: int):
+def delete_rating(db: Session, track_id: int, user_id: int):
     db_rating = (
-        db.query(models.Rating).filter(models.Rating.track_id == track_id).first()
+        db.query(models.Rating)
+        .filter(
+            models.Rating.track_id == track_id, models.Rating.user_id == user_id
+        )  # Filter by user_id
+        .first()
     )
     if db_rating:
         db.delete(db_rating)
         db.commit()
 
 
-def get_rating_statistics(db: Session, locale: str = "en"):
-    all_ratings_query = db.query(models.Rating.rating).all()
+def get_rating_statistics(db: Session, user_id: int, locale: str = "en"):
+    all_ratings_query = (
+        db.query(models.Rating.rating).filter(models.Rating.user_id == user_id).all()
+    )
     if not all_ratings_query:
         # Return default structure if no ratings exist
         return {
@@ -311,6 +336,7 @@ def get_rating_statistics(db: Session, locale: str = "en"):
             models.Rating.rating,
         )
         .join(models.Rating)
+        .filter(models.Rating.user_id == user_id)  # Filter by user_id
         .all()
     )
 
@@ -375,6 +401,7 @@ def get_rating_statistics(db: Session, locale: str = "en"):
 
     distribution_query = (
         db.query(models.Rating.rating, func.count(models.Rating.rating).label("count"))
+        .filter(models.Rating.user_id == user_id)
         .group_by(models.Rating.rating)
         .order_by(desc(models.Rating.rating))
         .all()
@@ -419,23 +446,34 @@ def get_playlist(db: Session, playlist_id: int) -> Optional[models.Playlist]:
     )
 
 
-def get_playlists(db: Session) -> list[models.Playlist]:
-    """Gets a list of all playlists."""
-    return db.query(models.Playlist).order_by(models.Playlist.name).all()
+def get_playlists(db: Session, user_id: int) -> list[models.Playlist]:
+    """Gets a list of all playlists for a specific user."""
+    return (
+        db.query(models.Playlist)
+        .filter(models.Playlist.user_id == user_id)
+        .order_by(models.Playlist.name)
+        .all()
+    )
 
 
-def create_playlist(db: Session, playlist: schemas.PlaylistCreate) -> models.Playlist:
+def create_playlist(
+    db: Session, user_id: int, playlist: schemas.PlaylistCreate
+) -> models.Playlist:
     """Creates a new playlist."""
-    db_playlist = models.Playlist(name=playlist.name, description=playlist.description)
+    db_playlist = models.Playlist(
+        user_id=user_id, name=playlist.name, description=playlist.description
+    )
     db.add(db_playlist)
     db.commit()
     db.refresh(db_playlist)
     return db_playlist
 
 
-def delete_playlist(db: Session, playlist_id: int) -> bool:
+def delete_playlist(db: Session, playlist_id: int, user_id: int) -> bool:
     """Deletes a playlist by its ID."""
-    db_playlist = db.query(models.Playlist).filter_by(id=playlist_id).first()
+    db_playlist = (
+        db.query(models.Playlist).filter_by(id=playlist_id, user_id=user_id).first()
+    )
     if db_playlist:
         db.delete(db_playlist)
         db.commit()
@@ -444,10 +482,12 @@ def delete_playlist(db: Session, playlist_id: int) -> bool:
 
 
 def update_playlist(
-    db: Session, playlist_id: int, name: str, description: Optional[str]
+    db: Session, playlist_id: int, user_id: int, name: str, description: Optional[str]
 ) -> Optional[models.Playlist]:
     """Updates a playlist's name and description."""
-    db_playlist = get_playlist(db, playlist_id)
+    db_playlist = (
+        db.query(models.Playlist).filter_by(id=playlist_id, user_id=user_id).first()
+    )
     if db_playlist:
         db_playlist.name = name
         db_playlist.description = description
@@ -457,10 +497,12 @@ def update_playlist(
 
 
 def add_track_to_playlist(
-    db: Session, playlist_id: int, track_id: int
+    db: Session, playlist_id: int, track_id: int, user_id: int
 ) -> Optional[models.Playlist]:
     """Adds a track to the end of a playlist."""
-    db_playlist = get_playlist(db, playlist_id)
+    db_playlist = (
+        db.query(models.Playlist).filter_by(id=playlist_id, user_id=user_id).first()
+    )
     if not db_playlist:
         return None
 
@@ -482,8 +524,17 @@ def add_track_to_playlist(
     return db_playlist
 
 
-def remove_track_from_playlist(db: Session, playlist_id: int, track_id: int):
+def remove_track_from_playlist(
+    db: Session, playlist_id: int, track_id: int, user_id: int
+):
     """Removes a track from a playlist and re-orders the remaining tracks."""
+    # First, get the playlist to ensure it belongs to the user
+    db_playlist = (
+        db.query(models.Playlist).filter_by(id=playlist_id, user_id=user_id).first()
+    )
+    if not db_playlist:
+        return  # Playlist not found or not owned by user
+
     assoc_to_delete = (
         db.query(models.PlaylistTrack)
         .filter_by(playlist_id=playlist_id, track_id=track_id)
@@ -503,8 +554,15 @@ def remove_track_from_playlist(db: Session, playlist_id: int, track_id: int):
         db.commit()
 
 
-def reorder_playlist(db: Session, playlist_id: int, track_ids: list[int]):
+def reorder_playlist(db: Session, playlist_id: int, track_ids: list[int], user_id: int):
     """Re-orders an entire playlist based on a new list of track IDs."""
+    # First, get the playlist to ensure it belongs to the user
+    db_playlist = (
+        db.query(models.Playlist).filter_by(id=playlist_id, user_id=user_id).first()
+    )
+    if not db_playlist:
+        return  # Playlist not found or not owned by user
+
     # This is an efficient way to update all positions at once
     for index, track_id in enumerate(track_ids):
         db.query(models.PlaylistTrack).filter_by(
@@ -513,11 +571,12 @@ def reorder_playlist(db: Session, playlist_id: int, track_ids: list[int]):
     db.commit()
 
 
-def export_playlists(db: Session) -> list[dict]:
-    """Fetches all playlists and formats them for JSON export."""
+def export_playlists(db: Session, user_id: int) -> list[dict]:
+    """Fetches all playlists for a specific user and formats them for JSON export."""
     playlists_to_export = []
     all_playlists = (
         db.query(models.Playlist)
+        .filter(models.Playlist.user_id == user_id)  # Filter by user_id
         .options(
             joinedload(models.Playlist.playlist_tracks).joinedload(
                 models.PlaylistTrack.track
@@ -538,11 +597,13 @@ def export_playlists(db: Session) -> list[dict]:
     return playlists_to_export
 
 
-def export_single_playlist(db: Session, playlist_id: int) -> Optional[dict]:
-    """Fetches a single playlist and formats it for JSON export."""
+def export_single_playlist(
+    db: Session, playlist_id: int, user_id: int
+) -> Optional[dict]:
+    """Fetches a single playlist for a specific user and formats it for JSON export."""
     playlist = (
         db.query(models.Playlist)
-        .filter_by(id=playlist_id)
+        .filter_by(id=playlist_id, user_id=user_id)  # Filter by user_id
         .options(
             joinedload(models.Playlist.playlist_tracks).joinedload(
                 models.PlaylistTrack.track
@@ -562,8 +623,8 @@ def export_single_playlist(db: Session, playlist_id: int) -> Optional[dict]:
     }
 
 
-def import_playlists(db: Session, data: list[dict]) -> tuple[int, int]:
-    """Imports playlists from a list of dictionaries, merging with existing data."""
+def import_playlists(db: Session, user_id: int, data: list[dict]) -> tuple[int, int]:
+    """Imports playlists for a specific user from a list of dictionaries, merging with existing data."""
     created_count = 0
     updated_count = 0
 
@@ -572,11 +633,17 @@ def import_playlists(db: Session, data: list[dict]) -> tuple[int, int]:
         if not playlist_name:
             continue
 
-        # Find existing playlist by name or create a new one
-        db_playlist = db.query(models.Playlist).filter_by(name=playlist_name).first()
+        # Find existing playlist by name and user_id or create a new one
+        db_playlist = (
+            db.query(models.Playlist)
+            .filter_by(name=playlist_name, user_id=user_id)
+            .first()
+        )
         if not db_playlist:
             db_playlist = models.Playlist(
-                name=playlist_name, description=playlist_data.get("description")
+                user_id=user_id,  # Store user_id
+                name=playlist_name,
+                description=playlist_data.get("description"),
             )
             db.add(db_playlist)
             created_count += 1
@@ -604,17 +671,24 @@ def import_playlists(db: Session, data: list[dict]) -> tuple[int, int]:
     return created_count, updated_count
 
 
-def get_track_playlist_membership(db: Session, track_id: int) -> dict:
-    """Checks which playlists a track belongs to."""
+def get_track_playlist_membership(db: Session, track_id: int, user_id: int) -> dict:
+    """Checks which playlists a track belongs to for a specific user."""
 
-    # 1. Get IDs of playlists the track is in.
-    member_playlist_ids_query = db.query(models.PlaylistTrack.playlist_id).filter_by(
-        track_id=track_id
+    # 1. Get IDs of playlists the track is in for the current user.
+    member_playlist_ids_query = (
+        db.query(models.PlaylistTrack.playlist_id)
+        .join(models.Playlist)
+        .filter(
+            models.PlaylistTrack.track_id == track_id,
+            models.Playlist.user_id == user_id,
+        )
     )
     member_playlist_ids = {id for (id,) in member_playlist_ids_query}
 
-    # 2. Get all playlists.
-    all_playlists = db.query(models.Playlist).all()
+    # 2. Get all playlists for the current user.
+    all_playlists = (
+        db.query(models.Playlist).filter(models.Playlist.user_id == user_id).all()
+    )
 
     # 3. Separate them into two lists.
     member_of = []
@@ -631,6 +705,7 @@ def get_track_playlist_membership(db: Session, track_id: int) -> dict:
 
 def get_playlist_snapshot(
     db: Session,
+    user_id: Optional[int] = None,
     limit: str = "all",
     rated_filter: Optional[str] = None,
     title_filter: Optional[str] = None,
@@ -666,15 +741,19 @@ def get_playlist_snapshot(
     rating_join_applied = False
     if exact_rating_filter is not None:
         query = query.join(models.Rating).filter(
-            models.Rating.rating == exact_rating_filter
+            models.Rating.rating == exact_rating_filter,
+            models.Rating.user_id == user_id,
         )
         rating_join_applied = True
     elif rated_filter == "rated":
-        query = query.join(models.Rating)
+        query = query.join(models.Rating).filter(models.Rating.user_id == user_id)
         rating_join_applied = True
     elif rated_filter == "unrated":
-        query = query.outerjoin(models.Rating).filter(models.Rating.id.is_(None))
-        rating_join_applied = True
+        user_ratings = select(models.Rating.track_id).where(
+            models.Rating.user_id == user_id
+        )
+        query = query.filter(models.Track.id.notin_(user_ratings))
+        rating_join_applied = False
 
     if producer_filter:
         search_term = f"%{producer_filter}%"
@@ -720,8 +799,8 @@ def get_playlist_snapshot(
         else:
             query = query.order_by(models.Track.rank.asc())
 
-    if rating_join_applied:
-        query = query.distinct()
+    # if rating_join_applied:
+    #     query = query.distinct()
 
     # --- 2. Execute the query to get ALL matching track IDs in order ---
     all_track_ids_tuples = query.all()
@@ -855,6 +934,7 @@ def get_playlist_tracks_count(
 def get_playlist_snapshot_for_playlist(
     db: Session,
     playlist_id: int,
+    user_id: int,  # Add user_id
     limit: str = "all",
     title_filter: Optional[str] = None,
     producer_filter: Optional[str] = None,
@@ -871,9 +951,12 @@ def get_playlist_snapshot_for_playlist(
     query = (
         db.query(models.Track.id)
         .join(models.PlaylistTrack)
-        .filter(models.PlaylistTrack.playlist_id == playlist_id)
+        .join(models.Playlist)  # Join with Playlist to filter by user_id
+        .filter(
+            models.PlaylistTrack.playlist_id == playlist_id,
+            models.Playlist.user_id == user_id,  # Filter by user_id
+        )
     )
-
     # --- 2. Apply filters (same as get_playlist_tracks_filtered) ---
     if title_filter:
         search_term = f"%{title_filter}%"
@@ -1004,7 +1087,7 @@ def get_recently_added_snapshot(
 
 
 def get_recommended_tracks(
-    db: Session, locale: str = "en", limit: int = 25
+    db: Session, user_id: int, locale: str = "en", limit: int = 25
 ) -> List[models.Track]:
     """
     Generates track recommendations based on user's rated producers and voicebanks.
@@ -1072,7 +1155,12 @@ def get_recommended_tracks(
     }
 
     # 2. Get all unrated tracks
-    rated_track_ids = db.query(models.Rating.track_id).distinct().all()
+    rated_track_ids = (
+        db.query(models.Rating.track_id)
+        .filter(models.Rating.user_id == user_id)
+        .distinct()
+        .all()
+    )
     rated_track_ids = [t_id for (t_id,) in rated_track_ids]
 
     unrated_tracks = (
@@ -1126,3 +1214,48 @@ def get_recommended_tracks(
     recommended_tracks = [track for track, _ in track_scores[:limit]]
 
     return recommended_tracks
+
+
+# User CRUD operations
+def get_user(db: Session, user_id: int):
+    return db.query(models.User).filter(models.User.id == user_id).first()
+
+
+def get_user_by_email(db: Session, email: str):
+    return db.query(models.User).filter(models.User.email == email).first()
+
+
+def create_user(db: Session, user: schemas.UserCreate):
+    hashed_password = get_password_hash(user.password)
+    db_user = models.User(email=user.email, hashed_password=hashed_password)
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+
+def get_users(db: Session) -> list[models.User]:
+    """Gets a list of all users."""
+    return db.query(models.User).all()
+
+
+def delete_user(db: Session, user_id: int) -> bool:
+    """Deletes a user by ID."""
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if db_user:
+        db.delete(db_user)
+        db.commit()
+        return True
+    return False
+
+
+def update_user_admin_status(
+    db: Session, user_id: int, is_admin: bool
+) -> Optional[models.User]:
+    """Sets the admin status of a user."""
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if db_user:
+        db_user.is_admin = is_admin
+        db.commit()
+        db.refresh(db_user)
+    return db_user
