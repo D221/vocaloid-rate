@@ -171,16 +171,5 @@
     >
       {{ _('Clear') }}
     </button>
-
-    {% if context.show_scrape_button %}
-      <button
-        type="button"
-        id="scrape-button"
-        class="cursor-pointer rounded border border-green-text p-2 font-bold text-green-text shadow-md ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-green-hover"
-      >
-        {{ _('Update Tracks') }}
-      </button>
-      <span id="scrape-status"></span>
-    {% endif %}
   </form>
 </div>

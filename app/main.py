@@ -468,22 +468,17 @@ def time_ago_filter(date: datetime) -> str:
 templates.env.filters["time_ago"] = time_ago_filter
 
 
-@app.post("/scrape", tags=["Scraping"])
-def scrape_and_populate(background_tasks: BackgroundTasks):
-    # Reset status before starting
-    with open(SCRAPE_STATUS_FILE, "w") as f:
-        f.write("idle")
+@app.get("/api/cron/scrape", tags=["Scraping"])
+def cron_scrape(request: Request, background_tasks: BackgroundTasks):
+    auth_header = request.headers.get("Authorization")
+    cron_secret = os.environ.get("CRON_SECRET")
+
+    # If CRON_SECRET is set in environment, enforce it.
+    if cron_secret and auth_header != f"Bearer {cron_secret}":
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
     background_tasks.add_task(scrape_and_populate_task)
-    return {"message": "Scraping has been started in the background."}
-
-
-@app.get("/api/scrape-status", tags=["Scraping"])
-def get_scrape_status():
-    if os.path.exists(SCRAPE_STATUS_FILE):
-        with open(SCRAPE_STATUS_FILE, "r") as f:
-            status = f.read().strip()
-        return {"status": status}
-    return {"status": "idle"}
+    return {"message": "Scraping task has been queued."}
 
 
 @app.get("/rated_tracks", tags=["Pages"])
