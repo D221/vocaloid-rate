@@ -75,11 +75,18 @@
       })();
     </script>
 
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://unpkg.com/htmx-ext-json-enc@2.0.1"></script>
     <script src="{{ url_for('static', path='js/global.min.js') }}"></script>
     {% block head_extra %}{% endblock %}
   </head>
 
-  <body class="m-4 bg-background font-sans text-foreground">
+  <body
+    class="m-4 bg-background font-sans text-foreground"
+    hx-trigger="load"
+    hx-get="/users/me/"
+    hx-target="#user-status"
+  >
     {% from "macros/icons.html" import render as icon %}
     <div
       id="music-player"
@@ -153,7 +160,7 @@
         class="pointer-events-none absolute inset-x-0 top-0 bottom-0 flex flex-col items-center justify-center"
       >
         <div
-          class="pointer-events-auto flex w-[45vw] max-w-[700px] min-w-[350px] flex-col items-center gap-1"
+          class="pointer-events-auto flex w-[45vw] max-w-175 min-w-87.5 flex-col items-center gap-1"
         >
           <div class="flex w-full items-center gap-2">
             <span
@@ -213,6 +220,11 @@
           </div>
         </div>
       </div>
+    </div>
+    {# music-player #}
+
+    <div id="user-status" class="flex justify-end p-2">
+      <!-- HTMX will load content here -->
     </div>
 
     {% block content %}{% endblock %}

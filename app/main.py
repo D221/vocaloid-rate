@@ -6,7 +6,7 @@ import sys
 import threading
 import webbrowser
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from gettext import NullTranslations
 from pathlib import Path
 from typing import AsyncGenerator, Optional
@@ -26,9 +26,11 @@ from fastapi import (
     Request,
     Response,
     UploadFile,
+    status,
 )
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -36,7 +38,14 @@ from sqlalchemy.orm import Session
 
 from alembic import command
 from app import crud, models, schemas, scraper
+from app.auth import (
+    authenticate_user,
+    create_access_token,
+    get_current_user,
+    get_optional_current_user,
+)
 from app.database import SessionLocal
+from app.security import ACCESS_TOKEN_EXPIRE_MINUTES
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
 
@@ -144,6 +153,42 @@ def get_locale(request: Request) -> str:
     return DEFAULT_LOCALE
 
 
+class TranslationProxy(Translations):
+    """
+    A proxy for a translation object that ensures the .info() dictionary
+    always contains a 'language' key. All other methods are passed through
+    to the wrapped translation object.
+    """
+
+    def __init__(
+        self, inner_translation: Translations | NullTranslations, language: str
+    ):
+        # We don't call super().__init__() because Translations doesn't have a standard one.
+        self._inner = inner_translation
+        self._language = language
+
+    def gettext(self, message: str) -> str:
+        return self._inner.gettext(message)
+
+    def ngettext(self, msgid1: str, msgid2: str, n: int) -> str:
+        return self._inner.ngettext(msgid1, msgid2, n)
+
+    def info(self) -> dict:
+        d = {}
+        # Ensure we don't crash if the inner .info() method fails
+        if hasattr(self._inner, "info"):
+            try:
+                d.update(self._inner.info())
+            except Exception:
+                d = {}  # Reset on failure
+        d.setdefault("language", self._language)
+        return d
+
+    def __getattr__(self, name):
+        """Pass through any other attribute/method calls to the inner object."""
+        return getattr(self._inner, name)
+
+
 def get_translations(
     locale: str = Depends(get_locale),
 ) -> Translations | NullTranslations:
@@ -172,10 +217,9 @@ def get_translations(
         # The TranslationProxy class is now always available.
         return TranslationProxy(t, locale)
 
-    except Exception as e:
-        logging.error(
-            f"Error loading translations from {locales_path} for {locale}: {e}",
-            exc_info=True,
+    except Exception:
+        logging.warning(
+            f"Translations not found for {locale} at {locales_path}. Falling back to default."
         )
         # On failure, wrap NullTranslations to uphold the .info()['language'] contract.
         return TranslationProxy(NullTranslations(), locale)
@@ -240,42 +284,6 @@ class SinglePlaylistImport(BaseModel):
     name: str
     description: Optional[str] = None
     tracks: list[str]  # List of track URLs
-
-
-class TranslationProxy(Translations):
-    """
-    A proxy for a translation object that ensures the .info() dictionary
-    always contains a 'language' key. All other methods are passed through
-    to the wrapped translation object.
-    """
-
-    def __init__(
-        self, inner_translation: Translations | NullTranslations, language: str
-    ):
-        # We don't call super().__init__() because Translations doesn't have a standard one.
-        self._inner = inner_translation
-        self._language = language
-
-    def gettext(self, message: str) -> str:
-        return self._inner.gettext(message)
-
-    def ngettext(self, msgid1: str, msgid2: str, n: int) -> str:
-        return self._inner.ngettext(msgid1, msgid2, n)
-
-    def info(self) -> dict:
-        d = {}
-        # Ensure we don't crash if the inner .info() method fails
-        if hasattr(self._inner, "info"):
-            try:
-                d.update(self._inner.info())
-            except Exception:
-                d = {}  # Reset on failure
-        d.setdefault("language", self._language)
-        return d
-
-    def __getattr__(self, name):
-        """Pass through any other attribute/method calls to the inner object."""
-        return getattr(self._inner, name)
 
 
 # Dependency
@@ -479,105 +487,323 @@ def get_scrape_status():
 
 
 @app.get("/rated_tracks", tags=["Pages"])
+
+
 def read_rated_tracks(
+
+
     request: Request,
+
+
     db: Session = Depends(get_db),
+
+
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
+
+
     page: int = 1,
+
+
     limit: str = "all",
+
+
     title_filter: Optional[str] = None,
+
+
     producer_filter: Optional[str] = None,
+
+
     voicebank_filter: Optional[str] = None,
+
+
     sort_by: Optional[str] = None,
+
+
     sort_dir: str = "asc",
+
+
     exact_rating_filter: Optional[int] = None,
+
+
     translations: Translations = Depends(get_translations),
+
+
 ):
+
+
+    if current_user is None:
+
+
+        return RedirectResponse(url="/login")
+
+
+
+
+
     locale = translations.info()["language"]
+
+
     if not sort_by:
+
+
         sort_by = "rating"
+
+
         sort_dir = "desc"
 
+
+
+
+
     filters = {
+
+
         "title_filter": title_filter,
+
+
         "producer_filter": producer_filter,
+
+
         "voicebank_filter": voicebank_filter,
+
+
         "exact_rating_filter": exact_rating_filter,
+
+
     }
+
+
+
+
 
     total_tracks = crud.get_tracks_count(
+
+
         db,
+
+
+        user_id=current_user.id,
+
+
         rated_filter="rated",
+
+
         title_filter=title_filter,
+
+
         producer_filter=producer_filter,
+
+
         voicebank_filter=voicebank_filter,
+
+
         exact_rating_filter=exact_rating_filter,
+
+
         rank_filter="all",
+
+
         locale=locale,
+
+
     )
+
+
+
+
 
     limit_val = total_tracks if limit == "all" else int(limit)
+
+
     total_pages = (total_tracks + limit_val - 1) // limit_val if limit_val > 0 else 1
+
+
     skip = (page - 1) * limit_val
 
+
+
+
+
     tracks = crud.get_tracks(
+
+
         db,
+
+
+        user_id=current_user.id,
+
+
         skip=skip,
+
+
         limit=limit_val,
+
+
         rated_filter="rated",
+
+
         title_filter=title_filter,
+
+
         producer_filter=producer_filter,
+
+
         voicebank_filter=voicebank_filter,
+
+
         sort_by=sort_by,
+
+
         sort_dir=sort_dir,
+
+
         exact_rating_filter=exact_rating_filter,
+
+
         rank_filter="all",
+
+
         locale=locale,
+
+
     )
 
-    all_db_tracks = crud.get_tracks(db, limit=1000, rank_filter="all")
+
+
+
+
+    all_db_tracks = crud.get_tracks(db, user_id=current_user.id, limit=1000, rank_filter="all")
+
+
+
+
 
     producers_flat = []
+
+
     voicebanks_flat = []
+
+
     for t in all_db_tracks:
+
+
         if locale == "ja" and t.producer_jp:
+
+
             producers_flat.extend([p.strip() for p in t.producer_jp.split(",")])
+
+
         else:
+
+
             producers_flat.extend([p.strip() for p in t.producer.split(",")])
 
+
+
+
+
         if locale == "ja" and t.voicebank_jp:
+
+
             voicebanks_flat.extend([v.strip() for v in t.voicebank_jp.split(",")])
+
+
         else:
+
+
             voicebanks_flat.extend([v.strip() for v in t.voicebank.split(",")])
 
+
+
+
+
     all_producers = sorted(list(set(producers_flat)))
+
+
     all_voicebanks = sorted(list(set(voicebanks_flat)))
 
-    stats = crud.get_rating_statistics(db, locale=locale)
+
+
+
+
+    stats = crud.get_rating_statistics(db, user_id=current_user.id, locale=locale)
+
+
     tracks_for_json = [track.to_dict() for track in tracks]
+
+
     tracks_json_string = json.dumps(tracks_for_json)
 
+
+
+
+
     context = {
+
+
         "request": request,
+
+
         "_": translations.gettext,
+
+
         "tracks": tracks,
+
+
         "tracks_json": tracks_json_string,
+
+
         "all_producers": all_producers,
+
+
         "all_voicebanks": all_voicebanks,
+
+
         "stats": stats,
+
+
         "filters": filters,
+
+
         "pagination": {
+
+
             "page": page,
+
+
             "limit": limit,
+
+
             "total_pages": total_pages,
+
+
             "total_tracks": total_tracks,
+
+
         },
+
+
     }
 
+
+
+
+
     return LocaleTemplateResponse(
+
+
         "rated.html",
+
+
         context,
+
+
         request=request,
+
+
         translations=translations,
+
+
     )
 
 
@@ -585,9 +811,13 @@ def read_rated_tracks(
 def view_playlists_page(
     request: Request,
     db: Session = Depends(get_db),
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
-    playlists = crud.get_playlists(db)
+    if current_user is None:
+        return RedirectResponse(url="/login")
+
+    playlists = crud.get_playlists(db, user_id=current_user.id)
     context = {"request": request, "_": translations.gettext, "playlists": playlists}
 
     return LocaleTemplateResponse(
@@ -603,6 +833,7 @@ def view_playlist_detail_page(
     playlist_id: int,
     request: Request,
     db: Session = Depends(get_db),
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
     page: int = 1,
     limit: str = "all",
     title_filter: Optional[str] = None,
@@ -612,10 +843,19 @@ def view_playlist_detail_page(
     sort_dir: str = "asc",
     translations: Translations = Depends(get_translations),
 ):
+    if current_user is None:
+        return RedirectResponse(url="/login")
+
     locale = translations.info()["language"]
     db_playlist = crud.get_playlist(db, playlist_id)
     if not db_playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
+
+    # Check ownership
+    if db_playlist.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403, detail="Not authorized to view this playlist"
+        )
 
     filters = {
         "title_filter": title_filter,
@@ -692,11 +932,23 @@ def edit_playlist_page(
     playlist_id: int,
     request: Request,
     db: Session = Depends(get_db),
+    current_user: Optional[models.User] = Depends(
+        get_optional_current_user
+    ),  # Add current_user
     translations: Translations = Depends(get_translations),
 ):
+    if current_user is None:
+        return RedirectResponse(url="/login")
+
     db_playlist = crud.get_playlist(db, playlist_id)
     if not db_playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
+
+    # Check ownership
+    if db_playlist.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403, detail="Not authorized to edit this playlist"
+        )
 
     # Get all tracks to populate the left-hand side
     all_tracks = crud.get_tracks(
@@ -726,6 +978,7 @@ def edit_playlist_page(
 def get_tracks_partial(
     request: Request,
     db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
     page: int = 1,
     limit: str = "all",
     rated_filter: Optional[str] = None,
@@ -749,6 +1002,7 @@ def get_tracks_partial(
 
     total_tracks = crud.get_tracks_count(
         db,
+        user_id=current_user.id,
         rated_filter=rated_filter,
         title_filter=title_filter,
         producer_filter=producer_filter,
@@ -764,6 +1018,7 @@ def get_tracks_partial(
 
     tracks = crud.get_tracks(
         db,
+        user_id=current_user.id,
         skip=skip,
         limit=limit_val,
         rated_filter=rated_filter,
@@ -940,11 +1195,42 @@ def read_options(
     )
 
 
+@app.get("/login", tags=["Pages"])
+def login_page(
+    request: Request,
+    translations: Translations = Depends(get_translations),
+):
+    context = {"request": request, "_": translations.gettext}
+    return LocaleTemplateResponse(
+        "login.html",
+        context,
+        request=request,
+        translations=translations,
+    )
+
+
+@app.get("/register", tags=["Pages"])
+def register_page(
+    request: Request,
+    translations: Translations = Depends(get_translations),
+):
+    context = {"request": request, "_": translations.gettext}
+    return LocaleTemplateResponse(
+        "register.html",
+        context,
+        request=request,
+        translations=translations,
+    )
+
+
 @app.get("/api/backup/ratings", tags=["Backup & Restore"])
-def backup_ratings(db: Session = Depends(get_db)):
-    rated_tracks = db.query(models.Track).join(models.Rating).all()
+def backup_ratings(
+    db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)
+):
+    # Query only tracks rated by the current user
+    results = db.query(models.Track, models.Rating).join(models.Rating).filter(models.Rating.user_id == current_user.id).all()
     backup_data = []
-    for track in rated_tracks:
+    for track, rating_obj in results:
         backup_data.append(
             {
                 "link": track.link,
@@ -956,15 +1242,19 @@ def backup_ratings(db: Session = Depends(get_db)):
                 "producer_jp": track.producer_jp,
                 "voicebank_jp": track.voicebank_jp,
                 "image_url": track.image_url,
-                "rating": track.ratings[0].rating if track.ratings else None,
-                "notes": track.ratings[0].notes if track.ratings else None,
+                "rating": rating_obj.rating,
+                "notes": rating_obj.notes,
             }
         )
     return backup_data
 
 
 @app.post("/api/restore/ratings", tags=["Backup & Restore"])
-async def restore_ratings(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def restore_ratings(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
     filename = getattr(file, "filename", "") or ""
     if not filename.lower().endswith(".json"):
         raise HTTPException(
@@ -1001,7 +1291,13 @@ async def restore_ratings(file: UploadFile = File(...), db: Session = Depends(ge
             updated_count += 1
 
         if item.get("rating") is not None:
-            crud.create_rating(db, track.id, item["rating"], item.get("notes"))
+            crud.create_rating(
+                db,
+                track.id,
+                user_id=current_user.id,
+                rating=item["rating"],
+                notes=item.get("notes"),
+            )
 
     return {"created": created_count, "updated": updated_count}
 
@@ -1010,6 +1306,7 @@ async def restore_ratings(file: UploadFile = File(...), db: Session = Depends(ge
 def read_root(
     request: Request,
     db: Session = Depends(get_db),
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
     page: int = 1,
     limit: str = "all",
     rated_filter: Optional[str] = None,
@@ -1022,6 +1319,9 @@ def read_root(
     translations: Translations = Depends(get_translations),
     is_slim_mode: bool = Depends(get_slim_mode),
 ):
+    if current_user is None:
+        return RedirectResponse(url="/login")
+
     locale = translations.info()["language"]
     global initial_scrape_in_progress
 
@@ -1042,6 +1342,7 @@ def read_root(
     }
     total_tracks = crud.get_tracks_count(
         db,
+        user_id=current_user.id,
         rated_filter=rated_filter,
         title_filter=title_filter,
         producer_filter=producer_filter,
@@ -1062,6 +1363,7 @@ def read_root(
 
     tracks = crud.get_tracks(
         db,
+        user_id=current_user.id,
         skip=skip,
         limit=limit_val,
         rated_filter=rated_filter,
@@ -1080,7 +1382,7 @@ def read_root(
     # 2. Convert this list to a JSON string
     tracks_json_string = json.dumps(tracks_for_json)
 
-    all_db_tracks = crud.get_tracks(db, limit=1000)
+    all_db_tracks = crud.get_tracks(db, user_id=current_user.id, limit=1000)
 
     producers_flat = []
     voicebanks_flat = []
@@ -1144,11 +1446,15 @@ def read_root(
 def read_recently_added(
     request: Request,
     db: Session = Depends(get_db),
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
     title_filter: Optional[str] = None,
     producer_filter: Optional[str] = None,
     voicebank_filter: Optional[str] = None,
     translations: Translations = Depends(get_translations),
 ):
+    if current_user is None:
+        return RedirectResponse(url="/login")
+
     locale = translations.info()["language"]
 
     filters = {
@@ -1176,7 +1482,7 @@ def read_recently_added(
     tracks_for_json = [track.to_dict() for track in tracks]
     tracks_json_string = json.dumps(tracks_for_json)
 
-    all_db_tracks = crud.get_tracks(db, limit=1000)  # For filter dropdowns
+    all_db_tracks = crud.get_tracks(db, user_id=current_user.id, limit=1000)  # For filter dropdowns
 
     producers_flat = []
     voicebanks_flat = []
@@ -1234,11 +1540,19 @@ def get_js_translations(locale: str = Depends(get_locale)):
 def read_recommendations(
     request: Request,
     db: Session = Depends(get_db),
+    current_user: Optional[models.User] = Depends(
+        get_optional_current_user
+    ),  # Protect endpoint
     translations: Translations = Depends(get_translations),
 ):
-    stats = crud.get_rating_statistics(db, locale=translations.info()["language"])
+    if current_user is None:
+        return RedirectResponse(url="/login")
+
+    stats = crud.get_rating_statistics(
+        db, user_id=current_user.id, locale=translations.info()["language"]
+    )
     recommended_tracks = crud.get_recommended_tracks(
-        db, locale=translations.info()["language"]
+        db, user_id=current_user.id, locale=translations.info()["language"]
     )
     tracks_for_json = [track.to_dict() for track in recommended_tracks]
     tracks_json_string = json.dumps(tracks_for_json)
@@ -1260,8 +1574,12 @@ def read_recommendations(
 
 
 @app.post("/rate/{track_id}/delete", tags=["Ratings"])
-def delete_rating_endpoint(track_id: int, db: Session = Depends(get_db)):
-    crud.delete_rating(db, track_id=track_id)
+def delete_rating_endpoint(
+    track_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    crud.delete_rating(db, track_id=track_id, user_id=current_user.id)
     # Return a 204 No Content response, which is standard for successful actions with no body
     return Response(status_code=204)
 
@@ -1272,8 +1590,11 @@ def rate_track(
     rating: int = Form(...),
     notes: Optional[str] = Form(None),
     db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ):
-    crud.create_rating(db, track_id=track_id, rating=rating, notes=notes)
+    crud.create_rating(
+        db, track_id=track_id, user_id=current_user.id, rating=rating, notes=notes
+    )
     return Response(status_code=204)
 
 
@@ -1428,47 +1749,66 @@ def get_vocadb_lyrics(song_id: int, locale: str = Depends(get_locale)):
 @app.get(
     "/api/playlists", response_model=list[schemas.PlaylistSimple], tags=["Playlists"]
 )
-def get_user_playlists(db: Session = Depends(get_db)):
-    """Get a simple list of all playlists (id and name)."""
-    return crud.get_playlists(db)
+def get_user_playlists(
+    db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)
+):
+    """Get a simple list of all playlists (id and name) for the current user."""
+    return crud.get_playlists(db, user_id=current_user.id)
 
 
 @app.post("/api/playlists", response_model=schemas.PlaylistSimple, tags=["Playlists"])
 def create_new_playlist(
-    playlist: schemas.PlaylistCreate, db: Session = Depends(get_db)
+    playlist: schemas.PlaylistCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ):
     """Create a new, empty playlist."""
-    return crud.create_playlist(db, playlist)
+    return crud.create_playlist(db, user_id=current_user.id, playlist=playlist)
 
 
 @app.post("/api/playlists/{playlist_id}/tracks/{track_id}", tags=["Playlists"])
 def add_track_to_a_playlist(
-    playlist_id: int, track_id: int, db: Session = Depends(get_db)
+    playlist_id: int,
+    track_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ):
     """Add a single track to a playlist."""
     db_playlist = crud.add_track_to_playlist(
-        db, playlist_id=playlist_id, track_id=track_id
+        db, playlist_id=playlist_id, track_id=track_id, user_id=current_user.id
     )
     if not db_playlist:
-        raise HTTPException(status_code=404, detail="Playlist not found")
+        raise HTTPException(
+            status_code=404, detail="Playlist not found or not owned by user"
+        )
     return Response(status_code=200, content="Track added successfully")
 
 
 @app.delete("/api/playlists/{playlist_id}/tracks/{track_id}", tags=["Playlists"])
 def remove_track_from_a_playlist(
-    playlist_id: int, track_id: int, db: Session = Depends(get_db)
+    playlist_id: int,
+    track_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ):
     """Remove a single track from a playlist."""
-    crud.remove_track_from_playlist(db, playlist_id=playlist_id, track_id=track_id)
+    crud.remove_track_from_playlist(
+        db, playlist_id=playlist_id, track_id=track_id, user_id=current_user.id
+    )
     return Response(status_code=200, content="Track removed successfully")
 
 
 @app.post("/api/playlists/{playlist_id}/reorder", tags=["Playlists"])
 def reorder_a_playlist(
-    playlist_id: int, track_ids: list[int], db: Session = Depends(get_db)
+    playlist_id: int,
+    track_ids: list[int],
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ):
     """Update the order of all tracks in a playlist."""
-    crud.reorder_playlist(db, playlist_id=playlist_id, track_ids=track_ids)
+    crud.reorder_playlist(
+        db, playlist_id=playlist_id, track_ids=track_ids, user_id=current_user.id
+    )
     return Response(status_code=200, content="Playlist reordered successfully")
 
 
@@ -1478,29 +1818,39 @@ def reorder_a_playlist(
     tags=["Playlists"],
 )
 def update_playlist_details(
-    playlist_id: int, playlist_update: PlaylistUpdate, db: Session = Depends(get_db)
+    playlist_id: int,
+    playlist_update: PlaylistUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ):
     """Update a playlist's name and description."""
     db_playlist = crud.update_playlist(
         db,
         playlist_id=playlist_id,
+        user_id=current_user.id,  # Pass user_id
         name=playlist_update.name,
         description=playlist_update.description,
     )
     if not db_playlist:
-        raise HTTPException(status_code=404, detail="Playlist not found")
+        raise HTTPException(
+            status_code=404, detail="Playlist not found or not owned by user"
+        )  # Update message
     return db_playlist
 
 
 @app.get("/api/playlists/export", tags=["Backup & Restore"])
-def export_all_playlists(db: Session = Depends(get_db)):
+def export_all_playlists(
+    db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)
+):
     """Exports all playlists and their tracks to a JSON format."""
-    return crud.export_playlists(db)
+    return crud.export_playlists(db, user_id=current_user.id)
 
 
 @app.post("/api/playlists/import-single", tags=["Backup & Restore"])
 async def import_single_playlist(
-    file: UploadFile = File(...), db: Session = Depends(get_db)
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ):
     """Imports a single playlist from a JSON file."""
     if not file.filename or not file.filename.lower().endswith(".json"):
@@ -1516,7 +1866,7 @@ async def import_single_playlist(
             )
 
         created, updated = crud.import_playlists(
-            db, [data]
+            db, user_id=current_user.id, data=[data]
         )  # We can reuse the main import logic by wrapping it in a list
 
         status = "created" if created > 0 else "updated"
@@ -1529,36 +1879,55 @@ async def import_single_playlist(
 
 
 @app.get("/api/playlists/{playlist_id}/export", tags=["Backup & Restore"])
-def export_single_playlist(playlist_id: int, db: Session = Depends(get_db)):
+def export_single_playlist(
+    playlist_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
     """Exports a single playlist and its tracks to a JSON format."""
-    playlist = crud.export_single_playlist(db, playlist_id)
+    playlist = crud.export_single_playlist(db, playlist_id, user_id=current_user.id)
     if not playlist:
-        raise HTTPException(status_code=404, detail="Playlist not found")
+        raise HTTPException(
+            status_code=404, detail="Playlist not found or not owned by user"
+        )
     return playlist
 
 
 @app.delete("/api/playlists/{playlist_id}", tags=["Playlists"])
-def delete_a_playlist(playlist_id: int, db: Session = Depends(get_db)):
+def delete_a_playlist(
+    playlist_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
     """Deletes a playlist and all its track associations."""
-    success = crud.delete_playlist(db, playlist_id=playlist_id)
+    success = crud.delete_playlist(db, playlist_id=playlist_id, user_id=current_user.id)
     if not success:
-        raise HTTPException(status_code=404, detail="Playlist not found")
+        raise HTTPException(
+            status_code=404, detail="Playlist not found or not owned by user"
+        )
     return Response(status_code=200, content="Playlist deleted successfully")
 
 
 @app.get("/api/tracks/{track_id}/playlist-status", tags=["Data"])
-def get_track_playlist_status(track_id: int, db: Session = Depends(get_db)):
+def get_track_playlist_status(
+    track_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
     """
     For a given track, returns two lists of playlists:
     'member_of': playlists the track is already in.
     'not_member_of': playlists the track is not in.
     """
-    return crud.get_track_playlist_membership(db, track_id=track_id)
+    return crud.get_track_playlist_membership(
+        db, track_id=track_id, user_id=current_user.id
+    )
 
 
 @app.get("/api/playlist-snapshot", response_class=JSONResponse, tags=["Data"])
 def get_playlist_snapshot_endpoint(
     db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
     limit: str = "all",
     rated_filter: Optional[str] = None,
     title_filter: Optional[str] = None,
@@ -1585,6 +1954,7 @@ def get_playlist_snapshot_endpoint(
 
     return crud.get_playlist_snapshot(
         db=db,
+        user_id=current_user.id,
         limit=limit,
         rated_filter=rated_filter,
         title_filter=title_filter,
@@ -1606,6 +1976,7 @@ def get_playlist_snapshot_endpoint(
 def get_playlist_snapshot_for_playlist_endpoint(
     playlist_id: int,
     db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),  # Add current_user
     limit: str = "all",
     title_filter: Optional[str] = None,
     producer_filter: Optional[str] = None,
@@ -1622,6 +1993,7 @@ def get_playlist_snapshot_for_playlist_endpoint(
     return crud.get_playlist_snapshot_for_playlist(
         db=db,
         playlist_id=playlist_id,
+        user_id=current_user.id,  # Pass user_id
         limit=limit,
         title_filter=title_filter,
         producer_filter=producer_filter,
@@ -1653,6 +2025,94 @@ def get_recently_added_snapshot_endpoint(
         voicebank_filter=voicebank_filter,
         locale=locale,
     )
+
+
+@app.post("/token", response_model=schemas.Token, tags=["Authentication"])
+async def login_for_access_token(
+    response: Response,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+):
+    logging.info(f"Login attempt for username: {form_data.username}")
+    user = authenticate_user(db, form_data.username, form_data.password)
+    if not user:
+        logging.warning(
+            f"Login failed: Incorrect username or password for {form_data.username}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    logging.info(f"Login successful for user: {user.email}")
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        samesite="lax",
+        secure=True,
+    )  # Set as httponly cookie
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+@app.post("/users/", response_model=schemas.User, tags=["Authentication"])
+def create_user(
+    response: Response, user: schemas.UserCreate, db: Session = Depends(get_db)
+):
+    logging.info(f"Registration attempt for email: {user.email}")
+    db_user = crud.get_user_by_email(db, email=user.email)
+    if db_user:
+        logging.warning(f"Registration failed: Email {user.email} already exists")
+        raise HTTPException(status_code=400, detail="Email already registered")
+    try:
+        new_user = crud.create_user(db=db, user=user)
+        logging.info(
+            f"Successfully created user: {new_user.email} with ID: {new_user.id}"
+        )
+
+        # Auto-login: Create and set token
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": new_user.email}, expires_delta=access_token_expires
+        )
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            samesite="lax",
+            secure=True,
+        )
+
+        return new_user
+    except Exception as e:
+        logging.error(f"Database error during user creation: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500, detail="Internal server error during registration"
+        )
+
+
+@app.get("/users/me/", tags=["Authentication"])
+async def read_users_me(
+    request: Request,
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    translations: Translations = Depends(get_translations),
+):
+    context = {
+        "request": request,
+        "_": translations.gettext,
+        "current_user": current_user,
+    }
+    return templates.TemplateResponse("partials/user_status.html", context)
+
+
+@app.post("/logout", tags=["Authentication"])
+async def logout(response: Response):
+    response.delete_cookie(key="access_token", samesite="lax", secure=True)
+    return Response(status_code=204)
 
 
 if __name__ == "__main__":
