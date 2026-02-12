@@ -1,14 +1,14 @@
 # Translations template for PROJECT.
-# Copyright (C) 2025 ORGANIZATION
+# Copyright (C) 2026 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-11-09 23:03+0200\n"
+"POT-Creation-Date: 2026-02-13 00:05+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,15 +17,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: app/templates/base.html:224
+#: app/templates/base.html:236
 msgid "Data sourced from"
 msgstr ""
 
-#: app/templates/base.html:229
+#: app/templates/base.html:241
 msgid "Vocaloard"
 msgstr ""
 
-#: app/templates/base.html:230
+#: app/templates/base.html:242
 msgid "This is an independent project."
 msgstr ""
 
@@ -43,8 +43,42 @@ msgstr ""
 msgid "Next"
 msgstr ""
 
+#: app/templates/login.html:8 app/templates/login.html:58
+#: app/templates/partials/user_status.html:17 app/templates/register.html:36
+msgid "Login"
+msgstr ""
+
+#: app/templates/login.html:26 app/templates/register.html:14
+msgid "Email"
+msgstr ""
+
+#: app/templates/login.html:33 app/templates/register.html:18
+msgid "Your Email"
+msgstr ""
+
+#: app/templates/login.html:42 app/templates/register.html:22
+msgid "Password"
+msgstr ""
+
+#: app/templates/login.html:49
+msgid "Your Password"
+msgstr ""
+
+#: app/templates/login.html:64
+msgid "Don't have an account?"
+msgstr ""
+
+#: app/templates/login.html:64 app/templates/partials/user_status.html:21
+#: app/templates/register.html:5 app/templates/register.html:32
+msgid "Register"
+msgstr ""
+
+#: app/templates/login.html:81 app/templates/register.html:52
+msgid "An unknown error occurred."
+msgstr ""
+
 #: app/templates/options.html:3 app/templates/options.html:6
-#: app/templates/partials/header.html:75 app/templates/partials/header.html:262
+#: app/templates/partials/header.html:98 app/templates/partials/header.html:291
 msgid "Options"
 msgstr ""
 
@@ -178,7 +212,7 @@ msgstr ""
 msgid "My Playlists"
 msgstr ""
 
-#: app/templates/partials/header.html:40 app/templates/partials/header.html:195
+#: app/templates/partials/header.html:52 app/templates/partials/header.html:224
 #: app/templates/playlists.html:7
 msgid "Playlists"
 msgstr ""
@@ -239,7 +273,7 @@ msgstr ""
 msgid "Import from File"
 msgstr ""
 
-#: app/templates/partials/header.html:63 app/templates/partials/header.html:235
+#: app/templates/partials/header.html:78 app/templates/partials/header.html:264
 #: app/templates/rated.html:3
 msgid "Rated Tracks"
 msgstr ""
@@ -285,7 +319,7 @@ msgstr ""
 msgid "Recently Added Tracks"
 msgstr ""
 
-#: app/templates/partials/header.html:70 app/templates/partials/header.html:248
+#: app/templates/partials/header.html:88 app/templates/partials/header.html:277
 #: app/templates/recommendations.html:3
 msgid "Recommendations"
 msgstr ""
@@ -298,6 +332,14 @@ msgstr ""
 msgid ""
 "No track recommendations available. Rate more tracks to get personalized "
 "recommendations!"
+msgstr ""
+
+#: app/templates/register.html:26
+msgid "Choose a strong password"
+msgstr ""
+
+#: app/templates/register.html:36
+msgid "Already have an account?"
 msgstr ""
 
 #: app/templates/scraping.html:3
@@ -324,7 +366,7 @@ msgstr ""
 msgid "Status:"
 msgstr ""
 
-#: app/templates/scraping.html:18
+#: app/templates/scraping.html:18 app/templates/scraping.html:43
 msgid "Scraping..."
 msgstr ""
 
@@ -338,7 +380,12 @@ msgid ""
 "application."
 msgstr ""
 
-#: app/templates/scraping.html:41
+#: app/templates/scraping.html:42
+#, python-format
+msgid "Scraping page %s..."
+msgstr ""
+
+#: app/templates/scraping.html:46
 msgid "Scraping... please wait."
 msgstr ""
 
@@ -398,40 +445,40 @@ msgstr ""
 msgid "Toggle menu"
 msgstr ""
 
-#: app/templates/partials/header.html:26 app/templates/partials/header.html:168
+#: app/templates/partials/header.html:32 app/templates/partials/header.html:197
 msgid "Main Chart"
 msgstr ""
 
-#: app/templates/partials/header.html:33 app/templates/partials/header.html:181
+#: app/templates/partials/header.html:42 app/templates/partials/header.html:210
 msgid "Recently Added"
 msgstr ""
 
-#: app/templates/partials/header.html:49 app/templates/partials/header.html:209
+#: app/templates/partials/header.html:60 app/templates/partials/header.html:238
 msgid "View Playlist"
 msgstr ""
 
-#: app/templates/partials/header.html:55 app/templates/partials/header.html:219
+#: app/templates/partials/header.html:66 app/templates/partials/header.html:248
 msgid "Edit Details"
 msgstr ""
 
-#: app/templates/partials/header.html:100
+#: app/templates/partials/header.html:129
 msgid "Edit playlist name"
 msgstr ""
 
-#: app/templates/partials/header.html:123
+#: app/templates/partials/header.html:152
 msgid "Edit playlist description"
 msgstr ""
 
-#: app/templates/partials/header.html:142
+#: app/templates/partials/header.html:171
 msgid "Last updated:"
 msgstr ""
 
-#: app/templates/partials/header.html:145
+#: app/templates/partials/header.html:174
 #, python-format
 msgid "Your database is %(days)s day(s) old, please update."
 msgstr ""
 
-#: app/templates/partials/header.html:148
+#: app/templates/partials/header.html:177
 msgid "Database not updated yet. Please update."
 msgstr ""
 
@@ -505,5 +552,13 @@ msgstr ""
 
 #: app/templates/partials/tracks_table_body.html:334
 msgid "Clear my rating for this track"
+msgstr ""
+
+#: app/templates/partials/user_status.html:3
+msgid "Logged in as"
+msgstr ""
+
+#: app/templates/partials/user_status.html:6
+msgid "Logout"
 msgstr ""
 

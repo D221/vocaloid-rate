@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-11-09 23:03+0200\n"
+"POT-Creation-Date: 2026-02-13 00:05+0200\n"
 "PO-Revision-Date: 2025-11-06 23:59+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -16,17 +16,17 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.17.0\n"
+"Generated-By: Babel 2.18.0\n"
 
-#: app/templates/base.html:224
+#: app/templates/base.html:236
 msgid "Data sourced from"
 msgstr "データ提供元"
 
-#: app/templates/base.html:229
+#: app/templates/base.html:241
 msgid "Vocaloard"
 msgstr "Vocaloard"
 
-#: app/templates/base.html:230
+#: app/templates/base.html:242
 msgid "This is an independent project."
 msgstr "これは独立したプロジェクトです。"
 
@@ -44,8 +44,42 @@ msgstr "前へ"
 msgid "Next"
 msgstr "次へ"
 
+#: app/templates/login.html:8 app/templates/login.html:58
+#: app/templates/partials/user_status.html:17 app/templates/register.html:36
+msgid "Login"
+msgstr ""
+
+#: app/templates/login.html:26 app/templates/register.html:14
+msgid "Email"
+msgstr ""
+
+#: app/templates/login.html:33 app/templates/register.html:18
+msgid "Your Email"
+msgstr ""
+
+#: app/templates/login.html:42 app/templates/register.html:22
+msgid "Password"
+msgstr ""
+
+#: app/templates/login.html:49
+msgid "Your Password"
+msgstr ""
+
+#: app/templates/login.html:64
+msgid "Don't have an account?"
+msgstr ""
+
+#: app/templates/login.html:64 app/templates/partials/user_status.html:21
+#: app/templates/register.html:5 app/templates/register.html:32
+msgid "Register"
+msgstr ""
+
+#: app/templates/login.html:81 app/templates/register.html:52
+msgid "An unknown error occurred."
+msgstr ""
+
 #: app/templates/options.html:3 app/templates/options.html:6
-#: app/templates/partials/header.html:75 app/templates/partials/header.html:262
+#: app/templates/partials/header.html:98 app/templates/partials/header.html:291
 msgid "Options"
 msgstr "設定"
 
@@ -180,7 +214,7 @@ msgstr "%(playlist_name)s - プレイリスト"
 msgid "My Playlists"
 msgstr "マイプレイリスト"
 
-#: app/templates/partials/header.html:40 app/templates/partials/header.html:195
+#: app/templates/partials/header.html:52 app/templates/partials/header.html:224
 #: app/templates/playlists.html:7
 msgid "Playlists"
 msgstr "プレイリスト"
@@ -242,7 +276,7 @@ msgstr "JSONファイルをアップロードして、プレイリストを復�
 msgid "Import from File"
 msgstr "ファイルからインポート"
 
-#: app/templates/partials/header.html:63 app/templates/partials/header.html:235
+#: app/templates/partials/header.html:78 app/templates/partials/header.html:264
 #: app/templates/rated.html:3
 msgid "Rated Tracks"
 msgstr "評価済みトラック"
@@ -288,7 +322,7 @@ msgstr "評価の分布"
 msgid "Recently Added Tracks"
 msgstr "新着トラック"
 
-#: app/templates/partials/header.html:70 app/templates/partials/header.html:248
+#: app/templates/partials/header.html:88 app/templates/partials/header.html:277
 #: app/templates/recommendations.html:3
 msgid "Recommendations"
 msgstr "おすすめ"
@@ -302,6 +336,14 @@ msgid ""
 "No track recommendations available. Rate more tracks to get personalized "
 "recommendations!"
 msgstr "おすすめのトラックはありません。トラックをさらに評価して、あなたに合ったおすすめを見つけましょう！"
+
+#: app/templates/register.html:26
+msgid "Choose a strong password"
+msgstr ""
+
+#: app/templates/register.html:36
+msgid "Already have an account?"
+msgstr ""
 
 #: app/templates/scraping.html:3
 msgid "Scraping Tracks"
@@ -327,7 +369,7 @@ msgstr "処理が完了するとページが自動的にリロードされます
 msgid "Status:"
 msgstr "ステータス:"
 
-#: app/templates/scraping.html:18
+#: app/templates/scraping.html:18 app/templates/scraping.html:43
 msgid "Scraping..."
 msgstr "収集中..."
 
@@ -341,7 +383,12 @@ msgid ""
 "application."
 msgstr "エラーが発生しました。サーバーログを確認し、アプリケーションを再起動してください。"
 
-#: app/templates/scraping.html:41
+#: app/templates/scraping.html:42
+#, python-format
+msgid "Scraping page %s..."
+msgstr "%sページを収集中..."
+
+#: app/templates/scraping.html:46
 msgid "Scraping... please wait."
 msgstr "スクレイピング処理中... しばらくお待ちください。"
 
@@ -401,40 +448,40 @@ msgstr "トラックを更新"
 msgid "Toggle menu"
 msgstr "メニューを開閉"
 
-#: app/templates/partials/header.html:26 app/templates/partials/header.html:168
+#: app/templates/partials/header.html:32 app/templates/partials/header.html:197
 msgid "Main Chart"
 msgstr "メインチャート"
 
-#: app/templates/partials/header.html:33 app/templates/partials/header.html:181
+#: app/templates/partials/header.html:42 app/templates/partials/header.html:210
 msgid "Recently Added"
 msgstr "新着"
 
-#: app/templates/partials/header.html:49 app/templates/partials/header.html:209
+#: app/templates/partials/header.html:60 app/templates/partials/header.html:238
 msgid "View Playlist"
 msgstr "プレイリストを表示"
 
-#: app/templates/partials/header.html:55 app/templates/partials/header.html:219
+#: app/templates/partials/header.html:66 app/templates/partials/header.html:248
 msgid "Edit Details"
 msgstr "詳細を編集"
 
-#: app/templates/partials/header.html:100
+#: app/templates/partials/header.html:129
 msgid "Edit playlist name"
 msgstr "プレイリスト名を編集"
 
-#: app/templates/partials/header.html:123
+#: app/templates/partials/header.html:152
 msgid "Edit playlist description"
 msgstr "プレイリストの説明を編集"
 
-#: app/templates/partials/header.html:142
+#: app/templates/partials/header.html:171
 msgid "Last updated:"
 msgstr "最終更新日時:"
 
-#: app/templates/partials/header.html:145
+#: app/templates/partials/header.html:174
 #, python-format
 msgid "Your database is %(days)s day(s) old, please update."
 msgstr "データベースが%(days)s日間更新されていません。更新してください。"
 
-#: app/templates/partials/header.html:148
+#: app/templates/partials/header.html:177
 msgid "Database not updated yet. Please update."
 msgstr "データベースはまだ更新されていません。更新してください。"
 
@@ -509,4 +556,12 @@ msgstr "メモを追加"
 #: app/templates/partials/tracks_table_body.html:334
 msgid "Clear my rating for this track"
 msgstr "このトラックの評価をクリア"
+
+#: app/templates/partials/user_status.html:3
+msgid "Logged in as"
+msgstr ""
+
+#: app/templates/partials/user_status.html:6
+msgid "Logout"
+msgstr ""
 
