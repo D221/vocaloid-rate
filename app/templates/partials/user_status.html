@@ -1,0 +1,38 @@
+<div
+  class="user-status-container text-right text-sm text-gray-600 dark:text-gray-400"
+>
+  {% if current_user %}
+    <span
+      >{{ _('Logged in as') }} <strong>{{ current_user.email }}</strong></span
+    >
+    <button
+      hx-post="/logout"
+      hx-trigger="click"
+      hx-on:htmx:after-request="handleLogoutResponse(event)"
+      class="ml-2 text-blue-500 hover:text-blue-700 focus:outline-none dark:text-blue-400 dark:hover:text-blue-600"
+    >
+      {{ _('Logout') }}
+    </button>
+    <script>
+      function handleLogoutResponse(event) {
+        if (event.detail.xhr.status === 204 || event.detail.successful) {
+          window.location.href = "/"; // Redirect to home after logout
+        }
+      }
+    </script>
+  {% else %}
+    <a
+      href="/login"
+      class="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-600"
+    >
+      {{ _('Login') }}
+    </a>
+    <span class="mx-1">|</span>
+    <a
+      href="/register"
+      class="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-600"
+    >
+      {{ _('Register') }}
+    </a>
+  {% endif %}
+</div>
