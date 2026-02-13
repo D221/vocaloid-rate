@@ -11,9 +11,9 @@ load_dotenv()  # Load environment variables as early as possible
 SQLALCHEMY_DATABASE_URL = os.environ.get("DATABASE_URL")
 
 connect_args = {}
-if SQLALCHEMY_DATABASE_URL is None:
+if not SQLALCHEMY_DATABASE_URL:
     # Fallback to SQLite for self-hosted option
-    DATA_DIR = Path("data")
+    DATA_DIR = Path(os.environ.get("DATA_DIR", "data"))
     DATA_DIR.mkdir(exist_ok=True)
     SQLALCHEMY_DATABASE_URL = f"sqlite:///{DATA_DIR / 'tracks.db'}"
     # SQLite-specific arguments
