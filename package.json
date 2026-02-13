@@ -9,8 +9,9 @@
     "// --- TRANSLATIONS ---": "",
     "i18n:extract:py": "uv run --with \"babel[jinja2]\" pybabel extract -F babel.cfg -o locales/messages.pot .",
     "i18n:extract:js": "uv run python ./scripts/extract_js_messages.py",
-    "i18n:update": "npm run i18n:extract:py && npm run i18n:extract:js && python -m babel.messages.frontend update -i locales/messages.pot -d locales",
-    "i18n:compile": "python -m babel.messages.frontend compile -d locales",
+    "i18n:update": "npm run i18n:extract:py && npm run i18n:extract:js && uv run python -m babel.messages.frontend update -i locales/messages.pot -d locales",
+    "i18n:compile": "uv run python -m babel.messages.frontend compile -d locales",
+    "i18n:compile:vercel": "python -m babel.messages.frontend compile -d locales",
     "// --- DEVELOPMENT ---": "",
     "watch:css": "tailwindcss -i ./app/static/css/input.css -o ./app/static/css/app.css --minify --watch",
     "watch:js": "chokidar \"./app/static/js/**/*.js\" -c \"npm run build:js\" --initial --ignore \"./app/static/js/**/*.min.js\"",
@@ -27,7 +28,7 @@
     "clean:static": "del-cli \"dist/vocaloid-rate/_internal/static/css/input.css\" \"dist/vocaloid-rate/_internal/static/js/*.js\" --ignore \"dist/vocaloid-rate/_internal/static/js/*.min.js\"",
     "release": "rimraf dist vocaloid-rate-release.zip && npm run build && npm run package && npm run clean:static && cd dist && bestzip vocaloid-rate-release.zip vocaloid-rate",
     "start": "uv run uvicorn app.main:app --host 0.0.0.0 --port 8000",
-    "vercel-build": "npm run build && mkdir -p public/static && cp -r app/static/. public/static/ && cp app/static/sw.js public/sw.js"
+    "vercel-build": "pip install -r requirements.txt && npm run i18n:compile:vercel && npm run build:css && npm run build:js && mkdir -p public/static && cp -r app/static/. public/static/ && cp app/static/sw.js public/sw.js"
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
