@@ -1,22 +1,23 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "app/main.py",
-      "use": "@vercel/python"
+  "functions": {
+    "app/main.py": {
+      "runtime": "@vercel/python",
+      "maxDuration": 60
     }
-  ],
-  "routes": [
+  },
+  "rewrites": [
     {
-      "src": "/static/(.*)",
-      "dest": "/app/static/$1",
-      "headers": {
-        "cache-control": "s-maxage=31536000,immutable"
-      }
+      "source": "/static/(.*)",
+      "destination": "/app/static/$1"
     },
     {
-      "src": "/(.*)",
-      "dest": "app/main.py"
+      "source": "/api/cron/scrape",
+      "destination": "/app/main.py"
+    },
+    {
+      "source": "/((?!static|api/cron).*)",
+      "destination": "/app/main.py"
     }
   ],
   "crons": [
