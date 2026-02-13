@@ -247,23 +247,34 @@ def get_translations(
         return TranslationProxy(NullTranslations(), locale)
 
 
-def LocaleTemplateResponse(
+async def LocaleTemplateResponse(
     template_name: str,
     context: dict,
     request: Request,
     translations: Translations,
 ):
     """
-    A helper that automatically adds locale to the context
+    A helper that automatically adds locale and current_user to the context
     and sets the language cookie on the response.
     """
     # 1. Automatically add the locale to the context
     context["locale"] = translations.info()["language"]
 
-    # 2. Create the response object
+    # 2. Inject current_user if not already explicitly provided
+    if "current_user" not in context:
+        # We use the existing logic from get_optional_current_user but directly
+        # to avoid complexity of nested Depends.
+        db = SessionLocal()
+        try:
+            user = await get_optional_current_user(request, None, db)
+            context["current_user"] = user
+        finally:
+            db.close()
+
+    # 3. Create the response object
     response = templates.TemplateResponse(template_name, context)
 
-    # 3. Automatically set the language cookie
+    # 4. Automatically set the language cookie
     response.set_cookie(key="language", value=get_locale(request))
     return response
 
@@ -528,7 +539,7 @@ def get_scrape_status():
 
 
 @app.get("/rated_tracks", tags=["Pages"])
-def read_rated_tracks(
+async def read_rated_tracks(
     request: Request,
     db: Session = Depends(get_db),
     current_user: Optional[models.User] = Depends(get_optional_current_user),
@@ -642,7 +653,7 @@ def read_rated_tracks(
         },
     }
 
-    return LocaleTemplateResponse(
+    return await LocaleTemplateResponse(
         "rated.html",
         context,
         request=request,
@@ -651,7 +662,7 @@ def read_rated_tracks(
 
 
 @app.get("/playlists", tags=["Pages"])
-def view_playlists_page(
+async def view_playlists_page(
     request: Request,
     db: Session = Depends(get_db),
     current_user: Optional[models.User] = Depends(get_optional_current_user),
@@ -663,7 +674,7 @@ def view_playlists_page(
     playlists = crud.get_playlists(db, user_id=current_user.id)
     context = {"request": request, "_": translations.gettext, "playlists": playlists}
 
-    return LocaleTemplateResponse(
+    return await LocaleTemplateResponse(
         "playlists.html",
         context,
         request=request,
@@ -672,7 +683,7 @@ def view_playlists_page(
 
 
 @app.get("/playlist/{playlist_id}", tags=["Pages"])
-def view_playlist_detail_page(
+async def view_playlist_detail_page(
     playlist_id: int,
     request: Request,
     db: Session = Depends(get_db),
@@ -762,7 +773,7 @@ def view_playlist_detail_page(
         },
     }
 
-    return LocaleTemplateResponse(
+    return await LocaleTemplateResponse(
         "playlist_view.html",
         context,
         request=request,
@@ -771,7 +782,7 @@ def view_playlist_detail_page(
 
 
 @app.get("/playlist/edit/{playlist_id}", tags=["Pages"])
-def edit_playlist_page(
+async def edit_playlist_page(
     playlist_id: int,
     request: Request,
     db: Session = Depends(get_db),
@@ -809,7 +820,7 @@ def edit_playlist_page(
         "tracks_json": tracks_json_string,
     }
 
-    return LocaleTemplateResponse(
+    return await LocaleTemplateResponse(
         "playlist_edit.html",
         context,
         request=request,
@@ -1025,12 +1036,12 @@ def get_recently_added_tracks_partial(
 
 
 @app.get("/options", tags=["Pages"])
-def read_options(
+async def read_options(
     request: Request, translations: Translations = Depends(get_translations)
 ):
     context = {"request": request, "_": translations.gettext}
 
-    return LocaleTemplateResponse(
+    return await LocaleTemplateResponse(
         "options.html",
         context,
         request=request,
@@ -1039,12 +1050,12 @@ def read_options(
 
 
 @app.get("/login", tags=["Pages"])
-def login_page(
+async def login_page(
     request: Request,
     translations: Translations = Depends(get_translations),
 ):
     context = {"request": request, "_": translations.gettext}
-    return LocaleTemplateResponse(
+    return await LocaleTemplateResponse(
         "login.html",
         context,
         request=request,
@@ -1053,12 +1064,12 @@ def login_page(
 
 
 @app.get("/register", tags=["Pages"])
-def register_page(
+async def register_page(
     request: Request,
     translations: Translations = Depends(get_translations),
 ):
     context = {"request": request, "_": translations.gettext}
-    return LocaleTemplateResponse(
+    return await LocaleTemplateResponse(
         "register.html",
         context,
         request=request,
@@ -1151,7 +1162,7 @@ async def restore_ratings(
 
 
 @app.get("/", tags=["Pages"])
-def read_root(
+async def read_root(
     request: Request,
     db: Session = Depends(get_db),
     current_user: Optional[models.User] = Depends(get_optional_current_user),
@@ -1174,7 +1185,7 @@ def read_root(
     global initial_scrape_in_progress
 
     if initial_scrape_in_progress:
-        return LocaleTemplateResponse(
+        return await LocaleTemplateResponse(
             "scraping.html",
             {"request": request, "_": translations.gettext},
             request=request,
@@ -1264,6 +1275,7 @@ def read_root(
 
     context = {
         "request": request,
+        "current_user": current_user,
         "_": translations.gettext,
         "is_slim_mode": is_slim_mode,
         "tracks": tracks,
@@ -1282,7 +1294,7 @@ def read_root(
         },
     }
 
-    return LocaleTemplateResponse(
+    return await LocaleTemplateResponse(
         "index.html",
         context,
         request=request,
@@ -1291,7 +1303,7 @@ def read_root(
 
 
 @app.get("/recently_added", tags=["Pages"])
-def read_recently_added(
+async def read_recently_added(
     request: Request,
     db: Session = Depends(get_db),
     current_user: Optional[models.User] = Depends(get_optional_current_user),
@@ -1367,7 +1379,7 @@ def read_recently_added(
     }
 
     # --- REPLACED THIS ---
-    return LocaleTemplateResponse(
+    return await LocaleTemplateResponse(
         "recently_added.html",
         context,
         request=request,
@@ -1387,7 +1399,7 @@ def get_js_translations(locale: str = Depends(get_locale)):
 
 
 @app.get("/recommendations", tags=["Pages"])
-def read_recommendations(
+async def read_recommendations(
     request: Request,
     db: Session = Depends(get_db),
     current_user: Optional[models.User] = Depends(
@@ -1415,7 +1427,7 @@ def read_recommendations(
         "tracks_json": tracks_json_string,
     }
 
-    return LocaleTemplateResponse(
+    return await LocaleTemplateResponse(
         "recommendations.html",
         context,
         request=request,
