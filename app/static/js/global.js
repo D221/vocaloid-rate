@@ -44,7 +44,7 @@ window._ = function (key, ...args) {
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
-      .register("/static/sw.js", { scope: "/" })
+      .register("/sw.js", { scope: "/" })
       .catch((err) => {
         console.error("ServiceWorker registration failed: ", err);
       });
