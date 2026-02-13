@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 from statistics import median
 from typing import List, Optional
 
-from sqlalchemy import desc, distinct, func, nullslast, or_, select
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import and_, desc, distinct, func, nullslast, or_, select
+from sqlalchemy.orm import Session, contains_eager, joinedload
 from sqlalchemy.sql.expression import exists
 
 from app import models, schemas
@@ -46,11 +46,17 @@ def get_tracks(
     exact_rating_filter: Optional[int] = None,
     locale: str = "en",
 ):
-    query = db.query(
-        models.Track,
+    # Optimized subquery for checking if track is in ANY of the current user's playlists
+    playlist_exists = (
         exists()
         .where(models.PlaylistTrack.track_id == models.Track.id)
-        .label("is_in_playlist"),
+        .where(models.Playlist.id == models.PlaylistTrack.playlist_id)
+        .where(models.Playlist.user_id == user_id)
+    )
+
+    query = db.query(
+        models.Track,
+        playlist_exists.label("is_in_playlist"),
     )
 
     if rank_filter == "ranked":
@@ -67,27 +73,18 @@ def get_tracks(
             )
         )
 
-    rating_join_applied = False
+    # Always outerjoin the current user's rating so we can display it and sort by it
+    # without redundant queries (N+1 problem) or incorrect cross-user results.
+    query = query.outerjoin(
+        models.Rating, and_(models.Rating.track_id == models.Track.id, models.Rating.user_id == user_id)
+    ).options(contains_eager(models.Track.ratings))
 
-    # This logic is now mutually exclusive (if/elif/else)
     if exact_rating_filter is not None:
-        # If we have an exact filter, it takes priority.
-        query = query.join(models.Rating).filter(
-            models.Rating.rating == exact_rating_filter,
-            models.Rating.user_id == user_id,
-        )
-        rating_join_applied = True
+        query = query.filter(models.Rating.rating == exact_rating_filter)
     elif rated_filter == "rated":
-        # This only runs if there's NO exact_rating_filter
-        query = query.join(models.Rating).filter(models.Rating.user_id == user_id)
-        rating_join_applied = True
+        query = query.filter(models.Rating.id.isnot(None))
     elif rated_filter == "unrated":
-        # Tracks where THIS user has no rating
-        user_ratings = select(models.Rating.track_id).where(
-            models.Rating.user_id == user_id
-        )
-        query = query.filter(models.Track.id.notin_(user_ratings))
-        rating_join_applied = False  # No join needed for this unrated logic
+        query = query.filter(models.Rating.id.is_(None))
 
     if producer_filter:
         search_term = f"%{producer_filter}%"
@@ -120,26 +117,16 @@ def get_tracks(
             )
             query = query.order_by(order_expression)
         elif sort_by == "rating":
-            if not rating_join_applied:
-                query = query.outerjoin(models.Rating)
             rating_column = models.Rating.rating
             if sort_dir == "desc":
                 query = query.order_by(nullslast(rating_column.desc()))
             else:
                 query = query.order_by(nullslast(rating_column.asc()))
     else:
-        # Default sort order for the main page
         if rank_filter == "unranked":
-            # For unranked archive, sort by date makes more sense
             query = query.order_by(models.Track.published_date.desc())
         else:
-            # Default to rank for on-chart view
             query = query.order_by(models.Track.rank.asc())
-
-    # distinct() is no longer necessary as we filter by user_id, 
-    # and it causes errors with ORDER BY on joined columns in PostgreSQL.
-    # if rating_join_applied:
-    #     query = query.distinct()
 
     results = query.offset(skip).limit(limit).all()
 
@@ -178,18 +165,18 @@ def get_tracks_count(
             )
         )
 
-    if exact_rating_filter is not None:
-        query = query.join(models.Rating).filter(
-            models.Rating.rating == exact_rating_filter,
-            models.Rating.user_id == user_id,
+    # Apply the same rating filters as get_tracks for consistent counting
+    if exact_rating_filter is not None or rated_filter in ["rated", "unrated"]:
+        query = query.outerjoin(
+            models.Rating, and_(models.Rating.track_id == models.Track.id, models.Rating.user_id == user_id)
         )
-    elif rated_filter == "rated":
-        query = query.join(models.Rating).filter(models.Rating.user_id == user_id)
-    elif rated_filter == "unrated":
-        user_ratings = select(models.Rating.track_id).where(
-            models.Rating.user_id == user_id
-        )
-        query = query.filter(models.Track.id.notin_(user_ratings))
+        
+        if exact_rating_filter is not None:
+            query = query.filter(models.Rating.rating == exact_rating_filter)
+        elif rated_filter == "rated":
+            query = query.filter(models.Rating.id.isnot(None))
+        elif rated_filter == "unrated":
+            query = query.filter(models.Rating.id.is_(None))
 
     if producer_filter:
         search_term = f"%{producer_filter}%"
