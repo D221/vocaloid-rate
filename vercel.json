@@ -1,19 +1,9 @@
 {
   "version": 2,
-  "outputDirectory": "public",
-  "functions": {
-    "api/index.py": {
-      "runtime": "@vercel/python"
-    }
-  },
   "rewrites": [
     {
-      "source": "/api/cron/scrape",
-      "destination": "api/index.py"
-    },
-    {
       "source": "/(.*)",
-      "destination": "api/index.py"
+      "destination": "/api/index.py"
     }
   ],
   "crons": [
