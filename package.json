@@ -25,7 +25,7 @@
     "clean:static": "del-cli \"dist/vocaloid-rate/_internal/static/css/input.css\" \"dist/vocaloid-rate/_internal/static/js/*.js\" --ignore \"dist/vocaloid-rate/_internal/static/js/*.min.js\"",
     "release": "rimraf dist vocaloid-rate-release.zip && npm run build && npm run package && npm run clean:static && cd dist && bestzip vocaloid-rate-release.zip vocaloid-rate",
     "start": "uv run uvicorn app.main:app --host 0.0.0.0 --port 8000",
-    "vercel-build": "npm run build"
+    "vercel-build": "npm run build && mkdir public"
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
