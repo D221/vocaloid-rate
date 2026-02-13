@@ -495,7 +495,8 @@ templates.env.filters["time_ago"] = time_ago_filter
 
 def is_local_mode():
     """Returns True if the app is running in local SQLite mode without a dedicated DB server."""
-    return not os.environ.get("DATABASE_URL")
+    db_url = os.environ.get("DATABASE_URL")
+    return not db_url or db_url.strip() == ""
 
 
 @app.post("/scrape", tags=["Scraping"])
