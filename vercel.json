@@ -9,10 +9,10 @@
   "routes": [
     {
       "src": "/static/(.*)",
+      "dest": "/app/static/$1",
       "headers": {
         "cache-control": "s-maxage=31536000,immutable"
-      },
-      "dest": "app/static/$1"
+      }
     },
     {
       "src": "/(.*)",

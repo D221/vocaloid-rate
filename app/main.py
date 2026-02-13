@@ -52,6 +52,9 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message
 # Global variable to store the base path for resources
 RESOURCE_BASE_PATH: Optional[Path] = None
 
+BASE_DIR = Path(__file__).resolve().parent
+STATIC_DIR = BASE_DIR / "static"
+
 
 @asynccontextmanager
 async def app_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -116,9 +119,6 @@ async def add_cache_control_header(request: Request, call_next):
 
 
 # models.Base.metadata.create_all(bind=engine) # This is now handled by Alembic
-
-BASE_DIR = Path(__file__).resolve().parent
-
 
 # --- i18n setup ---
 SUPPORTED_LOCALES = ["en", "ja"]
@@ -265,7 +265,7 @@ async def serve_sw(request: Request):
     )
 
 
-app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
@@ -482,323 +482,125 @@ def cron_scrape(request: Request, background_tasks: BackgroundTasks):
 
 
 @app.get("/rated_tracks", tags=["Pages"])
-
-
 def read_rated_tracks(
-
-
     request: Request,
-
-
     db: Session = Depends(get_db),
-
-
     current_user: Optional[models.User] = Depends(get_optional_current_user),
-
-
     page: int = 1,
-
-
     limit: str = "all",
-
-
     title_filter: Optional[str] = None,
-
-
     producer_filter: Optional[str] = None,
-
-
     voicebank_filter: Optional[str] = None,
-
-
     sort_by: Optional[str] = None,
-
-
     sort_dir: str = "asc",
-
-
     exact_rating_filter: Optional[int] = None,
-
-
     translations: Translations = Depends(get_translations),
-
-
 ):
 
-
     if current_user is None:
-
-
         return RedirectResponse(url="/login")
-
-
-
-
 
     locale = translations.info()["language"]
 
-
     if not sort_by:
-
-
         sort_by = "rating"
-
 
         sort_dir = "desc"
 
-
-
-
-
     filters = {
-
-
         "title_filter": title_filter,
-
-
         "producer_filter": producer_filter,
-
-
         "voicebank_filter": voicebank_filter,
-
-
         "exact_rating_filter": exact_rating_filter,
-
-
     }
 
-
-
-
-
     total_tracks = crud.get_tracks_count(
-
-
         db,
-
-
         user_id=current_user.id,
-
-
         rated_filter="rated",
-
-
         title_filter=title_filter,
-
-
         producer_filter=producer_filter,
-
-
         voicebank_filter=voicebank_filter,
-
-
         exact_rating_filter=exact_rating_filter,
-
-
         rank_filter="all",
-
-
         locale=locale,
-
-
     )
-
-
-
-
 
     limit_val = total_tracks if limit == "all" else int(limit)
 
-
     total_pages = (total_tracks + limit_val - 1) // limit_val if limit_val > 0 else 1
-
 
     skip = (page - 1) * limit_val
 
-
-
-
-
     tracks = crud.get_tracks(
-
-
         db,
-
-
         user_id=current_user.id,
-
-
         skip=skip,
-
-
         limit=limit_val,
-
-
         rated_filter="rated",
-
-
         title_filter=title_filter,
-
-
         producer_filter=producer_filter,
-
-
         voicebank_filter=voicebank_filter,
-
-
         sort_by=sort_by,
-
-
         sort_dir=sort_dir,
-
-
         exact_rating_filter=exact_rating_filter,
-
-
         rank_filter="all",
-
-
         locale=locale,
-
-
     )
 
-
-
-
-
-    all_db_tracks = crud.get_tracks(db, user_id=current_user.id, limit=1000, rank_filter="all")
-
-
-
-
+    all_db_tracks = crud.get_tracks(
+        db, user_id=current_user.id, limit=1000, rank_filter="all"
+    )
 
     producers_flat = []
 
-
     voicebanks_flat = []
 
-
     for t in all_db_tracks:
-
-
         if locale == "ja" and t.producer_jp:
-
-
             producers_flat.extend([p.strip() for p in t.producer_jp.split(",")])
 
-
         else:
-
-
             producers_flat.extend([p.strip() for p in t.producer.split(",")])
 
-
-
-
-
         if locale == "ja" and t.voicebank_jp:
-
-
             voicebanks_flat.extend([v.strip() for v in t.voicebank_jp.split(",")])
 
-
         else:
-
-
             voicebanks_flat.extend([v.strip() for v in t.voicebank.split(",")])
-
-
-
-
 
     all_producers = sorted(list(set(producers_flat)))
 
-
     all_voicebanks = sorted(list(set(voicebanks_flat)))
-
-
-
-
 
     stats = crud.get_rating_statistics(db, user_id=current_user.id, locale=locale)
 
-
     tracks_for_json = [track.to_dict() for track in tracks]
-
 
     tracks_json_string = json.dumps(tracks_for_json)
 
-
-
-
-
     context = {
-
-
         "request": request,
-
-
         "_": translations.gettext,
-
-
         "tracks": tracks,
-
-
         "tracks_json": tracks_json_string,
-
-
         "all_producers": all_producers,
-
-
         "all_voicebanks": all_voicebanks,
-
-
         "stats": stats,
-
-
         "filters": filters,
-
-
         "pagination": {
-
-
             "page": page,
-
-
             "limit": limit,
-
-
             "total_pages": total_pages,
-
-
             "total_tracks": total_tracks,
-
-
         },
-
-
     }
 
-
-
-
-
     return LocaleTemplateResponse(
-
-
         "rated.html",
-
-
         context,
-
-
         request=request,
-
-
         translations=translations,
-
-
     )
 
 
@@ -1223,7 +1025,12 @@ def backup_ratings(
     db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)
 ):
     # Query only tracks rated by the current user
-    results = db.query(models.Track, models.Rating).join(models.Rating).filter(models.Rating.user_id == current_user.id).all()
+    results = (
+        db.query(models.Track, models.Rating)
+        .join(models.Rating)
+        .filter(models.Rating.user_id == current_user.id)
+        .all()
+    )
     backup_data = []
     for track, rating_obj in results:
         backup_data.append(
@@ -1477,7 +1284,9 @@ def read_recently_added(
     tracks_for_json = [track.to_dict() for track in tracks]
     tracks_json_string = json.dumps(tracks_for_json)
 
-    all_db_tracks = crud.get_tracks(db, user_id=current_user.id, limit=1000)  # For filter dropdowns
+    all_db_tracks = crud.get_tracks(
+        db, user_id=current_user.id, limit=1000
+    )  # For filter dropdowns
 
     producers_flat = []
     voicebanks_flat = []
