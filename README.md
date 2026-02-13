@@ -208,7 +208,11 @@ The development environment requires three processes to run concurrently: the Fa
 Open your terminal and run:
 
 ```bash
+# Standard dev mode (uses environment variables)
 bun run dev
+
+# Or force local SQLite mode (ignores DATABASE_URL)
+bun run dev:local
 ```
 
 This command uses `concurrently` to:

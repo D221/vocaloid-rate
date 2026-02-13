@@ -18,17 +18,17 @@ oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="token", auto_error=False
 
 def verify_password(plain_password: str, hashed_password: str):
     # bcrypt expects bytes
-    password_bytes = plain_password.encode('utf-8')
-    hashed_bytes = hashed_password.encode('utf-8')
+    password_bytes = plain_password.encode("utf-8")
+    hashed_bytes = hashed_password.encode("utf-8")
     return bcrypt.checkpw(password_bytes, hashed_bytes)
 
 
 def get_password_hash(password: str):
     # bcrypt expects bytes, and returns a hashed byte string
-    password_bytes = password.encode('utf-8')
+    password_bytes = password.encode("utf-8")
     salt = bcrypt.gensalt()
     hashed_password = bcrypt.hashpw(password_bytes, salt)
-    return hashed_password.decode('utf-8')
+    return hashed_password.decode("utf-8")
 
 
 def authenticate_user(db: Session, email: str, password: str):
@@ -67,13 +67,13 @@ def get_db():
 
 
 async def get_current_user(
-    request: Request, # Add request
+    request: Request,  # Add request
     token: Optional[str] = Depends(oauth2_scheme),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     if token is None:
         token = request.cookies.get("access_token")
-    
+
     if token is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -86,7 +86,7 @@ async def get_current_user(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Server configuration error: SECRET_KEY not set",
         )
-    
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -106,13 +106,13 @@ async def get_current_user(
 
 
 async def get_optional_current_user(
-    request: Request, # Add request
+    request: Request,  # Add request
     token: Optional[str] = Depends(oauth2_scheme_optional),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     if token is None:
         token = request.cookies.get("access_token")
-        
+
     if token is None:
         return None
     if SECRET_KEY is None:

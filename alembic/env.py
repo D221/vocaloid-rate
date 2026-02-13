@@ -80,7 +80,9 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            render_as_batch=True if connectable.url.drivername.startswith("sqlite") else False,
+            render_as_batch=True
+            if connectable.url.drivername.startswith("sqlite")
+            else False,
         )
 
         with context.begin_transaction():

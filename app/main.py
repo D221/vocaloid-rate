@@ -556,7 +556,6 @@ async def read_rated_tracks(
     exact_rating_filter: Optional[int] = None,
     translations: Translations = Depends(get_translations),
 ):
-
     if current_user is None:
         return RedirectResponse(url="/login")
 

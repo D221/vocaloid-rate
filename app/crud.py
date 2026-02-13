@@ -76,7 +76,10 @@ def get_tracks(
     # Always outerjoin the current user's rating so we can display it and sort by it
     # without redundant queries (N+1 problem) or incorrect cross-user results.
     query = query.outerjoin(
-        models.Rating, and_(models.Rating.track_id == models.Track.id, models.Rating.user_id == user_id)
+        models.Rating,
+        and_(
+            models.Rating.track_id == models.Track.id, models.Rating.user_id == user_id
+        ),
     ).options(contains_eager(models.Track.ratings))
 
     if exact_rating_filter is not None:
@@ -168,9 +171,13 @@ def get_tracks_count(
     # Apply the same rating filters as get_tracks for consistent counting
     if exact_rating_filter is not None or rated_filter in ["rated", "unrated"]:
         query = query.outerjoin(
-            models.Rating, and_(models.Rating.track_id == models.Track.id, models.Rating.user_id == user_id)
+            models.Rating,
+            and_(
+                models.Rating.track_id == models.Track.id,
+                models.Rating.user_id == user_id,
+            ),
         )
-        
+
         if exact_rating_filter is not None:
             query = query.filter(models.Rating.rating == exact_rating_filter)
         elif rated_filter == "rated":
