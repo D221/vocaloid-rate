@@ -1683,11 +1683,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else {
           lyricsButton.disabled = true;
           lyricsButton.textContent = "...";
-          const titleEn = encodeURIComponent(lyricsButton.dataset.titleEn);
-          const titleJp = lyricsButton.dataset.titleJp
-            ? encodeURIComponent(lyricsButton.dataset.titleJp)
-            : "";
-          const producer = encodeURIComponent(lyricsButton.dataset.producer);
+          const trackId = parentCell.closest('tr').dataset.trackId;
           let allLyricsData = [];
           const renderLyric = (index) => {
             const selectedLyric = allLyricsData[index];
@@ -1704,21 +1700,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             lyricsMetadata.innerHTML = metadataHTML;
             lyricsContent.innerHTML = selectedLyric.text;
           };
-          fetch(
-            `/api/vocadb_search?title_en=${titleEn}&producer=${producer}&title_jp=${titleJp}`,
-          )
+          fetch(`/api/lyrics/${trackId}`)
             .then((res) =>
-              res.ok ? res.json() : Promise.reject(window._("Song not found")),
-            )
-            .then((searchData) =>
-              searchData.song_id
-                ? fetch(`/api/vocadb_lyrics/${searchData.song_id}?track_id=${parentCell.closest('tr').dataset.trackId}`)
-                : Promise.reject(window._("Song not found")),
-            )
-            .then((res) =>
-              res.ok
-                ? res.json()
-                : Promise.reject(window._("Lyrics not available")),
+              res.ok ? res.json() : Promise.reject(window._("Lyrics not available")),
             )
             .then((data) => {
               allLyricsData = data.lyrics;

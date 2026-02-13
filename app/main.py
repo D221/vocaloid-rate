@@ -1461,6 +1461,57 @@ def rate_track(
     return Response(status_code=204)
 
 
+@app.get("/api/lyrics/{track_id}", tags=["VocaDB"])
+def get_smart_lyrics(
+    track_id: int,
+    db: Session = Depends(get_db),
+    locale: str = Depends(get_locale),
+):
+    """Unified endpoint: checks local cache first, then searches VocaDB if needed."""
+    # 1. Check local cache
+    cached_lyrics = db.query(models.Lyric).filter(models.Lyric.track_id == track_id).all()
+    if cached_lyrics:
+        logging.info(f"Serving cached lyrics for track {track_id}")
+        available_lyrics = []
+        for c in cached_lyrics:
+            label = c.language + (" (" + c.translation_type + ")" if c.translation_type != "Unknown" else "")
+            # Apply display labels
+            if c.translation_type == "Romanized": label = "Romaji"
+            elif c.translation_type == "Translation" and c.language == "English": label = "English (Translation)"
+            elif c.translation_type == "Original" and c.language == "Japanese": label = "Japanese (Original)"
+            
+            available_lyrics.append({
+                "label": label,
+                "text": c.content,
+                "source": c.source,
+                "url": c.url,
+                "translation_type": c.translation_type
+            })
+        
+        available_lyrics.sort(key=lambda x: (
+            0 if (locale == "ja" and "Japanese" in x["label"]) or (locale != "ja" and "English" in x["label"]) else
+            1 if "Romaji" in x["label"] else
+            2 if (locale == "ja" and "English" in x["label"]) or (locale != "ja" and "Japanese" in x["label"]) else
+            3
+        ))
+        return {"lyrics": available_lyrics}
+
+    # 2. Not cached: We need to search for the song on VocaDB first
+    track = db.query(models.Track).filter(models.Track.id == track_id).first()
+    if not track:
+        raise HTTPException(status_code=404, detail="Track not found in local database")
+
+    # Reuse the search logic
+    search_result = search_vocadb(track.producer.split(',')[0].strip(), track.title, track.title_jp)
+    song_id = search_result.get("song_id")
+    
+    if not song_id:
+        return {"lyrics": []}
+
+    # 3. Fetch lyrics from VocaDB using the song_id we just found
+    return get_vocadb_lyrics(song_id, track_id=track_id, db=db, locale=locale)
+
+
 @app.get("/api/vocadb_artist_search", tags=["VocaDB"])
 def search_vocadb_artist(producer: str):
     headers = {"Accept": "application/json"}
@@ -1492,6 +1543,7 @@ def search_vocadb_artist(producer: str):
 
 @app.get("/api/vocadb_search", tags=["VocaDB"])
 def search_vocadb(producer: str, title_en: str, title_jp: str | None = None):
+    # ... existing search logic ...
     headers = {"Accept": "application/json"}
     try:
         # Step 1: Find the Artist ID (this is the same)
