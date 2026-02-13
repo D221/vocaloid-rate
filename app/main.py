@@ -506,7 +506,9 @@ def scrape_and_populate(
 ):
     # Allow scraping if user is admin OR if we are running in local mode
     if not (current_user.is_admin or is_local_mode()):
-        raise HTTPException(status_code=403, detail="Only admins can trigger scraping in cloud mode.")
+        raise HTTPException(
+            status_code=403, detail="Only admins can trigger scraping in cloud mode."
+        )
 
     # Reset status before starting
     write_scrape_status("idle")
@@ -1469,31 +1471,49 @@ def get_smart_lyrics(
 ):
     """Unified endpoint: checks local cache first, then searches VocaDB if needed."""
     # 1. Check local cache
-    cached_lyrics = db.query(models.Lyric).filter(models.Lyric.track_id == track_id).all()
+    cached_lyrics = (
+        db.query(models.Lyric).filter(models.Lyric.track_id == track_id).all()
+    )
     if cached_lyrics:
         logging.info(f"Serving cached lyrics for track {track_id}")
         available_lyrics = []
         for c in cached_lyrics:
-            label = c.language + (" (" + c.translation_type + ")" if c.translation_type != "Unknown" else "")
+            label = c.language + (
+                " (" + c.translation_type + ")"
+                if c.translation_type != "Unknown"
+                else ""
+            )
             # Apply display labels
-            if c.translation_type == "Romanized": label = "Romaji"
-            elif c.translation_type == "Translation" and c.language == "English": label = "English (Translation)"
-            elif c.translation_type == "Original" and c.language == "Japanese": label = "Japanese (Original)"
-            
-            available_lyrics.append({
-                "label": label,
-                "text": c.content,
-                "source": c.source,
-                "url": c.url,
-                "translation_type": c.translation_type
-            })
-        
-        available_lyrics.sort(key=lambda x: (
-            0 if (locale == "ja" and "Japanese" in x["label"]) or (locale != "ja" and "English" in x["label"]) else
-            1 if "Romaji" in x["label"] else
-            2 if (locale == "ja" and "English" in x["label"]) or (locale != "ja" and "Japanese" in x["label"]) else
-            3
-        ))
+            if c.translation_type == "Romanized":
+                label = "Romaji"
+            elif c.translation_type == "Translation" and c.language == "English":
+                label = "English (Translation)"
+            elif c.translation_type == "Original" and c.language == "Japanese":
+                label = "Japanese (Original)"
+
+            available_lyrics.append(
+                {
+                    "label": label,
+                    "text": c.content,
+                    "source": c.source,
+                    "url": c.url,
+                    "translation_type": c.translation_type,
+                }
+            )
+
+        available_lyrics.sort(
+            key=lambda x: (
+                0
+                if (locale == "ja" and "Japanese" in x["label"])
+                or (locale != "ja" and "English" in x["label"])
+                else 1
+                if "Romaji" in x["label"]
+                else 2
+                if (locale == "ja" and "English" in x["label"])
+                or (locale != "ja" and "Japanese" in x["label"])
+                else 3
+            )
+        )
         return {"lyrics": available_lyrics}
 
     # 2. Not cached: We need to search for the song on VocaDB first
@@ -1502,9 +1522,11 @@ def get_smart_lyrics(
         raise HTTPException(status_code=404, detail="Track not found in local database")
 
     # Reuse the search logic
-    search_result = search_vocadb(track.producer.split(',')[0].strip(), track.title, track.title_jp)
+    search_result = search_vocadb(
+        track.producer.split(",")[0].strip(), track.title, track.title_jp
+    )
     song_id = search_result.get("song_id")
-    
+
     if not song_id:
         return {"lyrics": []}
 
@@ -1599,34 +1621,56 @@ def get_vocadb_lyrics(
 ):
     # 1. Check local cache first if track_id is provided
     if track_id:
-        cached_lyrics = db.query(models.Lyric).filter(models.Lyric.track_id == track_id).all()
+        cached_lyrics = (
+            db.query(models.Lyric).filter(models.Lyric.track_id == track_id).all()
+        )
         if cached_lyrics:
             logging.info(f"Serving cached lyrics for track {track_id}")
             available_lyrics = []
             for c in cached_lyrics:
-                available_lyrics.append({
-                    "label": c.language + (" (" + c.translation_type + ")" if c.translation_type != "Unknown" else ""),
-                    "text": c.content,
-                    "source": c.source,
-                    "url": c.url,
-                    "translation_type": c.translation_type
-                })
-            
-            # Re-apply the special labels for consistent UI
-            for l in available_lyrics:
-                if l["translation_type"] == "Romanized":
-                    l["label"] = "Romaji"
-                elif l["translation_type"] == "Translation" and "English" in l["label"]:
-                    l["label"] = "English (Translation)"
-                elif l["translation_type"] == "Original" and "Japanese" in l["label"]:
-                    l["label"] = "Japanese (Original)"
+                available_lyrics.append(
+                    {
+                        "label": c.language
+                        + (
+                            " (" + c.translation_type + ")"
+                            if c.translation_type != "Unknown"
+                            else ""
+                        ),
+                        "text": c.content,
+                        "source": c.source,
+                        "url": c.url,
+                        "translation_type": c.translation_type,
+                    }
+                )
 
-            available_lyrics.sort(key=lambda x: (
-                0 if (locale == "ja" and "Japanese" in x["label"]) or (locale != "ja" and "English" in x["label"]) else
-                1 if "Romaji" in x["label"] else
-                2 if (locale == "ja" and "English" in x["label"]) or (locale != "ja" and "Japanese" in x["label"]) else
-                3
-            ))
+            # Re-apply the special labels for consistent UI
+            for lyric in available_lyrics:
+                if lyric["translation_type"] == "Romanized":
+                    lyric["label"] = "Romaji"
+                elif (
+                    lyric["translation_type"] == "Translation"
+                    and "English" in lyric["label"]
+                ):
+                    lyric["label"] = "English (Translation)"
+                elif (
+                    lyric["translation_type"] == "Original"
+                    and "Japanese" in lyric["label"]
+                ):
+                    lyric["label"] = "Japanese (Original)"
+
+            available_lyrics.sort(
+                key=lambda x: (
+                    0
+                    if (locale == "ja" and "Japanese" in x["label"])
+                    or (locale != "ja" and "English" in x["label"])
+                    else 1
+                    if "Romaji" in x["label"]
+                    else 2
+                    if (locale == "ja" and "English" in x["label"])
+                    or (locale != "ja" and "Japanese" in x["label"])
+                    else 3
+                )
+            )
             return {"lyrics": available_lyrics}
 
     # 2. If not cached, fetch from VocaDB
@@ -1646,12 +1690,15 @@ def get_vocadb_lyrics(
             text = lyric_data.get("value", "").replace("\n", "<br>")
             lang_code = lyric_data.get("cultureCodes", [""])[0]
             trans_type = lyric_data.get("translationType", "Unknown")
-            
+
             # Map culture code to readable language name for storage
             lang_name = "Unknown"
-            if "ja" in lang_code: lang_name = "Japanese"
-            elif "en" in lang_code: lang_name = "English"
-            elif lang_code == "": lang_name = "Romaji" if trans_type == "Romanized" else "Other"
+            if "ja" in lang_code:
+                lang_name = "Japanese"
+            elif "en" in lang_code:
+                lang_name = "English"
+            elif lang_code == "":
+                lang_name = "Romaji" if trans_type == "Romanized" else "Other"
 
             lyric_obj = {
                 "label": f"{lang_name} - {trans_type}",
@@ -1679,23 +1726,29 @@ def get_vocadb_lyrics(
                     translation_type=trans_type,
                     source=lyric_obj["source"],
                     url=lyric_obj["url"],
-                    content=text
+                    content=text,
                 )
                 db.add(new_lyric)
-        
+
         if track_id:
             db.commit()
             logging.info(f"Cached {len(available_lyrics)} lyrics for track {track_id}")
 
         def sort_key(lyric):
             if locale == "ja":
-                if "Japanese" in lyric["label"]: return 0
-                if "Romaji" in lyric["label"]: return 1
-                if "English" in lyric["label"]: return 2
+                if "Japanese" in lyric["label"]:
+                    return 0
+                if "Romaji" in lyric["label"]:
+                    return 1
+                if "English" in lyric["label"]:
+                    return 2
             else:
-                if "English" in lyric["label"]: return 0
-                if "Romaji" in lyric["label"]: return 1
-                if "Japanese" in lyric["label"]: return 2
+                if "English" in lyric["label"]:
+                    return 0
+                if "Romaji" in lyric["label"]:
+                    return 1
+                if "Japanese" in lyric["label"]:
+                    return 2
             return 3
 
         available_lyrics.sort(key=sort_key)

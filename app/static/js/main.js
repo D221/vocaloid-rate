@@ -1683,7 +1683,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else {
           lyricsButton.disabled = true;
           lyricsButton.textContent = "...";
-          const trackId = parentCell.closest('tr').dataset.trackId;
+          const trackId = parentCell.closest("tr").dataset.trackId;
           let allLyricsData = [];
           const renderLyric = (index) => {
             const selectedLyric = allLyricsData[index];
@@ -1702,7 +1702,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           };
           fetch(`/api/lyrics/${trackId}`)
             .then((res) =>
-              res.ok ? res.json() : Promise.reject(window._("Lyrics not available")),
+              res.ok
+                ? res.json()
+                : Promise.reject(window._("Lyrics not available")),
             )
             .then((data) => {
               allLyricsData = data.lyrics;
