@@ -183,21 +183,61 @@
       </button>
       <script>
         document.getElementById('scrape-btn').addEventListener('click', function() {
+          const btn = this;
+          const originalText = btn.innerHTML;
+          btn.disabled = true;
+          btn.classList.add('opacity-50', 'cursor-wait');
+
           fetch('/scrape', { method: 'POST' })
             .then(res => res.json())
             .then(data => {
               if (typeof showToast === 'function') {
                 showToast(data.message);
-              } else {
-                console.log(data.message);
               }
+
+              // Start polling for status
+              const pollInterval = setInterval(() => {
+                fetch('/api/scrape-status')
+                  .then(res => res.json())
+                  .then(statusData => {
+                    const status = statusData.status;
+
+                    if (status.startsWith('in_progress')) {
+                      const page = status.split(':')[1] || '?';
+                      btn.textContent = `{{ _('Updating') }} (${page}/6)...`;
+                    } else if (status === 'completed') {
+                      clearInterval(pollInterval);
+                      if (typeof showToast === 'function') {
+                        showToast("{{ _('Update complete! Reloading...') }}");
+                      }
+                      setTimeout(() => window.location.reload(), 1500);
+                    } else if (status === 'no_changes') {
+                      clearInterval(pollInterval);
+                      if (typeof showToast === 'function') {
+                        showToast("{{ _('No changes found. Database is already up-to-date.') }}", "success");
+                      }
+                      btn.disabled = false;
+                      btn.innerHTML = originalText;
+                      btn.classList.remove('opacity-50', 'cursor-wait');
+                    } else if (status === 'error') {
+                      clearInterval(pollInterval);
+                      if (typeof showToast === 'function') {
+                        showToast("{{ _('An error occurred during scraping.') }}", "error");
+                      }
+                      btn.disabled = false;
+                      btn.innerHTML = originalText;
+                      btn.classList.remove('opacity-50', 'cursor-wait');
+                    }
+                  });
+              }, 2000);
             })
             .catch(err => {
               if (typeof showToast === 'function') {
                 showToast(err.message || "Error triggered", "error");
-              } else {
-                console.error(err);
               }
+              btn.disabled = false;
+              btn.innerHTML = originalText;
+              btn.classList.remove('opacity-50', 'cursor-wait');
             });
         });
       </script>
