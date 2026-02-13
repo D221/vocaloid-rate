@@ -171,5 +171,28 @@
     >
       {{ _('Clear') }}
     </button>
+
+    {% if current_user and current_user.is_admin %}
+      <button
+        type="button"
+        id="scrape-btn"
+        class="cursor-pointer rounded border border-amber-text p-2 font-bold text-amber-text shadow-md ease-in-out hover:bg-amber-hover hover:transition-colors hover:duration-200"
+      >
+        {{ _('Update Database') }}
+      </button>
+      <script>
+        document.getElementById('scrape-btn').addEventListener('click', function() {
+          if (confirm("{{ _('Are you sure you want to trigger a database update? This will scrape the latest rankings.') }}")) {
+            fetch('/scrape', { method: 'POST' })
+              .then(res => res.json())
+              .then(data => {
+                alert(data.message);
+                window.location.reload();
+              })
+              .catch(err => alert("Error: " + err));
+          }
+        });
+      </script>
+    {% endif %}
   </form>
 </div>

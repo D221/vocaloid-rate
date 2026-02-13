@@ -481,6 +481,20 @@ def time_ago_filter(date: datetime) -> str:
 templates.env.filters["time_ago"] = time_ago_filter
 
 
+@app.post("/scrape", tags=["Scraping"])
+def scrape_and_populate(
+    background_tasks: BackgroundTasks,
+    current_user: models.User = Depends(get_current_user),
+):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Only admins can trigger scraping.")
+
+    # Reset status before starting
+    write_scrape_status("idle")
+    background_tasks.add_task(scrape_and_populate_task)
+    return {"message": "Scraping has been started in the background."}
+
+
 @app.get("/api/cron/scrape", tags=["Scraping"])
 def cron_scrape(request: Request, background_tasks: BackgroundTasks):
     auth_header = request.headers.get("Authorization")
