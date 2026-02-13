@@ -111,13 +111,3 @@ def _scrape_single_page(page_num: int):
             )
 
     return tracks_on_page
-
-
-# This is the new main function that calls the helper.
-def scrape_all_pages():
-    """Scrapes all pages of the ranking by calling _scrape_single_page in a loop."""
-    all_tracks = []
-    for page in range(1, 7):
-        all_tracks.extend(_scrape_single_page(page))
-    logger.info(f"Scraper finished. Total tracks collected: {len(all_tracks)}")
-    return all_tracks
