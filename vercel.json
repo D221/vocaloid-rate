@@ -1,11 +1,12 @@
 {
   "version": 2,
-  "outputDirectory": ".",
+  "outputDirectory": "public",
+  "functions": {
+    "api/index.py": {
+      "runtime": "@vercel/python"
+    }
+  },
   "rewrites": [
-    {
-      "source": "/static/(.*)",
-      "destination": "app/static/$1"
-    },
     {
       "source": "/api/cron/scrape",
       "destination": "api/index.py"
