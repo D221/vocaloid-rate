@@ -1,5 +1,10 @@
 # Vocaloid Rate
 
+> **Web Version:** Access the application at [vocaloid-rate.vercel.app](https://vocaloid-rate.vercel.app/).
+> - **Note on Performance:** The web version may be significantly slower than running the application locally via the downloadable `.exe` due to cloud database latency.
+> - **User Accounts:** You can create an account and log in. Passwords are securely hashed and encrypted.
+> - **Privacy:** Emails are only used as usernames; we do not send any emails (including password resets). You can use a dummy email address if you prefer.
+
 ![Vocaloid Rater Screenshot](assets/main.png)
 
 Vocaloid Rate is a personal, self-hosted web application for tracking, rating, and exploring Vocaloid music rankings. It scrapes data from [Vocaloard](https://vocaloard.injpok.tokyo/en/), providing a clean and feature-rich interface to manage your personal collection of rated tracks and playlists.
@@ -64,6 +69,30 @@ The application is built with a Python/FastAPI backend and a optimized vanilla J
 ![Mobile View](assets/mobile.png)
 
 </details>
+
+## Deployment Options
+
+Vocaloid Rate supports two primary deployment modes:
+
+### 1. Self-Hosted (SQLite)
+This is the default mode, ideal for local use or hosting on a private server (e.g., via Docker).
+- **Database:** SQLite (stored in `data/tracks.db`).
+- **Setup:** Just run the application. No additional configuration is required.
+- **Persistent Data:** Ensure the `data` directory is persisted.
+
+### 2. Cloud Deployment (Vercel + Postgres)
+The application is pre-configured for deployment on Vercel using a PostgreSQL database (e.g., Vercel Postgres, Supabase, or Railway).
+- **Database:** PostgreSQL (or any other DB supported by SQLAlchemy).
+- **Environment Variables:**
+  - `DATABASE_URL`: Your database connection string (e.g., `postgres://user:password@host:port/dbname`).
+  - `SECRET_KEY`: A long, random string for JWT authentication.
+  - `CRON_SECRET`: (Optional) A secret key to protect the scraping cron endpoint.
+- **Vercel Setup:**
+  - Connect your repository to Vercel.
+  - Configure the environment variables in the Vercel dashboard.
+  - The application will automatically run migrations on startup.
+
+---
 
 ## Installation (for End-Users)
 

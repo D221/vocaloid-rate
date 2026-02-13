@@ -55,6 +55,31 @@ RESOURCE_BASE_PATH: Optional[Path] = None
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 
+# Environment-aware directories
+DATA_DIR = os.environ.get("DATA_DIR", "data")
+if "VERCEL" in os.environ:
+    # On Vercel, use /tmp for any temporary file operations
+    SCRAPE_STATUS_FILE = os.path.join("/tmp", "scrape_status.txt")
+else:
+    SCRAPE_STATUS_FILE = os.path.join(DATA_DIR, "scrape_status.txt")
+
+
+def write_scrape_status(status_text: str):
+    """Safely write scraping status to file, ignoring errors on read-only filesystems."""
+    try:
+        # Ensure directory exists if possible
+        status_dir = os.path.dirname(SCRAPE_STATUS_FILE)
+        if status_dir and not os.path.exists(status_dir):
+            try:
+                os.makedirs(status_dir, exist_ok=True)
+            except OSError:
+                pass  # Ignore if we can't create directory (e.g. read-only)
+
+        with open(SCRAPE_STATUS_FILE, "w") as f:
+            f.write(status_text)
+    except Exception as e:
+        logging.debug(f"Could not write scrape status to file: {e}")
+
 
 @asynccontextmanager
 async def app_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -80,10 +105,7 @@ async def app_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     if track_count == 0:
         logging.info("Database is empty. Starting initial scrape.")
         initial_scrape_in_progress = True
-        if not os.path.exists(DATA_DIR):
-            os.makedirs(DATA_DIR)
-        with open(SCRAPE_STATUS_FILE, "w") as f:
-            f.write("in_progress")
+        write_scrape_status("in_progress")
         scrape_thread = threading.Thread(target=initial_scrape_task)
         scrape_thread.start()
 
@@ -269,9 +291,6 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
-DATA_DIR = "data"
-SCRAPE_STATUS_FILE = os.path.join(DATA_DIR, "scrape_status.txt")
-
 initial_scrape_in_progress = False
 
 
@@ -304,8 +323,7 @@ def initial_scrape_task():
             new_tracks_count = 0
             all_scraped_tracks = []
             for page in range(1, 7):
-                with open(SCRAPE_STATUS_FILE, "w") as f:
-                    f.write(f"in_progress:{page}/6")
+                write_scrape_status(f"in_progress:{page}/6")
                 all_scraped_tracks.extend(scraper._scrape_single_page(page))
 
             logging.info(
@@ -330,8 +348,7 @@ def initial_scrape_task():
             logging.info("Database commit successful and update time logged.")
 
         finally:
-            with open(SCRAPE_STATUS_FILE, "w") as f:
-                f.write(final_status)
+            write_scrape_status(final_status)
             global initial_scrape_in_progress
             initial_scrape_in_progress = False
     finally:
@@ -365,21 +382,18 @@ def scrape_and_populate_task():
             logging.info(
                 "Smart Scrape: No changes found on page 1. The ranking is already up-to-date."
             )
-            with open(SCRAPE_STATUS_FILE, "w") as f:
-                f.write("no_changes")
+            write_scrape_status("no_changes")
             return
 
         # If we reach here, it means changes were found.
         logging.info("Smart Scrape: Changes detected! Proceeding with full scrape.")
-        with open(SCRAPE_STATUS_FILE, "w") as f:
-            f.write("in_progress:1/6")
+        write_scrape_status("in_progress:1/6")
 
         final_status = "completed"
         try:
             remaining_pages_tracks = []
             for page in range(2, 7):
-                with open(SCRAPE_STATUS_FILE, "w") as f:
-                    f.write(f"in_progress:{page}/6")
+                write_scrape_status(f"in_progress:{page}/6")
                 remaining_pages_tracks.extend(scraper._scrape_single_page(page))
 
             all_scraped_tracks = scraped_page_1 + remaining_pages_tracks
@@ -439,8 +453,7 @@ def scrape_and_populate_task():
             db.rollback()
 
         finally:
-            with open(SCRAPE_STATUS_FILE, "w") as f:
-                f.write(final_status)
+            write_scrape_status(final_status)
     finally:
         db.close()
 
@@ -479,6 +492,18 @@ def cron_scrape(request: Request, background_tasks: BackgroundTasks):
 
     background_tasks.add_task(scrape_and_populate_task)
     return {"message": "Scraping task has been queued."}
+
+
+@app.get("/api/scrape-status", tags=["Scraping"])
+def get_scrape_status():
+    if os.path.exists(SCRAPE_STATUS_FILE):
+        try:
+            with open(SCRAPE_STATUS_FILE, "r") as f:
+                status = f.read().strip()
+            return {"status": status}
+        except Exception:
+            return {"status": "error"}
+    return {"status": "idle"}
 
 
 @app.get("/rated_tracks", tags=["Pages"])
