@@ -183,15 +183,22 @@
       </button>
       <script>
         document.getElementById('scrape-btn').addEventListener('click', function() {
-          if (confirm("{{ _('Are you sure you want to trigger a database update? This will scrape the latest rankings.') }}")) {
-            fetch('/scrape', { method: 'POST' })
-              .then(res => res.json())
-              .then(data => {
-                alert(data.message);
-                window.location.reload();
-              })
-              .catch(err => alert("Error: " + err));
-          }
+          fetch('/scrape', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+              if (typeof showToast === 'function') {
+                showToast(data.message);
+              } else {
+                console.log(data.message);
+              }
+            })
+            .catch(err => {
+              if (typeof showToast === 'function') {
+                showToast(err.message || "Error triggered", "error");
+              } else {
+                console.error(err);
+              }
+            });
         });
       </script>
     {% endif %}
