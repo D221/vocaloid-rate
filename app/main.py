@@ -1539,7 +1539,45 @@ def search_vocadb(producer: str, title_en: str, title_jp: str | None = None):
 
 
 @app.get("/api/vocadb_lyrics/{song_id}", tags=["VocaDB"])
-def get_vocadb_lyrics(song_id: int, locale: str = Depends(get_locale)):
+def get_vocadb_lyrics(
+    song_id: int,
+    track_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    locale: str = Depends(get_locale),
+):
+    # 1. Check local cache first if track_id is provided
+    if track_id:
+        cached_lyrics = db.query(models.Lyric).filter(models.Lyric.track_id == track_id).all()
+        if cached_lyrics:
+            logging.info(f"Serving cached lyrics for track {track_id}")
+            available_lyrics = []
+            for c in cached_lyrics:
+                available_lyrics.append({
+                    "label": c.language + (" (" + c.translation_type + ")" if c.translation_type != "Unknown" else ""),
+                    "text": c.content,
+                    "source": c.source,
+                    "url": c.url,
+                    "translation_type": c.translation_type
+                })
+            
+            # Re-apply the special labels for consistent UI
+            for l in available_lyrics:
+                if l["translation_type"] == "Romanized":
+                    l["label"] = "Romaji"
+                elif l["translation_type"] == "Translation" and "English" in l["label"]:
+                    l["label"] = "English (Translation)"
+                elif l["translation_type"] == "Original" and "Japanese" in l["label"]:
+                    l["label"] = "Japanese (Original)"
+
+            available_lyrics.sort(key=lambda x: (
+                0 if (locale == "ja" and "Japanese" in x["label"]) or (locale != "ja" and "English" in x["label"]) else
+                1 if "Romaji" in x["label"] else
+                2 if (locale == "ja" and "English" in x["label"]) or (locale != "ja" and "Japanese" in x["label"]) else
+                3
+            ))
+            return {"lyrics": available_lyrics}
+
+    # 2. If not cached, fetch from VocaDB
     headers = {"Accept": "application/json"}
     try:
         api_url = f"https://vocadb.net/api/songs/{song_id}?fields=Lyrics"
@@ -1554,47 +1592,61 @@ def get_vocadb_lyrics(song_id: int, locale: str = Depends(get_locale)):
         available_lyrics = []
         for lyric_data in lyrics_list:
             text = lyric_data.get("value", "").replace("\n", "<br>")
-            lang = lyric_data.get("cultureCodes", [""])[0]
+            lang_code = lyric_data.get("cultureCodes", [""])[0]
             trans_type = lyric_data.get("translationType", "Unknown")
-            label = f"{lang.upper()} - {trans_type}"
+            
+            # Map culture code to readable language name for storage
+            lang_name = "Unknown"
+            if "ja" in lang_code: lang_name = "Japanese"
+            elif "en" in lang_code: lang_name = "English"
+            elif lang_code == "": lang_name = "Romaji" if trans_type == "Romanized" else "Other"
 
+            lyric_obj = {
+                "label": f"{lang_name} - {trans_type}",
+                "text": text,
+                "source": lyric_data.get("source", "VocaDB"),
+                "url": lyric_data.get("url", ""),
+                "translation_type": trans_type,
+            }
+
+            # Pre-save cleanup for specific labels
             if trans_type == "Romanized":
-                label = "Romaji"
-            elif trans_type == "Translation" and "en" in lang:
-                label = "English (Translation)"
-            elif trans_type == "Original" and "ja" in lang:
-                label = "Japanese (Original)"
+                lyric_obj["label"] = "Romaji"
+            elif trans_type == "Translation" and lang_name == "English":
+                lyric_obj["label"] = "English (Translation)"
+            elif trans_type == "Original" and lang_name == "Japanese":
+                lyric_obj["label"] = "Japanese (Original)"
 
-            available_lyrics.append(
-                {
-                    "label": label,
-                    "text": text,
-                    "source": lyric_data.get("source", ""),
-                    "url": lyric_data.get("url", ""),
-                    "translation_type": trans_type,
-                }
-            )
+            available_lyrics.append(lyric_obj)
+
+            # 3. Save to cache if we have a track_id
+            if track_id:
+                new_lyric = models.Lyric(
+                    track_id=track_id,
+                    language=lang_name,
+                    translation_type=trans_type,
+                    source=lyric_obj["source"],
+                    url=lyric_obj["url"],
+                    content=text
+                )
+                db.add(new_lyric)
+        
+        if track_id:
+            db.commit()
+            logging.info(f"Cached {len(available_lyrics)} lyrics for track {track_id}")
 
         def sort_key(lyric):
-            # New logic based on locale
             if locale == "ja":
-                if "Japanese" in lyric["label"]:
-                    return 0
-                if "Romaji" in lyric["label"]:
-                    return 1
-                if "English" in lyric["label"]:
-                    return 2
-            else:  # Default to English first
-                if "English" in lyric["label"]:
-                    return 0
-                if "Romaji" in lyric["label"]:
-                    return 1
-                if "Japanese" in lyric["label"]:
-                    return 2
+                if "Japanese" in lyric["label"]: return 0
+                if "Romaji" in lyric["label"]: return 1
+                if "English" in lyric["label"]: return 2
+            else:
+                if "English" in lyric["label"]: return 0
+                if "Romaji" in lyric["label"]: return 1
+                if "Japanese" in lyric["label"]: return 2
             return 3
 
         available_lyrics.sort(key=sort_key)
-
         return {"lyrics": available_lyrics}
 
     except requests.exceptions.RequestException as e:

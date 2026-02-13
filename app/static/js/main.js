@@ -1712,7 +1712,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             )
             .then((searchData) =>
               searchData.song_id
-                ? fetch(`/api/vocadb_lyrics/${searchData.song_id}`)
+                ? fetch(`/api/vocadb_lyrics/${searchData.song_id}?track_id=${parentCell.closest('tr').dataset.trackId}`)
                 : Promise.reject(window._("Song not found")),
             )
             .then((res) =>

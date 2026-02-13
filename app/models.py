@@ -22,6 +22,7 @@ class Track(Base):
     rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     ratings: Mapped[list["Rating"]] = relationship("Rating", back_populates="track")
+    lyrics: Mapped[list["Lyric"]] = relationship("Lyric", back_populates="track", cascade="all, delete-orphan")
 
     def to_dict(self):
         """Returns a dictionary representation of the track for JSON serialization."""
@@ -104,5 +105,19 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False) # New admin flag
+
+
+class Lyric(Base):
+    __tablename__ = "lyrics"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    track_id: Mapped[int] = mapped_column(ForeignKey("tracks.id"), index=True)
+    language: Mapped[str] = mapped_column(String)  # e.g. "English", "Japanese"
+    translation_type: Mapped[str] = mapped_column(String)  # e.g. "Original", "Translation"
+    source: Mapped[str | None] = mapped_column(String, nullable=True)  # e.g. "VocaDB"
+    url: Mapped[str | None] = mapped_column(String, nullable=True)
+    content: Mapped[str] = mapped_column(String)  # The HTML or text content
+
+    track: Mapped["Track"] = relationship("Track", back_populates="lyrics")
 
 
