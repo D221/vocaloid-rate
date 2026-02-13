@@ -172,7 +172,8 @@
       {{ _('Clear') }}
     </button>
 
-    {% if current_user and current_user.is_admin %}
+    {% set is_local = not os.environ.get('DATABASE_URL') %}
+    {% if current_user and (current_user.is_admin or is_local) %}
       <button
         type="button"
         id="scrape-btn"

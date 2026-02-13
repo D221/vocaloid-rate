@@ -290,6 +290,7 @@ async def serve_sw(request: Request):
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
+templates.env.globals["os"] = os
 
 initial_scrape_in_progress = False
 
@@ -481,13 +482,19 @@ def time_ago_filter(date: datetime) -> str:
 templates.env.filters["time_ago"] = time_ago_filter
 
 
+def is_local_mode():
+    """Returns True if the app is running in local SQLite mode without a dedicated DB server."""
+    return not os.environ.get("DATABASE_URL")
+
+
 @app.post("/scrape", tags=["Scraping"])
 def scrape_and_populate(
     background_tasks: BackgroundTasks,
     current_user: models.User = Depends(get_current_user),
 ):
-    if not current_user.is_admin:
-        raise HTTPException(status_code=403, detail="Only admins can trigger scraping.")
+    # Allow scraping if user is admin OR if we are running in local mode
+    if not (current_user.is_admin or is_local_mode()):
+        raise HTTPException(status_code=403, detail="Only admins can trigger scraping in cloud mode.")
 
     # Reset status before starting
     write_scrape_status("idle")
