@@ -1,7 +1,5 @@
 {
   "version": 2,
-  "buildCommand": "npm install && npm run build",
-
   "builds": [
     {
       "src": "app/main.py",
@@ -14,7 +12,7 @@
       "headers": {
         "cache-control": "s-maxage=31536000,immutable"
       },
-      "dest": "/app/static/$1"
+      "dest": "app/static/$1"
     },
     {
       "src": "/(.*)",
