@@ -6,7 +6,6 @@ from pydantic import BaseModel
 
 class RatingBase(BaseModel):
     rating: float
-    user_id: int  # New
 
 
 class Rating(RatingBase):
@@ -37,7 +36,6 @@ class Track(BaseModel):
 class PlaylistBase(BaseModel):
     name: str
     description: Optional[str] = None
-    user_id: int  # New
 
 
 class PlaylistCreate(PlaylistBase):
