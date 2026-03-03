@@ -6,7 +6,7 @@
 > - **User Accounts:** You can create an account and log in. Passwords are securely hashed and encrypted.
 > - **Privacy:** Emails are only used as usernames; we do not send any emails (including password resets). You can use a dummy email address if you prefer.
 
-![Vocaloid Rater Screenshot](assets/main.png)
+![Vocaloid Rate Screenshot](assets/main.png)
 
 Vocaloid Rate is a personal, self-hosted web application for tracking, rating, and exploring Vocaloid music rankings. It scrapes data from [Vocaloard](https://vocaloard.injpok.tokyo/en/), providing a clean and feature-rich interface to manage your personal collection of rated tracks and playlists.
 
