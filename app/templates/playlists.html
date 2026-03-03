@@ -8,7 +8,7 @@
   {% include "partials/header.html" %}
 
   <div class="mx-auto max-w-4xl">
-    <div class="mb-6 flex justify-end gap-2">
+    <div class="mb-3 flex justify-end gap-2">
       <label
         for="import-single-playlist-input"
         class="flex cursor-pointer items-center gap-2 rounded border border-green-text p-2 font-bold text-green-text shadow-md ease-in-out hover:bg-green-hover hover:transition-colors hover:duration-200"
@@ -29,12 +29,37 @@
         {{ icon('plus', size="h-6 w-6") }} {{ _('Create New Playlist') }}
       </button>
     </div>
+    <div
+      id="create-playlist-panel"
+      class="mb-6 hidden rounded border border-border bg-card-bg p-3 shadow-md"
+    >
+      <div class="flex flex-col gap-2 md:flex-row">
+        <input
+          type="text"
+          id="new-playlist-name-input"
+          maxlength="100"
+          placeholder="{{ _('Playlist name') }}"
+          class="w-full rounded border border-border bg-background p-2 text-foreground"
+        />
+        <button
+          type="button"
+          id="save-new-playlist-btn"
+          class="cursor-pointer rounded border border-sky-text px-3 py-2 font-bold text-sky-text shadow-md ease-in-out hover:bg-sky-hover hover:transition-colors hover:duration-200"
+        >
+          {{ _('Save') }}
+        </button>
+      </div>
+      <div id="create-playlist-status" class="mt-2 text-sm font-bold"></div>
+    </div>
 
-    <div class="space-y-4">
+    <div class="space-y-4" id="playlists-list">
       {% if playlists %}
         {% for playlist in playlists %}
           <div
             class="flex items-center justify-between rounded border border-border bg-card-bg p-4 shadow-md"
+            data-playlist-id="{{ playlist.id }}"
+            data-playlist-name="{{ playlist.name }}"
+            data-playlist-description="{{ playlist.description or '' }}"
           >
             <div>
               <h2 class="text-xl font-bold text-header">{{ playlist.name }}</h2>
@@ -76,6 +101,7 @@
         {% endfor %}
       {% else %}
         <div
+          id="empty-playlists-state"
           class="rounded border border-border bg-card-bg p-8 text-center text-gray-text shadow-md"
         >
           {{ _("You haven't created any playlists yet.") }}
