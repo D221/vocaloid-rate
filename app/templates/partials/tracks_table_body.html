@@ -1,6 +1,5 @@
 {% from "macros/icons.html" import render as icon %}
 
-<template id="playlist-data"> {{ tracks_json | safe }} </template>
 {% for track in tracks %}
   <tr
     data-track-id="{{ track.id }}"

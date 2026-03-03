@@ -1775,17 +1775,46 @@ document.addEventListener("DOMContentLoaded", async () => {
           const renderLyric = (index) => {
             const selectedLyric = allLyricsData[index];
             if (!selectedLyric) return;
-            let metadataHTML = `Type: <strong>${selectedLyric.translation_type}</strong>`;
+
+            const isSafeHttpUrl = (value) => {
+              try {
+                const parsed = new URL(value);
+                return parsed.protocol === "http:" || parsed.protocol === "https:";
+              } catch {
+                return false;
+              }
+            };
+
+            lyricsMetadata.textContent = "";
+            const typeLabel = document.createTextNode("Type: ");
+            const typeValue = document.createElement("strong");
+            typeValue.textContent = selectedLyric.translation_type || "Unknown";
+            lyricsMetadata.appendChild(typeLabel);
+            lyricsMetadata.appendChild(typeValue);
+
             if (selectedLyric.source) {
-              metadataHTML += ` | Source: `;
-              if (selectedLyric.url) {
-                metadataHTML += `<a class="hover:underline hover:text-sky-text font-semibold" href="${selectedLyric.url}" target="_blank">${selectedLyric.source}</a>`;
+              lyricsMetadata.appendChild(document.createTextNode(" | Source: "));
+              if (selectedLyric.url && isSafeHttpUrl(selectedLyric.url)) {
+                const sourceLink = document.createElement("a");
+                sourceLink.className =
+                  "hover:text-sky-text font-semibold hover:underline";
+                sourceLink.href = selectedLyric.url;
+                sourceLink.target = "_blank";
+                sourceLink.rel = "noopener noreferrer";
+                sourceLink.textContent = selectedLyric.source;
+                lyricsMetadata.appendChild(sourceLink);
               } else {
-                metadataHTML += selectedLyric.source;
+                lyricsMetadata.appendChild(
+                  document.createTextNode(selectedLyric.source),
+                );
               }
             }
-            lyricsMetadata.innerHTML = metadataHTML;
-            lyricsContent.innerHTML = selectedLyric.text;
+
+            const lyricText = (selectedLyric.text || "").replace(
+              /<br\s*\/?>/gi,
+              "\n",
+            );
+            lyricsContent.textContent = lyricText;
           };
           fetch(`/api/lyrics/${trackId}`)
             .then((res) =>
@@ -1815,8 +1844,8 @@ document.addEventListener("DOMContentLoaded", async () => {
               }
             })
             .catch((errorMsg) => {
-              lyricsMetadata.innerHTML = "";
-              lyricsContent.innerHTML = `<em>${errorMsg}</em>`;
+              lyricsMetadata.textContent = "";
+              lyricsContent.textContent = String(errorMsg);
               lyricsContainer.style.display = "block";
               lyricsContainer.dataset.loaded = "false";
               setTimeout(() => {
