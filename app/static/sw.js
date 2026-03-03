@@ -1,6 +1,6 @@
 importScripts("/static/js/idb-helper.js");
 
-const CACHE_NAME = "vocarater-cache-v1";
+const CACHE_NAME = "vocarater-cache-v2";
 // List of files that make up the "app shell"
 const urlsToCache = [
   "/",
@@ -94,6 +94,24 @@ self.addEventListener("fetch", (event) => {
   }
 
   // Strategy 3: For everything else (CSS, JS, images), use Cache-First.
+  if (
+    request.method === "GET" &&
+    (request.url.includes("/static/js/") || request.url.includes("/static/css/"))
+  ) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, responseClone);
+          });
+          return response;
+        })
+        .catch(() => caches.match(request)),
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       return cachedResponse || fetch(request);

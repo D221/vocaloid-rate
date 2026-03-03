@@ -92,10 +92,16 @@ async def app_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         # Running in a development environment
         RESOURCE_BASE_PATH = Path(__file__).resolve().parent.parent  # Project root
 
-    # Run alembic migrations
-    alembic_ini_path = RESOURCE_BASE_PATH / "alembic.ini"
-    alembic_cfg = Config(str(alembic_ini_path))
-    command.upgrade(alembic_cfg, "head")
+    should_run_migrations = os.environ.get("RUN_MIGRATIONS_ON_STARTUP")
+    if should_run_migrations is None:
+        should_run_migrations = "false" if "VERCEL" in os.environ else "true"
+
+    if should_run_migrations.lower() == "true":
+        alembic_ini_path = RESOURCE_BASE_PATH / "alembic.ini"
+        alembic_cfg = Config(str(alembic_ini_path))
+        command.upgrade(alembic_cfg, "head")
+    else:
+        logging.info("Skipping Alembic migrations on startup.")
 
     global initial_scrape_in_progress
     db = SessionLocal()
@@ -304,6 +310,7 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 templates.env.globals["os"] = os
 
 initial_scrape_in_progress = False
+MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024  # 5 MiB
 
 
 class PlaylistUpdate(BaseModel):
@@ -315,6 +322,25 @@ class SinglePlaylistImport(BaseModel):
     name: str
     description: Optional[str] = None
     tracks: list[str]  # List of track URLs
+
+
+async def read_upload_with_size_limit(
+    upload_file: UploadFile, max_bytes: int = MAX_UPLOAD_SIZE_BYTES
+) -> bytes:
+    chunks = []
+    total_size = 0
+    while True:
+        chunk = await upload_file.read(1024 * 1024)
+        if not chunk:
+            break
+        total_size += len(chunk)
+        if total_size > max_bytes:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File is too large. Maximum allowed size is {max_bytes // (1024 * 1024)} MB.",
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 
 # Dependency
@@ -613,8 +639,15 @@ async def read_rated_tracks(
         locale=locale,
     )
 
+    all_tracks_count = crud.get_tracks_count(
+        db, user_id=current_user.id, rank_filter="all", locale=locale
+    )
     all_db_tracks = crud.get_tracks(
-        db, user_id=current_user.id, limit=1000, rank_filter="all"
+        db,
+        user_id=current_user.id,
+        limit=max(all_tracks_count, 1),
+        rank_filter="all",
+        locale=locale,
     )
 
     producers_flat = []
@@ -1144,7 +1177,7 @@ async def restore_ratings(
             status_code=400, detail="Invalid file type. Please upload a .json file."
         )
 
-    contents = await file.read()
+    contents = await read_upload_with_size_limit(file)
     try:
         backup_data = json.loads(contents)
     except json.JSONDecodeError:
@@ -1174,13 +1207,16 @@ async def restore_ratings(
             updated_count += 1
 
         if item.get("rating") is not None:
-            crud.create_rating(
-                db,
-                track.id,
-                user_id=current_user.id,
-                rating=item["rating"],
-                notes=item.get("notes"),
-            )
+            try:
+                crud.create_rating(
+                    db,
+                    track.id,
+                    user_id=current_user.id,
+                    rating=item["rating"],
+                    notes=item.get("notes"),
+                )
+            except ValueError as e:
+                raise HTTPException(status_code=400, detail=str(e))
 
     return {"created": created_count, "updated": updated_count}
 
@@ -1265,7 +1301,16 @@ async def read_root(
     # 2. Convert this list to a JSON string
     tracks_json_string = json.dumps(tracks_for_json)
 
-    all_db_tracks = crud.get_tracks(db, user_id=current_user.id, limit=1000)
+    all_tracks_count = crud.get_tracks_count(
+        db, user_id=current_user.id, rank_filter="all", locale=locale
+    )
+    all_db_tracks = crud.get_tracks(
+        db,
+        user_id=current_user.id,
+        limit=max(all_tracks_count, 1),
+        rank_filter="all",
+        locale=locale,
+    )
 
     producers_flat = []
     voicebanks_flat = []
@@ -1366,9 +1411,16 @@ async def read_recently_added(
     tracks_for_json = [track.to_dict() for track in tracks]
     tracks_json_string = json.dumps(tracks_for_json)
 
+    all_tracks_count = crud.get_tracks_count(
+        db, user_id=current_user.id, rank_filter="all", locale=locale
+    )
     all_db_tracks = crud.get_tracks(
-        db, user_id=current_user.id, limit=1000
-    )  # For filter dropdowns
+        db,
+        user_id=current_user.id,
+        limit=max(all_tracks_count, 1),
+        rank_filter="all",
+        locale=locale,
+    )
 
     producers_flat = []
     voicebanks_flat = []
@@ -1473,7 +1525,7 @@ def delete_rating_endpoint(
 @app.post("/rate/{track_id}", tags=["Ratings"])
 def rate_track(
     track_id: int,
-    rating: int = Form(...),
+    rating: int = Form(..., ge=1, le=10),
     notes: Optional[str] = Form(None),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
@@ -1897,7 +1949,7 @@ async def import_single_playlist(
     if not file.filename or not file.filename.lower().endswith(".json"):
         raise HTTPException(status_code=400, detail="Invalid file type. Must be .json")
 
-    contents = await file.read()
+    contents = await read_upload_with_size_limit(file)
     try:
         data = json.loads(contents)
         # Validate that it's a single playlist object, not a list
@@ -1915,8 +1967,11 @@ async def import_single_playlist(
 
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON format.")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred: {e}")
+    except Exception:
+        logging.error("Playlist import failed", exc_info=True)
+        raise HTTPException(
+            status_code=500, detail="An internal error occurred while importing."
+        )
 
 
 @app.get("/api/playlists/{playlist_id}/export", tags=["Backup & Restore"])
@@ -2068,9 +2123,8 @@ def get_recently_added_snapshot_endpoint(
     )
 
 
-@app.post("/token", response_model=schemas.Token, tags=["Authentication"])
+@app.post("/token", status_code=204, tags=["Authentication"])
 async def login_for_access_token(
-    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
@@ -2090,6 +2144,7 @@ async def login_for_access_token(
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
+    response = Response(status_code=204)
     response.set_cookie(
         key="access_token",
         value=access_token,
@@ -2097,7 +2152,7 @@ async def login_for_access_token(
         samesite="lax",
         secure=True,
     )  # Set as httponly cookie
-    return {"access_token": access_token, "token_type": "bearer"}
+    return response
 
 
 @app.post("/users/", response_model=schemas.User, tags=["Authentication"])

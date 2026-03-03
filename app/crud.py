@@ -4,6 +4,7 @@ from statistics import median
 from typing import List, Optional
 
 from sqlalchemy import and_, desc, distinct, func, nullslast, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, contains_eager, joinedload
 from sqlalchemy.sql.expression import exists
 
@@ -265,6 +266,9 @@ def get_recently_added_tracks(
 def create_rating(
     db: Session, track_id: int, user_id: int, rating: float, notes: Optional[str] = None
 ):
+    if rating < 1 or rating > 10:
+        raise ValueError("Rating must be between 1 and 10.")
+
     db_rating = (
         db.query(models.Rating)
         .filter(
@@ -280,7 +284,22 @@ def create_rating(
             track_id=track_id, user_id=user_id, rating=rating
         )  # Store user_id
         db.add(db_rating)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # Handle rare race condition where duplicate row is created concurrently.
+        db.rollback()
+        db_rating = (
+            db.query(models.Rating)
+            .filter(
+                models.Rating.track_id == track_id, models.Rating.user_id == user_id
+            )
+            .first()
+        )
+        if db_rating:
+            db_rating.rating = rating
+            db_rating.notes = notes
+            db.commit()
     db.refresh(db_rating)
     return db_rating
 

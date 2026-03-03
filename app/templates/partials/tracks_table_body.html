@@ -16,7 +16,7 @@
       data-label="{{ _('Image') }}"
       class="slim-hideable-image border-b border-border p-0 md:table-cell md:border md:p-2 md:whitespace-nowrap"
     >
-      <a href="{{ track.link }}" target="_blank">
+      <a href="{{ track.link }}" target="_blank" rel="noopener noreferrer">
         <img
           src="{{ track.image_url }}"
           alt="{{ track.title }}"
@@ -48,6 +48,7 @@
           <a
             href="{{ track.link }}"
             target="_blank"
+            rel="noopener noreferrer"
             class="font-semibold hover:text-sky-text hover:underline"
             title="{% if locale == 'ja' and track.title_jp %}
               {{ track.title_jp }}

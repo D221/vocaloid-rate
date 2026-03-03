@@ -1,6 +1,14 @@
 import datetime
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -43,6 +51,9 @@ class Track(Base):
 
 class Rating(Base):
     __tablename__ = "ratings"
+    __table_args__ = (
+        UniqueConstraint("track_id", "user_id", name="uq_ratings_track_user"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     track_id: Mapped[int] = mapped_column(ForeignKey("tracks.id"))

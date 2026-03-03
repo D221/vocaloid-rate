@@ -1,7 +1,7 @@
 import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class RatingBase(BaseModel):
@@ -27,7 +27,7 @@ class Track(BaseModel):
     link: str
     image_url: Optional[str] = None
     rank: Optional[int] = None
-    ratings: List[Rating] = []
+    ratings: List[Rating] = Field(default_factory=list)
 
     class Config:
         from_attributes = True
@@ -56,7 +56,7 @@ class PlaylistTrackDetail(Track):
 class Playlist(PlaylistBase):
     id: int
     created_at: datetime.datetime
-    tracks: List[PlaylistTrackDetail] = []
+    tracks: List[PlaylistTrackDetail] = Field(default_factory=list)
 
     class Config:
         from_attributes = True
