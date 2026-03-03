@@ -330,8 +330,11 @@
             border-amber-text text-amber-text hover:bg-amber-hover
           {% endif %} cursor-pointer rounded border px-2 py-1 font-bold shadow-md ease-in-out hover:transition-colors hover:duration-200 2xl:hidden"
         >
-          {% if current_rating > 0 %}★ {{ current_rating|int }}{% else %}☆
-          {{ _('Rate') }}{% endif %}
+          {% if current_rating > 0 %}
+            ★ {{ current_rating|int }}
+          {% else %}
+            ☆ {{ _('Rate') }}
+          {% endif %}
         </button>
 
         <div class="hidden items-center gap-2 2xl:flex 2xl:flex-nowrap">

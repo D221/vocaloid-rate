@@ -96,7 +96,8 @@ self.addEventListener("fetch", (event) => {
   // Strategy 3: For everything else (CSS, JS, images), use Cache-First.
   if (
     request.method === "GET" &&
-    (request.url.includes("/static/js/") || request.url.includes("/static/css/"))
+    (request.url.includes("/static/js/") ||
+      request.url.includes("/static/css/"))
   ) {
     event.respondWith(
       fetch(request)

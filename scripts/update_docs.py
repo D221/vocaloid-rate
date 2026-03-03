@@ -26,14 +26,17 @@ def start_fastapi():
     """Start FastAPI in the background."""
     # The command itself is fine, as it's found in the system's PATH
     cmd = ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    env = os.environ.copy()
+    # Docs generation needs app import/startup, but CI may not provide auth secrets.
+    env.setdefault("SECRET_KEY", "docs-generation-temporary-secret-key")
 
     # We need to run this command from the project root so uvicorn can find "app.main"
     # Note: On Windows, shell=True is often needed for commands like uvicorn if they are scripts.
     # The Popen object needs to know the correct CWD.
     if sys.platform == "win32":
-        return subprocess.Popen(cmd, shell=True, cwd=PROJECT_ROOT)
+        return subprocess.Popen(cmd, shell=True, cwd=PROJECT_ROOT, env=env)
     else:
-        return subprocess.Popen(cmd, preexec_fn=os.setsid, cwd=PROJECT_ROOT)
+        return subprocess.Popen(cmd, preexec_fn=os.setsid, cwd=PROJECT_ROOT, env=env)
 
 
 def stop_fastapi(process):
@@ -48,7 +51,7 @@ def stop_fastapi(process):
 def fetch_openapi():
     """Fetch the OpenAPI spec and save it."""
     url = "http://localhost:8000/openapi.json"
-    for _ in range(10):
+    for _ in range(30):
         try:
             response = requests.get(url)
             response.raise_for_status()
@@ -61,7 +64,7 @@ def fetch_openapi():
         except requests.ConnectionError:
             print("Waiting for FastAPI to start...")
             time.sleep(1)
-    raise RuntimeError("Failed to fetch OpenAPI spec after 10 seconds.")
+    raise RuntimeError("Failed to fetch OpenAPI spec after 30 seconds.")
 
 
 def generate_api_docs():
