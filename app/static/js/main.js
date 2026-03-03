@@ -67,8 +67,101 @@ const showToast = (message, type = "success") => {
   }, 2500); // Toast visible for 2.5 seconds
 };
 
+const THUMBNAIL_UPGRADE_ITEM_LIMIT = 80;
+const THUMBNAIL_UPGRADE_CONCURRENCY = 4;
+const thumbnailUpgradeState = {
+  observer: null,
+  queue: [],
+  activeCount: 0,
+};
+
+const resetThumbnailUpgradeState = () => {
+  if (thumbnailUpgradeState.observer) {
+    thumbnailUpgradeState.observer.disconnect();
+    thumbnailUpgradeState.observer = null;
+  }
+  thumbnailUpgradeState.queue = [];
+};
+
+const runThumbnailUpgradeQueue = () => {
+  while (
+    thumbnailUpgradeState.activeCount < THUMBNAIL_UPGRADE_CONCURRENCY &&
+    thumbnailUpgradeState.queue.length > 0
+  ) {
+    const { img, skipProbe } = thumbnailUpgradeState.queue.shift();
+    if (!img || img.dataset.processed === "true") {
+      continue;
+    }
+
+    thumbnailUpgradeState.activeCount += 1;
+    const currentSrc = img.currentSrc || img.src;
+
+    if (!currentSrc.includes("i.ytimg.com")) {
+      img.dataset.processed = "true";
+      img.dataset.upgradeQueued = "false";
+      img.classList.add("object-cover", "aspect-video");
+      thumbnailUpgradeState.activeCount -= 1;
+      continue;
+    }
+
+    const maxResUrl = currentSrc.replace(
+      /(\/)(maxresdefault|mqdefault|hqdefault|default)(\.jpg)/,
+      "$1maxresdefault$3",
+    );
+    const hqUrl = currentSrc.replace(
+      /(\/)(maxresdefault|mqdefault|hqdefault|default)(\.jpg)/,
+      "$1hqdefault$3",
+    );
+
+    const finalize = () => {
+      img.dataset.processed = "true";
+      img.dataset.upgradeQueued = "false";
+      img.classList.add("object-cover", "aspect-video");
+      thumbnailUpgradeState.activeCount -= 1;
+      runThumbnailUpgradeQueue();
+    };
+
+    if (skipProbe) {
+      img.src = hqUrl;
+      finalize();
+      continue;
+    }
+
+    fetch(maxResUrl, { method: "HEAD" })
+      .then((response) => {
+        if (
+          response.ok &&
+          parseInt(response.headers.get("Content-Length"), 10) > 1024
+        ) {
+          img.src = maxResUrl;
+        } else {
+          img.src = hqUrl;
+        }
+      })
+      .catch(() => {
+        img.src = hqUrl;
+      })
+      .finally(finalize);
+  }
+};
+
+const queueThumbnailUpgrade = (img, skipProbe) => {
+  if (!img || img.dataset.processed === "true") return;
+  if (img.dataset.upgradeQueued === "true") return;
+
+  img.dataset.upgradeQueued = "true";
+  thumbnailUpgradeState.queue.push({ img, skipProbe });
+  runThumbnailUpgradeQueue();
+};
+
 const upgradeThumbnails = () => {
-  document.querySelectorAll("img.track-thumbnail").forEach((img) => {
+  resetThumbnailUpgradeState();
+  const thumbnails = Array.from(
+    document.querySelectorAll("img.track-thumbnail"),
+  );
+  const skipExpensiveProbe = thumbnails.length > THUMBNAIL_UPGRADE_ITEM_LIMIT;
+
+  thumbnails.forEach((img) => {
     // --- Desktop Logic (Corrected) ---
     if (window.innerWidth >= 768) {
       if (img.src.includes("i.ytimg.com")) {
@@ -83,43 +176,37 @@ const upgradeThumbnails = () => {
           img.src = mqUrl;
         }
       }
+      img.dataset.processed = "true";
+      img.dataset.upgradeQueued = "false";
       img.classList.remove("object-cover", "aspect-video");
       return;
     }
+  });
 
-    // --- Mobile Logic (Unchanged and Working) ---
-    const currentSrc = img.src;
+  if (window.innerWidth >= 768) return;
 
-    if (currentSrc.includes("i.ytimg.com") && !img.dataset.processed) {
-      img.dataset.processed = "true";
+  if (!("IntersectionObserver" in window)) {
+    thumbnails.forEach((img) => {
+      queueThumbnailUpgrade(img, skipExpensiveProbe);
+    });
+    return;
+  }
 
-      const maxResUrl = currentSrc.replace(
-        /(\/)(mqdefault|hqdefault|default)(\.jpg)/,
-        "$1maxresdefault$3",
-      );
-      const hqUrl = currentSrc.replace(
-        /(\/)(mqdefault|hqdefault|default)(\.jpg)/,
-        "$1hqdefault$3",
-      );
+  thumbnailUpgradeState.observer = new IntersectionObserver(
+    (entries, observer) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const img = entry.target;
+        observer.unobserve(img);
+        queueThumbnailUpgrade(img, skipExpensiveProbe);
+      });
+    },
+    { rootMargin: "300px 0px", threshold: 0.01 },
+  );
 
-      fetch(maxResUrl, { method: "HEAD" })
-        .then((response) => {
-          if (
-            response.ok &&
-            parseInt(response.headers.get("Content-Length"), 10) > 1024
-          ) {
-            img.src = maxResUrl;
-          } else {
-            throw new Error("maxresdefault not available or is a placeholder");
-          }
-        })
-        .catch(() => {
-          img.src = hqUrl;
-        })
-        .finally(() => {
-          img.classList.add("object-cover", "aspect-video");
-        });
-    }
+  thumbnails.forEach((img) => {
+    if (img.dataset.processed === "true") return;
+    thumbnailUpgradeState.observer.observe(img);
   });
 };
 
@@ -2025,7 +2112,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   if (limitFilter) {
-    limitFilter.value = currentLimit;
     limitFilter.addEventListener("change", (e) => {
       currentLimit = e.target.value;
       currentPage = 1;
@@ -2109,16 +2195,60 @@ document.addEventListener("DOMContentLoaded", async () => {
   // --- Initial Page Load Logic ---
   if (document.getElementById("tracks-table-body")) {
     const urlParams = new URLSearchParams(window.location.search);
-    currentPage = parseInt(urlParams.get("page"), 10) || 1;
+    const tableBody = document.getElementById("tracks-table-body");
+    const serverPage =
+      parseInt(paginationContainer?.dataset.initialPage, 10) || 1;
+    const serverTotalPages =
+      parseInt(paginationContainer?.dataset.initialTotalPages, 10) || 1;
+    const serverLimit =
+      paginationContainer?.dataset.initialLimit || limitFilter?.value || "all";
+
+    currentPage = parseInt(urlParams.get("page"), 10) || serverPage;
     currentLimit =
       urlParams.get("limit") ||
       localStorage.getItem("defaultPageSize") ||
-      "all";
+      serverLimit;
     if (limitFilter) limitFilter.value = currentLimit;
 
-    // Fetch the initial view based on the resolved state
-    showSkeleton();
-    updateTracks();
+    if (paginationContainer) {
+      updatePaginationUI({
+        page: serverPage,
+        total_pages: serverTotalPages,
+        limit: serverLimit,
+      });
+    }
+
+    const shouldFetchInitialTracks =
+      currentPage !== serverPage || currentLimit !== serverLimit;
+
+    if (shouldFetchInitialTracks) {
+      // Keep this only for true client/server state mismatch.
+      showSkeleton();
+      updateTracks();
+    } else {
+      // Preserve first paint: use server-rendered rows as initial player data.
+      playerState.masterPlaylist = [...playerState.playlist];
+
+      // Warm up full playlist state in the background without re-rendering.
+      const snapshotUrl =
+        tableBody.dataset.snapshotUrl || "/api/playlist-snapshot";
+      const snapshotParams = new URLSearchParams(urlParams.toString());
+      if (!snapshotParams.has("page")) {
+        snapshotParams.set("page", String(currentPage));
+      }
+      if (!snapshotParams.has("limit")) {
+        snapshotParams.set("limit", currentLimit);
+      }
+      fetch(`${snapshotUrl}?${snapshotParams.toString()}`)
+        .then((res) => (res.ok ? res.json() : Promise.reject()))
+        .then((masterPlaylistData) => {
+          playerState.masterPlaylist = masterPlaylistData;
+          if (playerState.isShuffle) {
+            generateShuffledPlaylist();
+          }
+        })
+        .catch(() => {});
+    }
   }
 
   window.playerAPI = {

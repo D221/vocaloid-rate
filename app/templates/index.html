@@ -38,6 +38,9 @@
   <div
     class="mt-8 flex-wrap items-center justify-center gap-3"
     id="pagination-container"
+    data-initial-page="{{ pagination.page }}"
+    data-initial-total-pages="{{ pagination.total_pages }}"
+    data-initial-limit="{{ pagination.limit }}"
   >
     <button
       class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-sky-hover disabled:cursor-not-allowed disabled:opacity-50"
