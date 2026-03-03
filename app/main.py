@@ -521,8 +521,14 @@ def cron_scrape(request: Request, background_tasks: BackgroundTasks):
     auth_header = request.headers.get("Authorization")
     cron_secret = os.environ.get("CRON_SECRET")
 
-    # If CRON_SECRET is set in environment, enforce it.
-    if cron_secret and auth_header != f"Bearer {cron_secret}":
+    # Always require CRON_SECRET for this public endpoint.
+    if not cron_secret:
+        raise HTTPException(
+            status_code=503,
+            detail="CRON_SECRET is not configured for scheduled scraping.",
+        )
+
+    if auth_header != f"Bearer {cron_secret}":
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     background_tasks.add_task(scrape_and_populate_task)
@@ -721,7 +727,11 @@ async def view_playlist_detail_page(
 
     # Use our new functions to get the initial filtered/paginated track list
     total_tracks = crud.get_playlist_tracks_count(
-        db, playlist_id=playlist_id, locale=locale, **filters
+        db,
+        playlist_id=playlist_id,
+        user_id=current_user.id,
+        locale=locale,
+        **filters,
     )
     limit_val = total_tracks if limit == "all" else int(limit)
     total_pages = (total_tracks + limit_val - 1) // limit_val if limit_val > 0 else 1
@@ -730,6 +740,7 @@ async def view_playlist_detail_page(
     tracks_in_playlist = crud.get_playlist_tracks_filtered(
         db,
         playlist_id=playlist_id,
+        user_id=current_user.id,
         skip=skip,
         limit=limit_val,
         sort_by=sort_by,
@@ -921,6 +932,7 @@ def get_playlist_tracks_partial(
     playlist_id: int,
     request: Request,
     db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
     page: int = 1,
     limit: str = "all",
     title_filter: Optional[str] = None,
@@ -930,10 +942,19 @@ def get_playlist_tracks_partial(
     sort_dir: str = "asc",
     translations: Translations = Depends(get_translations),
 ):
+    db_playlist = crud.get_playlist(db, playlist_id)
+    if not db_playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+    if db_playlist.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403, detail="Not authorized to view this playlist"
+        )
+
     locale = translations.info()["language"]
     total_tracks = crud.get_playlist_tracks_count(
         db,
         playlist_id=playlist_id,
+        user_id=current_user.id,
         title_filter=title_filter,
         producer_filter=producer_filter,
         voicebank_filter=voicebank_filter,
@@ -947,6 +968,7 @@ def get_playlist_tracks_partial(
     tracks = crud.get_playlist_tracks_filtered(
         db,
         playlist_id=playlist_id,
+        user_id=current_user.id,
         skip=skip,
         limit=limit_val,
         title_filter=title_filter,

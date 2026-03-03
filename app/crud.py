@@ -817,6 +817,7 @@ def get_playlist_snapshot(
 def get_playlist_tracks_filtered(
     db: Session,
     playlist_id: int,
+    user_id: int,
     skip: int = 0,
     limit: int = 1000,
     title_filter: Optional[str] = None,
@@ -829,7 +830,17 @@ def get_playlist_tracks_filtered(
     query = (
         db.query(models.Track)
         .join(models.PlaylistTrack)
+        .join(models.Playlist)
         .filter(models.PlaylistTrack.playlist_id == playlist_id)
+        .filter(models.Playlist.user_id == user_id)
+        .outerjoin(
+            models.Rating,
+            and_(
+                models.Rating.track_id == models.Track.id,
+                models.Rating.user_id == user_id,
+            ),
+        )
+        .options(contains_eager(models.Track.ratings))
     )
 
     if title_filter:
@@ -874,12 +885,16 @@ def get_playlist_tracks_filtered(
         # Default sort for playlists is their manually set position
         query = query.order_by(models.PlaylistTrack.position.asc())
 
-    return query.offset(skip).limit(limit).all()
+    tracks = query.offset(skip).limit(limit).all()
+    for track in tracks:
+        track.is_in_playlist = True
+    return tracks
 
 
 def get_playlist_tracks_count(
     db: Session,
     playlist_id: int,
+    user_id: int,
     title_filter: Optional[str] = None,
     producer_filter: Optional[str] = None,
     voicebank_filter: Optional[str] = None,
@@ -888,7 +903,9 @@ def get_playlist_tracks_count(
     query = (
         db.query(func.count(distinct(models.Track.id)))
         .join(models.PlaylistTrack)
+        .join(models.Playlist)
         .filter(models.PlaylistTrack.playlist_id == playlist_id)
+        .filter(models.Playlist.user_id == user_id)
     )
 
     if title_filter:
@@ -1091,7 +1108,11 @@ def get_recommended_tracks(
     MINIMUM_SCORE_THRESHOLD = 0.3
 
     # 1. Get all user ratings and calculate average ratings for producers and voicebanks
-    all_ratings_query = db.query(models.Rating.rating).all()
+    all_ratings_query = (
+        db.query(models.Rating.rating)
+        .filter(models.Rating.user_id == user_id)
+        .all()
+    )
     if not all_ratings_query:
         return []
 
@@ -1107,6 +1128,7 @@ def get_recommended_tracks(
             models.Rating.rating,
         )
         .join(models.Rating)
+        .filter(models.Rating.user_id == user_id)
         .all()
     )
 
