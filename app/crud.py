@@ -1128,9 +1128,7 @@ def get_recommended_tracks(
 
     # 1. Get all user ratings and calculate average ratings for producers and voicebanks
     all_ratings_query = (
-        db.query(models.Rating.rating)
-        .filter(models.Rating.user_id == user_id)
-        .all()
+        db.query(models.Rating.rating).filter(models.Rating.user_id == user_id).all()
     )
     if not all_ratings_query:
         return []
@@ -1190,14 +1188,18 @@ def get_recommended_tracks(
     }
 
     # 2. Get all unrated tracks
-    unrated_tracks = db.query(models.Track).filter(
-        ~exists().where(
-            and_(
-                models.Rating.track_id == models.Track.id,
-                models.Rating.user_id == user_id,
+    unrated_tracks = (
+        db.query(models.Track)
+        .filter(
+            ~exists().where(
+                and_(
+                    models.Rating.track_id == models.Track.id,
+                    models.Rating.user_id == user_id,
+                )
             )
         )
-    ).all()
+        .all()
+    )
 
     # 3. Calculate recommendation score for each unrated track
     track_scores = []

@@ -1960,9 +1960,7 @@ async def import_all_playlists(
                 status_code=400, detail="JSON is not a valid playlists export."
             )
 
-        created, updated = crud.import_playlists(
-            db, user_id=current_user.id, data=data
-        )
+        created, updated = crud.import_playlists(db, user_id=current_user.id, data=data)
         return {"created": created, "updated": updated}
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON format.")
