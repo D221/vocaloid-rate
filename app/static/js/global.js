@@ -31,6 +31,7 @@ window.initializeTheme = function () {
 
 // TRANSLATION LOGIC
 let translations = {};
+const TRANSLATIONS_CACHE_PREFIX = "jsTranslations:";
 
 window._ = function (key, ...args) {
   let translated = translations[key] || key;
@@ -38,6 +39,20 @@ window._ = function (key, ...args) {
     translated = translated.replace(/%s/g, () => args.shift());
   }
   return translated;
+};
+
+window.showToast = function (message, type = "success") {
+  const toast = document.createElement("div");
+  const bgColor = type === "error" ? "bg-red-text" : "bg-green-text";
+  toast.className = `fixed bottom-24 right-5 z-[2000] rounded-md px-4 py-3 font-semibold text-white shadow-lg ${bgColor}`;
+  toast.textContent = window._(message);
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.transition = "opacity 0.5s ease";
+    toast.style.opacity = "0";
+    setTimeout(() => toast.remove(), 500);
+  }, 2500);
 };
 
 // PWA SERVICE WORKER REGISTRATION
@@ -57,15 +72,24 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Fetch translations for the current language.
   const lang = document.documentElement.lang || "en";
+  const cacheKey = `${TRANSLATIONS_CACHE_PREFIX}${lang}`;
   try {
-    const response = await fetch(`/api/translations?lang=${lang}`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      translations = JSON.parse(cached);
+    } else {
+      const response = await fetch(
+        `/api/translations?lang=${encodeURIComponent(lang)}`,
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      translations = await response.json();
+      sessionStorage.setItem(cacheKey, JSON.stringify(translations));
     }
-    translations = await response.json();
   } catch (error) {
-    // <-- THE FIX IS HERE: ADDED THE OPENING BRACE
     console.error("Could not fetch translations:", error);
+    translations = {};
   }
 
   // --- Language Switcher Logic ---

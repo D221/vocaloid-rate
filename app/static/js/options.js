@@ -74,7 +74,9 @@ document.addEventListener("DOMContentLoaded", () => {
         URL.revokeObjectURL(url);
       } catch (error) {
         console.error("Backup failed:", error);
-        alert("Backup failed. See console for details.");
+        if (typeof window.showToast === "function") {
+          window.showToast("Backup failed. See console for details.", "error");
+        }
       }
     });
   }
@@ -132,7 +134,13 @@ document.addEventListener("DOMContentLoaded", () => {
     slimModeToggle.addEventListener("change", () => {
       const isChecked = slimModeToggle.checked;
       localStorage.setItem(SLIM_MODE_KEY, isChecked);
-      window.location.reload();
+      document.documentElement.classList.toggle("slim-mode-html", isChecked);
+      if (typeof window.showToast === "function") {
+        window.showToast(
+          isChecked ? "Slim mode enabled." : "Slim mode disabled.",
+          "success",
+        );
+      }
     });
   }
 });

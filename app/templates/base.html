@@ -65,11 +65,6 @@
         const slim = localStorage.getItem("viewModeSlim") === "true";
         if (slim) {
           document.documentElement.classList.add("slim-mode-html");
-          document.addEventListener("DOMContentLoaded", () => {
-            document
-              .querySelectorAll("td.slim-hideable-image")
-              .forEach((td) => td.remove());
-          });
           return;
         }
       })();

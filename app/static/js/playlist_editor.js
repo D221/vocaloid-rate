@@ -324,7 +324,13 @@ document.addEventListener("DOMContentLoaded", () => {
           window.playerAPI.buildPlaylistFromEditor(playlistItemsForPlayer);
           window.playerAPI.loadAndPlayTrack(trackId);
         } else {
-          alert(
+          if (typeof showToast === "function") {
+            showToast(
+              "Player API not found. Make sure main.js is loaded before this script.",
+              "error",
+            );
+          }
+          console.error(
             "Player API not found. Make sure main.js is loaded before this script.",
           );
         }

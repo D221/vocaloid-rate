@@ -9,6 +9,8 @@ let skeletonTimer;
 
 let currentPage = 1;
 let currentLimit = localStorage.getItem("defaultPageSize") || "all";
+let updateRequestId = 0;
+let updateAbortController = null;
 
 const playerState = {
   isPlaying: false,
@@ -940,13 +942,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const pageContentUrl = `${baseUrl}?${paramsForFetch.toString()}`;
       const masterPlaylistUrl = `${snapshotUrl}?${paramsForFetch.toString()}`;
+      updateRequestId += 1;
+      const requestId = updateRequestId;
+      if (updateAbortController) {
+        updateAbortController.abort();
+      }
+      updateAbortController = new AbortController();
       try {
         const [pageResponse, masterPlaylistResponse] = await Promise.all([
-          fetch(pageContentUrl),
-          fetch(masterPlaylistUrl),
+          fetch(pageContentUrl, { signal: updateAbortController.signal }),
+          fetch(masterPlaylistUrl, { signal: updateAbortController.signal }),
         ]);
 
         hideSkeleton();
+        if (requestId !== updateRequestId) return;
 
         if (!pageResponse.ok || !masterPlaylistResponse.ok) {
           throw new Error("Failed to fetch page data or playlist snapshot.");
@@ -980,6 +989,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         updatePaginationUI(pageData.pagination);
         upgradeThumbnails();
       } catch (error) {
+        if (error?.name === "AbortError") {
+          return;
+        }
         hideSkeleton();
         console.error("Failed to update tracks:", error);
         tableBody.innerHTML =
@@ -991,6 +1003,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       updateActiveFilterDisplay();
     }
   };
+  window.addEventListener("tracks:refresh", () => {
+    if (!document.getElementById("tracks-table-body")) return;
+    showSkeleton();
+    updateTracks();
+  });
 
   function updatePlayerUI() {
     playPauseBtn.innerHTML = playerState.isPlaying
@@ -1779,7 +1796,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             const isSafeHttpUrl = (value) => {
               try {
                 const parsed = new URL(value);
-                return parsed.protocol === "http:" || parsed.protocol === "https:";
+                return (
+                  parsed.protocol === "http:" || parsed.protocol === "https:"
+                );
               } catch {
                 return false;
               }
@@ -1793,7 +1812,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             lyricsMetadata.appendChild(typeValue);
 
             if (selectedLyric.source) {
-              lyricsMetadata.appendChild(document.createTextNode(" | Source: "));
+              lyricsMetadata.appendChild(
+                document.createTextNode(" | Source: "),
+              );
               if (selectedLyric.url && isSafeHttpUrl(selectedLyric.url)) {
                 const sourceLink = document.createElement("a");
                 sourceLink.className =
