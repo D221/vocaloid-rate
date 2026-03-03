@@ -69,6 +69,65 @@ const showToast = (message, type = "success") => {
   }, 2500); // Toast visible for 2.5 seconds
 };
 
+const setNotesButtonLabel = (button, hasNote) => {
+  if (!button) return;
+  button.innerHTML = `
+    <span class="2xl:hidden">${window._("Note")}</span>
+    <span class="hidden 2xl:inline">${hasNote ? window._("Edit Note") : window._("Add Note")}</span>
+  `;
+};
+
+const getTrackRowFromRatingForm = (form) =>
+  form?.closest("tr[data-track-id]") || null;
+
+const getTrackNotesInputFromForm = (form) => {
+  const row = getTrackRowFromRatingForm(form);
+  return row?.querySelector("textarea[data-notes-input]") || null;
+};
+
+const hasNoteForForm = (form) => {
+  const notesInput = getTrackNotesInputFromForm(form);
+  return Boolean(notesInput && notesInput.value.trim().length > 0);
+};
+
+const setCompactRatingButtonLabel = (button, rating, hasNote = false) => {
+  if (!button) return;
+  const numericRating = Number(rating) || 0;
+  button.textContent =
+    numericRating > 0
+      ? `★ ${numericRating.toFixed(1).replace(/\.0$/, "")}`
+      : `☆ ${window._("Rate")}`;
+  button.classList.remove(
+    "border-amber-text",
+    "text-amber-text",
+    "border-yellow-500",
+    "text-yellow-500",
+    "border-cyan-text",
+    "text-cyan-text",
+    "hover:bg-amber-hover",
+    "hover:bg-cyan-hover",
+  );
+  if (hasNote) {
+    button.classList.add(
+      "border-cyan-text",
+      "text-cyan-text",
+      "hover:bg-cyan-hover",
+    );
+  } else if (numericRating > 0) {
+    button.classList.add(
+      "border-yellow-500",
+      "text-yellow-500",
+      "hover:bg-amber-hover",
+    );
+  } else {
+    button.classList.add(
+      "border-amber-text",
+      "text-amber-text",
+      "hover:bg-amber-hover",
+    );
+  }
+};
+
 const THUMBNAIL_UPGRADE_ITEM_LIMIT = 80;
 const THUMBNAIL_UPGRADE_CONCURRENCY = 4;
 const thumbnailUpgradeState = {
@@ -1166,6 +1225,143 @@ document.addEventListener("DOMContentLoaded", async () => {
     return clampedRating;
   };
 
+  let activeRatingModalForm = null;
+  let activeModalRating = 0;
+
+  const closeRatingModal = () => {
+    const modal = document.getElementById("rating-modal");
+    if (!modal) return;
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+    activeRatingModalForm = null;
+    activeModalRating = 0;
+  };
+
+  const ensureClearRatingButton = (form) => {
+    if (form.querySelector("[data-clear-rating]")) return;
+    const deleteButtonHTML = `
+      <button data-clear-rating type="button" data-delete-endpoint="${form.action}/delete"
+        class="shadow-md p-1 rounded border border-red-text text-red-text font-bold cursor-pointer ease-in-out hover:transition-colors hover:duration-200 hover:bg-red-hover">
+        <span class="inline-block h-6 w-6">${getIconSVG("xmark")}</span>
+      </button>`;
+    const buttonContainer = form.querySelector(
+      "button[data-notes-toggle]",
+    )?.parentElement;
+    if (buttonContainer) {
+      buttonContainer.insertAdjacentHTML("beforeend", deleteButtonHTML);
+    }
+  };
+
+  const applyRatingToFormUI = (form, rating) => {
+    const ratingContainer = form.querySelector("[data-star-rating]");
+    if (ratingContainer) {
+      ratingContainer.dataset.rating = String(rating);
+      ratingContainer.style.setProperty(
+        "--rating-width",
+        `${(rating / 10) * 100}%`,
+      );
+    }
+    const radioToSelect = form.querySelector(`input[value="${rating}"]`);
+    if (radioToSelect) {
+      radioToSelect.checked = true;
+    }
+    const compactButton = form.querySelector("[data-open-rating-modal]");
+    setCompactRatingButtonLabel(compactButton, rating, hasNoteForForm(form));
+  };
+
+  const submitRating = async (form, rating, notesValue = null) => {
+    const formData = new FormData(form);
+    formData.set("rating", rating);
+    if (notesValue !== null) {
+      formData.set("notes", notesValue);
+    }
+    const response = await fetch(form.action, {
+      method: "POST",
+      body: formData,
+    });
+    if (!response.ok) {
+      throw new Error(window._("Failed to save rating."));
+    }
+    applyRatingToFormUI(form, rating);
+    if (notesValue !== null) {
+      const notesInput = getTrackNotesInputFromForm(form);
+      if (notesInput) {
+        notesInput.value = notesValue;
+      }
+      const notesBtn = form.querySelector("button[data-notes-toggle]");
+      if (notesBtn) {
+        const hasNote = notesValue.trim().length > 0;
+        notesBtn.classList.toggle("border-cyan-text", hasNote);
+        notesBtn.classList.toggle("text-cyan-text", hasNote);
+        notesBtn.classList.toggle("border-gray-text", !hasNote);
+        notesBtn.classList.toggle("text-gray-text", !hasNote);
+        setNotesButtonLabel(notesBtn, hasNote);
+      }
+      const compactButton = form.querySelector("[data-open-rating-modal]");
+      setCompactRatingButtonLabel(
+        compactButton,
+        rating,
+        notesValue.trim().length > 0,
+      );
+    }
+    ensureClearRatingButton(form);
+  };
+
+  const getRatingModal = () => {
+    let modal = document.getElementById("rating-modal");
+    if (modal) return modal;
+
+    modal = document.createElement("div");
+    modal.id = "rating-modal";
+    modal.className =
+      "fixed inset-0 z-[2100] hidden items-end justify-center bg-black/50 p-4";
+    modal.innerHTML = `
+      <div class="w-full max-w-md rounded-xl border border-border bg-card-bg p-4 shadow-2xl">
+        <div class="mb-3 flex items-center justify-between">
+          <h3 class="text-lg font-bold text-header">${window._("Rate Track")}</h3>
+          <button type="button" data-rating-modal-close class="rounded border border-gray-text px-2 py-1 text-xs font-bold text-gray-text hover:bg-gray-hover">${window._("Close")}</button>
+        </div>
+        <div class="mb-3 text-sm text-gray-text" data-rating-modal-current></div>
+        <div class="grid grid-cols-5 gap-2" data-rating-modal-grid></div>
+        <div class="mt-3">
+          <label class="mb-1 block text-sm font-bold text-header" for="rating-modal-notes">${window._("Note")}</label>
+          <textarea id="rating-modal-notes" data-rating-modal-notes class="h-24 w-full rounded border border-border bg-background p-2 text-sm text-foreground" placeholder="${window._("Add a note")}"></textarea>
+        </div>
+        <div class="mt-3 flex justify-between">
+          <button type="button" data-rating-modal-clear class="rounded border border-red-text px-3 py-2 text-sm font-bold text-red-text hover:bg-red-hover">${window._("Clear")}</button>
+          <button type="button" data-rating-modal-save class="rounded border border-sky-text px-3 py-2 text-sm font-bold text-sky-text hover:bg-sky-hover">${window._("Save")}</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+    return modal;
+  };
+
+  const renderRatingModalGrid = (modal, selectedRating) => {
+    const grid = modal.querySelector("[data-rating-modal-grid]");
+    const current = modal.querySelector("[data-rating-modal-current]");
+    if (!grid || !current) return;
+    current.textContent =
+      selectedRating > 0
+        ? window._("Selected: %s ★", String(selectedRating))
+        : window._("Select a rating");
+
+    grid.innerHTML = "";
+    for (let i = 1; i <= 10; i += 1) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.modalRatingValue = String(i);
+      button.className =
+        "rounded border px-2 py-2 text-sm font-bold shadow-sm transition-colors " +
+        (i <= selectedRating
+          ? "border-yellow-500 text-yellow-500 bg-yellow-100/20"
+          : "border-border text-foreground hover:bg-gray-hover");
+      button.textContent = `★ ${i}`;
+      grid.appendChild(button);
+    }
+  };
+
   const renderRatingChart = () => {
     const chartCanvas = document.getElementById("ratingDistributionChart");
     if (!chartCanvas) return;
@@ -1261,6 +1457,97 @@ document.addEventListener("DOMContentLoaded", async () => {
       closePlaylistModals();
       return; // Stop processing to prevent other actions
     }
+    if (e.target.id === "rating-modal") {
+      closeRatingModal();
+      return;
+    }
+
+    const ratingModalClose = e.target.closest("[data-rating-modal-close]");
+    if (ratingModalClose) {
+      e.preventDefault();
+      closeRatingModal();
+      return;
+    }
+
+    const modalRatingButton = e.target.closest("[data-modal-rating-value]");
+    if (modalRatingButton) {
+      e.preventDefault();
+      activeModalRating = parseInt(
+        modalRatingButton.dataset.modalRatingValue,
+        10,
+      );
+      const modal = getRatingModal();
+      renderRatingModalGrid(modal, activeModalRating);
+      return;
+    }
+
+    const ratingModalSave = e.target.closest("[data-rating-modal-save]");
+    if (ratingModalSave && activeRatingModalForm && activeModalRating > 0) {
+      e.preventDefault();
+      const modal = getRatingModal();
+      const notesText =
+        modal.querySelector("[data-rating-modal-notes]")?.value ?? "";
+      submitRating(activeRatingModalForm, activeModalRating, notesText)
+        .then(() => {
+          showToast(window._("Rating saved."));
+          closeRatingModal();
+        })
+        .catch((error) =>
+          showToast(error.message || window._("Error"), "error"),
+        );
+      return;
+    }
+
+    const ratingModalClear = e.target.closest("[data-rating-modal-clear]");
+    if (ratingModalClear && activeRatingModalForm) {
+      e.preventDefault();
+      const clearBtn = activeRatingModalForm.querySelector(
+        "[data-clear-rating]",
+      );
+      if (clearBtn) {
+        clearBtn.click();
+      } else {
+        const ratingContainer =
+          activeRatingModalForm.querySelector("[data-star-rating]");
+        if (ratingContainer) {
+          ratingContainer.dataset.rating = "0";
+          ratingContainer.style.setProperty("--rating-width", "0%");
+        }
+        const compactButton = activeRatingModalForm.querySelector(
+          "[data-open-rating-modal]",
+        );
+        setCompactRatingButtonLabel(compactButton, 0, false);
+        const notesInput = getTrackNotesInputFromForm(activeRatingModalForm);
+        if (notesInput) {
+          notesInput.value = "";
+        }
+      }
+      closeRatingModal();
+      return;
+    }
+
+    const openRatingModalBtn = e.target.closest("[data-open-rating-modal]");
+    if (openRatingModalBtn) {
+      e.preventDefault();
+      const form = openRatingModalBtn.closest("form[data-rating-form]");
+      if (!form) return;
+      activeRatingModalForm = form;
+      const currentRating = parseFloat(
+        form.querySelector("[data-star-rating]")?.dataset.rating || "0",
+      );
+      activeModalRating =
+        Math.max(1, Math.min(10, Math.round(currentRating || 0))) || 1;
+      const modal = getRatingModal();
+      const existingNotes = getTrackNotesInputFromForm(form)?.value || "";
+      const modalNotes = modal.querySelector("[data-rating-modal-notes]");
+      if (modalNotes) {
+        modalNotes.value = existingNotes;
+      }
+      renderRatingModalGrid(modal, activeModalRating);
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      return;
+    }
 
     const clearRatingBtn = e.target.closest("[data-clear-rating]");
     if (clearRatingBtn) {
@@ -1285,6 +1572,10 @@ document.addEventListener("DOMContentLoaded", async () => {
           ratingContainer.dataset.rating = "0";
           ratingContainer.style.setProperty("--rating-width", "0%");
         }
+        const compactButton = ratingForm.querySelector(
+          "[data-open-rating-modal]",
+        );
+        setCompactRatingButtonLabel(compactButton, 0, false);
 
         // 2. Clear radio buttons
         ratingForm
@@ -1292,16 +1583,15 @@ document.addEventListener("DOMContentLoaded", async () => {
           .forEach((r) => (r.checked = false));
 
         // 3. Clear and reset notes
-        const notesInput = ratingForm.querySelector(
-          "textarea[data-notes-input]",
-        );
+        const notesInput = getTrackNotesInputFromForm(ratingForm);
         const notesButton = ratingForm.querySelector(
           "button[data-notes-toggle]",
         );
         if (notesInput) notesInput.value = "";
         if (notesButton) {
-          notesButton.classList.add("text-foreground", "text-foreground");
-          notesButton.textContent = "Add Note";
+          notesButton.classList.remove("border-cyan-text", "text-cyan-text");
+          notesButton.classList.add("border-gray-text", "text-gray-text");
+          setNotesButtonLabel(notesButton, false);
         }
 
         // 4. Remove the clear button itself
@@ -1389,29 +1679,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       const radioToSelect = form.querySelector(`input[value="${rating}"]`);
       if (radioToSelect) {
         radioToSelect.checked = true;
-        const formData = new FormData(form);
-        formData.set("rating", rating);
-        fetch(form.action, { method: "POST", body: formData }).then(() => {
-          ratingContainer.dataset.rating = rating;
-          updateStarPreview(ratingContainer, e);
-          if (!form.querySelector("[data-clear-rating]")) {
-            // Correctly create just the button with the necessary data attribute
-            const deleteButtonHTML = `
-								<button data-clear-rating type="button" data-delete-endpoint="${form.action}/delete"
-									class="shadow-md p-1 rounded border border-red-text text-red-text font-bold cursor-pointer ease-in-out  hover:transition-colors hover:duration-200 hover:bg-red-hover">
-									<span class="inline-block h-6 w-6">${getIconSVG("xmark")}</span>
-								</button>`;
-
-            // Find the container where the notes button lives
-            const buttonContainer = form.querySelector(
-              "button[data-notes-toggle]",
-            )?.parentElement;
-            if (buttonContainer) {
-              // Insert the new button right into that container
-              buttonContainer.insertAdjacentHTML("beforeend", deleteButtonHTML);
-            }
-          }
-        });
+        submitRating(form, rating)
+          .then(() => {
+            updateStarPreview(ratingContainer, e);
+          })
+          .catch((error) =>
+            showToast(error.message || window._("Error"), "error"),
+          );
       }
       return;
     }
@@ -2031,9 +2305,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 notesBtn.classList.toggle("text-gray-text", !hasNote);
 
                 setTimeout(() => {
-                  notesBtn.textContent = hasNote
-                    ? window._("Edit Note")
-                    : window._("Add Note");
+                  setNotesButtonLabel(notesBtn, hasNote);
                 }, 2000);
               }
             },

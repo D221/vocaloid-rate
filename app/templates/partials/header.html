@@ -181,9 +181,9 @@
   </div>
 
   <!-- Desktop Nav & Theme Switcher (Order 3 on mobile, Order 2 on desktop) -->
-  <div class="order-3 flex shrink-0 items-center gap-4 md:order-2">
+  <div class="order-3 flex items-center gap-4 md:order-2">
     <!-- Desktop Navigation (hidden on mobile) -->
-    <div class="hidden items-center gap-4 md:flex">
+    <div class="hidden items-center gap-4 md:flex md:flex-wrap">
       {% set is_active = request.url.path == '/' %}
       <a
         href="/"

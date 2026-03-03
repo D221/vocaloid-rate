@@ -42,9 +42,9 @@
     >
       <!-- ACTIONS + TITLE GROUP -->
       <div
-        class="slim-actions-container flex flex-col items-center md:flex-row md:items-start md:justify-between"
+        class="slim-actions-container flex flex-col items-center gap-2 xl:flex-row xl:items-start xl:justify-between"
       >
-        <div class="min-w-0 text-center md:text-left">
+        <div class="min-w-0 text-center xl:flex-1 xl:text-left">
           <a
             href="{{ track.link }}"
             target="_blank"
@@ -74,7 +74,9 @@
           </a>
         </div>
 
-        <div class="mt-2 flex justify-center gap-2 md:justify-start">
+        <div
+          class="mt-2 flex flex-wrap justify-center gap-2 xl:mt-0 xl:justify-end"
+        >
           <button
             data-play-button
             class="cursor-pointer rounded border border-gray-text px-2 py-1 text-gray-text ease-in-out hover:bg-gray-hover hover:transition-colors hover:duration-200"
@@ -208,7 +210,7 @@
 
         <!-- Part 2: The button, with controlled margin -->
         <div
-          class="slim-hideable-secondary mt-2 flex justify-center gap-2 md:justify-start"
+          class="slim-hideable-secondary mt-2 flex flex-wrap justify-center gap-2 md:justify-start"
         >
           <button
             data-vocadb-artist-button
@@ -284,15 +286,16 @@
       class="block border-b border-border p-3 text-left last:border-b-0 md:table-cell md:w-1 md:min-w-0 md:border md:px-3 md:py-2 md:text-left md:whitespace-nowrap"
     >
       {% set current_rating = track.ratings[0].rating if track.ratings else 0 %}
+      {% set has_note = track.ratings and track.ratings[0].notes %}
       <form
         data-rating-form
         action="/rate/{{ track.id }}"
         method="post"
-        class="flex items-center justify-center gap-2.5 md:justify-between"
+        class="flex items-center justify-center gap-2.5 2xl:justify-between"
       >
         <div
           data-star-rating
-          class="relative inline-block cursor-pointer text-2xl"
+          class="relative hidden cursor-pointer text-lg leading-none xl:text-xl 2xl:inline-block 2xl:text-2xl"
           data-rating="{{ current_rating }}"
           style="--rating-width: {{ (current_rating / 10.0) * 100 }}%;"
         >
@@ -316,9 +319,22 @@
             />
           {% endfor %}
         </div>
+        <button
+          type="button"
+          data-open-rating-modal
+          class="{% if has_note %}
+            border-cyan-text text-cyan-text hover:bg-cyan-hover
+          {% elif current_rating > 0 %}
+            border-yellow-500 text-yellow-500 hover:bg-amber-hover
+          {% else %}
+            border-amber-text text-amber-text hover:bg-amber-hover
+          {% endif %} cursor-pointer rounded border px-2 py-1 font-bold shadow-md ease-in-out hover:transition-colors hover:duration-200 2xl:hidden"
+        >
+          {% if current_rating > 0 %}★ {{ current_rating|int }}{% else %}☆
+          {{ _('Rate') }}{% endif %}
+        </button>
 
-        <div class="flex items-center gap-2">
-          {% set has_note = track.ratings and track.ratings[0].notes %}
+        <div class="hidden items-center gap-2 2xl:flex 2xl:flex-nowrap">
           <button
             type="button"
             data-notes-toggle
@@ -326,9 +342,12 @@
               border-cyan-text text-cyan-text hover:bg-green-hover
             {% else %}
               text-gray-text hover:bg-gray-hover
-            {% endif %} cursor-pointer rounded border px-2 py-1 font-bold shadow-md ease-in-out hover:transition-colors hover:duration-200"
+            {% endif %} cursor-pointer rounded border px-2 py-1 text-xs font-bold shadow-md ease-in-out hover:transition-colors hover:duration-200 xl:text-sm"
           >
-            {{ _('Edit Note') if has_note else _('Add Note') }}
+            <span class="2xl:hidden">{{ _('Note') }}</span>
+            <span class="hidden 2xl:inline"
+              >{{ _('Edit Note') if has_note else _('Add Note') }}</span
+            >
           </button>
           {% if track.ratings %}
             <button
