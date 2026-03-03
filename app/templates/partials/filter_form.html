@@ -172,8 +172,7 @@
       {{ _('Clear') }}
     </button>
 
-    {% set is_local = not os.environ.get('DATABASE_URL') %}
-    {% if current_user and (current_user.is_admin or is_local) %}
+    {% if current_user and (current_user.is_admin or is_local_env) %}
       <button
         type="button"
         id="scrape-btn"
@@ -210,9 +209,18 @@
                       } else if (status === "completed") {
                         clearInterval(pollInterval);
                         if (typeof showToast === "function") {
-                          showToast("{{ _('Update complete! Reloading...') }}");
+                          showToast("{{ _('Update complete!') }}");
                         }
-                        setTimeout(() => window.location.reload(), 1500);
+                        if (document.getElementById("tracks-table-body")) {
+                          window.dispatchEvent(
+                            new CustomEvent("tracks:refresh"),
+                          );
+                        } else {
+                          window.location.reload();
+                        }
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                        btn.classList.remove("opacity-50", "cursor-wait");
                       } else if (status === "no_changes") {
                         clearInterval(pollInterval);
                         if (typeof showToast === "function") {

@@ -265,6 +265,7 @@ async def LocaleTemplateResponse(
     """
     # 1. Automatically add the locale to the context
     context["locale"] = translations.info()["language"]
+    context["is_local_env"] = not bool(os.environ.get("DATABASE_URL"))
 
     # 2. Inject current_user if not already explicitly provided
     if "current_user" not in context:
@@ -307,7 +308,6 @@ async def serve_sw(request: Request):
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
-templates.env.globals["os"] = os
 
 initial_scrape_in_progress = False
 MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024  # 5 MiB
@@ -1471,7 +1471,10 @@ def get_js_translations(locale: str = Depends(get_locale)):
     js_translations_path = RESOURCE_BASE_PATH / "locales" / "js_translations.json"
     with open(js_translations_path, "r", encoding="utf-8") as f:
         all_translations = json.load(f)
-    return all_translations.get(locale, all_translations["en"])
+    return JSONResponse(
+        content=all_translations.get(locale, all_translations["en"]),
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
 
 
 @app.get("/recommendations", tags=["Pages"])
@@ -1937,6 +1940,39 @@ def export_all_playlists(
 ):
     """Exports all playlists and their tracks to a JSON format."""
     return crud.export_playlists(db, user_id=current_user.id)
+
+
+@app.post("/api/playlists/import", tags=["Backup & Restore"])
+async def import_all_playlists(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Imports all playlists from a JSON file."""
+    if not file.filename or not file.filename.lower().endswith(".json"):
+        raise HTTPException(status_code=400, detail="Invalid file type. Must be .json")
+
+    contents = await read_upload_with_size_limit(file)
+    try:
+        data = json.loads(contents)
+        if not isinstance(data, list):
+            raise HTTPException(
+                status_code=400, detail="JSON is not a valid playlists export."
+            )
+
+        created, updated = crud.import_playlists(
+            db, user_id=current_user.id, data=data
+        )
+        return {"created": created, "updated": updated}
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON format.")
+    except HTTPException:
+        raise
+    except Exception:
+        logging.error("Playlists import failed", exc_info=True)
+        raise HTTPException(
+            status_code=500, detail="An internal error occurred while importing."
+        )
 
 
 @app.post("/api/playlists/import-single", tags=["Backup & Restore"])

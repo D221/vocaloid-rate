@@ -1190,17 +1190,14 @@ def get_recommended_tracks(
     }
 
     # 2. Get all unrated tracks
-    rated_track_ids = (
-        db.query(models.Rating.track_id)
-        .filter(models.Rating.user_id == user_id)
-        .distinct()
-        .all()
-    )
-    rated_track_ids = [t_id for (t_id,) in rated_track_ids]
-
-    unrated_tracks = (
-        db.query(models.Track).filter(models.Track.id.notin_(rated_track_ids)).all()
-    )
+    unrated_tracks = db.query(models.Track).filter(
+        ~exists().where(
+            and_(
+                models.Rating.track_id == models.Track.id,
+                models.Rating.user_id == user_id,
+            )
+        )
+    ).all()
 
     # 3. Calculate recommendation score for each unrated track
     track_scores = []
@@ -1218,7 +1215,7 @@ def get_recommended_tracks(
 
         track_voicebanks = []
         if locale == "ja" and track.voicebank_jp:
-            track_voicebanks.extend([v.strip() for v in track.voicebank.split(",")])
+            track_voicebanks.extend([v.strip() for v in track.voicebank_jp.split(",")])
         else:
             track_voicebanks.extend([v.strip() for v in track.voicebank.split(",")])
 
