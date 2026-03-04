@@ -3,10 +3,13 @@
 {% block title %}{{ _('Scraping Tracks') }} - {{ _('Vocaloid Rate') }}{% endblock %}
 
 {% block content %}
+  {% set title = _("Scraping Tracks") %}
+  {% include "partials/header.html" %}
+
   <div class="text-center">
-    <h1 class="mb-4 text-4xl font-bold text-sky-text">
+    <h2 class="mb-4 text-3xl font-bold text-sky-text">
       {{ _('Initial Data Scrape in Progress') }}
-    </h1>
+    </h2>
     <p class="mb-8 text-xl text-foreground">
       {{ _('The database is being populated with the latest Vocaloid track rankings for the first time.') }}
       <br />

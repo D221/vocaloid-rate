@@ -576,6 +576,7 @@ const updateActiveFilterDisplay = () => {
   const voicebank = params.get("voicebank_filter");
   const rank = params.get("rank_filter");
   const rated = params.get("rated_filter");
+  const recentBias = params.get("recent_bias");
 
   if (title) chips.push(window._("Title: %s", title));
   if (producer) chips.push(window._("Producer: %s", producer));
@@ -584,6 +585,9 @@ const updateActiveFilterDisplay = () => {
   if (rated && rated !== "all") chips.push(window._("Rating: %s", rated));
   if (ratingFilter) {
     chips.push(window._("Exact rating: %s ★", ratingFilter));
+  }
+  if (recentBias && recentBias !== "off") {
+    chips.push(window._("Recent bias: %s", recentBias));
   }
 
   if (chips.length === 0) {
