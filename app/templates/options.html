@@ -33,20 +33,22 @@
       <p class="mb-2">
         {{ _('Upload a JSON backup file to restore your ratings. If a track from the backup does not exist in the database, it will be added.') }}
       </p>
-      <input
-        type="file"
-        id="restore-file-input"
-        aria-label="Restore ratings from JSON file"
-        accept=".json"
-        class="w-full max-w-full min-w-0 rounded border border-sky-text shadow-md ease-in-out file:border-r file:border-sky-text file:p-2 file:font-bold file:text-sky-text hover:transition-colors hover:duration-200 hover:file:cursor-pointer hover:file:bg-sky-hover"
-      />
-      <button
-        id="restore-button"
-        class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-sky-hover disabled:cursor-not-allowed disabled:opacity-50"
-        disabled
-      >
-        {{ _('Upload and Restore') }}
-      </button>
+      <div class="flex items-center gap-2">
+        <input
+          type="file"
+          id="restore-file-input"
+          aria-label="Restore ratings from JSON file"
+          accept=".json"
+          class="w-full max-w-full min-w-0 rounded border border-sky-text shadow-md ease-in-out file:border-r file:border-sky-text file:p-2 file:font-bold file:text-sky-text hover:transition-colors hover:duration-200 hover:file:cursor-pointer hover:file:bg-sky-hover"
+        />
+        <button
+          id="restore-button"
+          class="shrink-0 cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-sky-hover disabled:cursor-not-allowed disabled:opacity-50"
+          disabled
+        >
+          {{ _('Upload and Restore') }}
+        </button>
+      </div>
       <div class="spinner" id="restore-spinner"></div>
       <p id="restore-status" style="margin-top: 1rem; font-weight: bold;"></p>
     </div>

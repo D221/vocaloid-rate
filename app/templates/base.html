@@ -68,6 +68,31 @@
           return;
         }
       })();
+
+      (function () {
+        const PAGE_SIZE_KEY = "defaultPageSize";
+        const validPageSizes = ["all", "25", "50", "100"];
+        const savedPageSize = localStorage.getItem(PAGE_SIZE_KEY);
+        if (!savedPageSize || !validPageSizes.includes(savedPageSize)) {
+          return;
+        }
+
+        document.cookie = `default_page_size=${encodeURIComponent(savedPageSize)}; path=/; max-age=31536000; samesite=lax`;
+
+        const isHomePage = window.location.pathname === "/";
+        if (!isHomePage || savedPageSize === "all") {
+          return;
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.has("limit")) {
+          return;
+        }
+
+        params.set("limit", savedPageSize);
+        const nextUrl = `${window.location.pathname}?${params.toString()}`;
+        window.location.replace(nextUrl);
+      })();
     </script>
 
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>

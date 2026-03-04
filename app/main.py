@@ -1227,7 +1227,7 @@ async def read_root(
     db: Session = Depends(get_db),
     current_user: Optional[models.User] = Depends(get_optional_current_user),
     page: int = 1,
-    limit: str = "all",
+    limit: Optional[str] = None,
     rated_filter: Optional[str] = None,
     title_filter: Optional[str] = None,
     producer_filter: Optional[str] = None,
@@ -1259,6 +1259,13 @@ async def read_root(
         "voicebank_filter": voicebank_filter,
         "rank_filter": rank_filter,
     }
+
+    valid_limits = {"all", "25", "50", "100"}
+    cookie_limit = request.cookies.get("default_page_size")
+    effective_limit = limit if limit is not None else cookie_limit
+    if effective_limit not in valid_limits:
+        effective_limit = "all"
+
     total_tracks = crud.get_tracks_count(
         db,
         user_id=current_user.id,
@@ -1271,8 +1278,8 @@ async def read_root(
     )
 
     limit_val = 10000  # A large number for "all"
-    if limit.isdigit():
-        limit_val = int(limit)
+    if effective_limit.isdigit():
+        limit_val = int(effective_limit)
 
     total_pages = 1
     if limit_val != 10000:
@@ -1357,7 +1364,7 @@ async def read_root(
         "filters": filters,
         "pagination": {
             "page": page,
-            "limit": limit,
+            "limit": effective_limit,
             "total_pages": total_pages,
             "total_tracks": total_tracks,
         },

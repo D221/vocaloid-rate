@@ -19,20 +19,29 @@
     {% endif %}
     <a
       href="/recommendations{{ off_query }}"
-      class="{% if current_bias == 'off' %}border-cyan-text text-cyan-text{% else %}border-gray-text
-      text-gray-text{% endif %} rounded border px-2 py-1 font-bold shadow-md hover:bg-gray-hover"
+      class="{% if current_bias == 'off' %}
+        border-cyan-text text-cyan-text
+      {% else %}
+        border-gray-text text-gray-text
+      {% endif %} rounded border px-2 py-1 font-bold shadow-md hover:bg-gray-hover"
       >{{ _('Off') }}</a
     >
     <a
       href="/recommendations{{ light_query }}"
-      class="{% if current_bias == 'light' %}border-cyan-text text-cyan-text{% else %}border-gray-text
-      text-gray-text{% endif %} rounded border px-2 py-1 font-bold shadow-md hover:bg-gray-hover"
+      class="{% if current_bias == 'light' %}
+        border-cyan-text text-cyan-text
+      {% else %}
+        border-gray-text text-gray-text
+      {% endif %} rounded border px-2 py-1 font-bold shadow-md hover:bg-gray-hover"
       >{{ _('Light') }}</a
     >
     <a
       href="/recommendations{{ strong_query }}"
-      class="{% if current_bias == 'strong' %}border-cyan-text text-cyan-text{% else %}border-gray-text
-      text-gray-text{% endif %} rounded border px-2 py-1 font-bold shadow-md hover:bg-gray-hover"
+      class="{% if current_bias == 'strong' %}
+        border-cyan-text text-cyan-text
+      {% else %}
+        border-gray-text text-gray-text
+      {% endif %} rounded border px-2 py-1 font-bold shadow-md hover:bg-gray-hover"
       >{{ _('Strong') }}</a
     >
   </div>

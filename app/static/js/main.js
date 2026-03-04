@@ -424,34 +424,12 @@ const hideSkeleton = () => {
 };
 
 const updatePaginationUI = (pagination) => {
-  const pageLinks = document.getElementById("page-links");
-  const prevButton = document.getElementById("prev-page-btn");
-  const nextButton = document.getElementById("next-page-btn");
-  const paginationContainer = document.getElementById("pagination-container");
+  const paginationContainers = document.querySelectorAll(
+    "[data-pagination-container]",
+  );
   const limitFilter = document.getElementById("limit_filter");
 
-  if (
-    !pageLinks ||
-    !prevButton ||
-    !nextButton ||
-    !limitFilter ||
-    !paginationContainer
-  )
-    return;
-
-  // Clear previous page links
-  pageLinks.innerHTML = "";
-
-  if (pagination.total_pages <= 1) {
-    paginationContainer.style.display = "none";
-    return;
-  }
-
-  paginationContainer.style.display = "flex";
-
-  // Update prev/next buttons
-  prevButton.disabled = pagination.page <= 1;
-  nextButton.disabled = pagination.page >= pagination.total_pages;
+  if (paginationContainers.length === 0) return;
 
   const createPageElement = (
     page,
@@ -467,11 +445,12 @@ const updatePaginationUI = (pagination) => {
     }
     const button = document.createElement("button");
     button.className =
-      "shadow-md py-2 px-4 rounded border border-sky-text text-sky-text font-bold cursor-pointer ease-in-out  hover:transition-colors hover:duration-200 enabled:hover:bg-sky-hover";
+      "shadow-md py-2 px-4 rounded border border-gray-text text-gray-text font-bold cursor-pointer ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-gray-hover";
     button.textContent = text;
     button.dataset.page = page;
     if (isCurrent) {
-      button.classList.add("bg-sky-text", "text-stone-950", "border-sky-text");
+      button.classList.remove("text-gray-text", "hover:bg-gray-hover");
+      button.classList.add("bg-gray-text", "text-white", "border-gray-text");
       button.disabled = true;
     }
     return button;
@@ -481,14 +460,12 @@ const updatePaginationUI = (pagination) => {
   const totalPages = pagination.total_pages;
   const pagesToShow = [];
 
-  // --- FEATURE CHANGE: Logic to show all pages if total is 10 or less ---
   if (totalPages <= 10) {
     for (let i = 1; i <= totalPages; i++) {
       pagesToShow.push(i);
     }
   } else {
-    // --- Use ellipsis logic for more than 10 pages ---
-    const context = 2; // N pages before and after current page
+    const context = 2;
     for (let i = 1; i <= totalPages; i++) {
       if (
         i === 1 ||
@@ -506,16 +483,43 @@ const updatePaginationUI = (pagination) => {
     }
   }
 
-  pagesToShow.forEach((p) => {
-    if (p === "...") {
-      pageLinks.appendChild(createPageElement(null, null, false, true));
-    } else {
-      pageLinks.appendChild(createPageElement(p, p, p === currentPage));
+  paginationContainers.forEach((paginationContainer) => {
+    const pageLinks = paginationContainer.querySelector("[data-page-links]");
+    const prevButton = paginationContainer.querySelector(
+      '[data-pagination-action="prev"]',
+    );
+    const nextButton = paginationContainer.querySelector(
+      '[data-pagination-action="next"]',
+    );
+    if (!pageLinks || !prevButton || !nextButton) return;
+
+    pageLinks.innerHTML = "";
+
+    if (pagination.total_pages <= 1) {
+      paginationContainer.style.display = "none";
+      return;
     }
+
+    paginationContainer.style.display = "flex";
+    prevButton.disabled = pagination.page <= 1;
+    nextButton.disabled = pagination.page >= pagination.total_pages;
+
+    pagesToShow.forEach((p) => {
+      if (p === "...") {
+        pageLinks.appendChild(createPageElement(null, null, false, true));
+      } else {
+        pageLinks.appendChild(createPageElement(p, p, p === currentPage));
+      }
+    });
   });
 
-  limitFilter.value = pagination.limit;
+  if (limitFilter) {
+    limitFilter.value = pagination.limit;
+  }
 };
+
+const getPrimaryPaginationContainer = () =>
+  document.querySelector("[data-pagination-container]");
 
 const updateSortIndicators = () => {
   const params = new URLSearchParams(window.location.search);
@@ -768,7 +772,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const currentTimeEl = document.getElementById("player-current-time");
   const durationEl = document.getElementById("player-duration");
   const limitFilter = document.getElementById("limit_filter");
-  const paginationContainer = document.getElementById("pagination-container");
+  const primaryPaginationContainer = getPrimaryPaginationContainer();
   const filterForm = document.getElementById("filter-form");
 
   function loadAndPlayTrack(trackId) {
@@ -2491,35 +2495,35 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  if (paginationContainer) {
-    paginationContainer.addEventListener("click", (e) => {
-      let pageChanged = false;
-      // Handle previous button
-      if (e.target.id === "prev-page-btn" && !e.target.disabled) {
-        currentPage--;
+  document.addEventListener("click", (e) => {
+    if (!e.target || !e.target.closest) return;
+    if (!e.target.closest("[data-pagination-container]")) return;
+
+    let pageChanged = false;
+    const paginationAction = e.target.closest("[data-pagination-action]")
+      ?.dataset.paginationAction;
+    if (paginationAction === "prev") {
+      currentPage--;
+      pageChanged = true;
+    } else if (paginationAction === "next") {
+      currentPage++;
+      pageChanged = true;
+    }
+
+    const pageButton = e.target.closest("button[data-page]");
+    if (pageButton && !pageButton.disabled) {
+      const page = parseInt(pageButton.dataset.page, 10);
+      if (!Number.isNaN(page)) {
+        currentPage = page;
         pageChanged = true;
       }
-      // Handle next button
-      if (e.target.id === "next-page-btn" && !e.target.disabled) {
-        currentPage++;
-        pageChanged = true;
-      }
-      // Handle specific page number buttons
-      const pageButton = e.target.closest("button[data-page]");
-      if (pageButton && !pageButton.classList.contains("active")) {
-        const page = parseInt(pageButton.dataset.page, 10);
-        if (!Number.isNaN(page)) {
-          currentPage = page;
-          pageChanged = true;
-        }
-      }
-      // If any page change happened, update the tracks
-      if (pageChanged) {
-        showSkeleton();
-        updateTracks();
-      }
-    });
-  }
+    }
+
+    if (pageChanged) {
+      showSkeleton();
+      updateTracks();
+    }
+  });
 
   if (filterForm) {
     filterForm.addEventListener("input", (e) => {
@@ -2568,11 +2572,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const tableBody = document.getElementById("tracks-table-body");
     const serverPage =
-      parseInt(paginationContainer?.dataset.initialPage, 10) || 1;
+      parseInt(primaryPaginationContainer?.dataset.initialPage, 10) || 1;
     const serverTotalPages =
-      parseInt(paginationContainer?.dataset.initialTotalPages, 10) || 1;
+      parseInt(primaryPaginationContainer?.dataset.initialTotalPages, 10) || 1;
     const serverLimit =
-      paginationContainer?.dataset.initialLimit || limitFilter?.value || "all";
+      primaryPaginationContainer?.dataset.initialLimit ||
+      limitFilter?.value ||
+      "all";
 
     currentPage = parseInt(urlParams.get("page"), 10) || serverPage;
     currentLimit =
@@ -2581,7 +2587,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       serverLimit;
     if (limitFilter) limitFilter.value = currentLimit;
 
-    if (paginationContainer) {
+    if (primaryPaginationContainer) {
       updatePaginationUI({
         page: serverPage,
         total_pages: serverTotalPages,

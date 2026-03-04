@@ -1,4 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
+  function setDefaultPageSizeCookie(value) {
+    const encoded = encodeURIComponent(value);
+    document.cookie = `default_page_size=${encoded}; path=/; max-age=31536000; samesite=lax`;
+  }
+
   function updateThemeSelectionUI() {
     // Get the current theme from storage, or fall back to the system theme
     const currentTheme = window.getStoredTheme() || window.getSystemTheme();
@@ -39,9 +44,12 @@ document.addEventListener("DOMContentLoaded", () => {
   if (defaultPageSizeSelect) {
     const savedPageSize = localStorage.getItem("defaultPageSize") || "all";
     defaultPageSizeSelect.value = savedPageSize;
+    setDefaultPageSizeCookie(savedPageSize);
 
     defaultPageSizeSelect.addEventListener("change", () => {
-      localStorage.setItem("defaultPageSize", defaultPageSizeSelect.value);
+      const selectedPageSize = defaultPageSizeSelect.value;
+      localStorage.setItem("defaultPageSize", selectedPageSize);
+      setDefaultPageSizeCookie(selectedPageSize);
     });
   }
 

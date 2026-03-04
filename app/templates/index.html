@@ -19,6 +19,8 @@
     }
   %}
   {% include "partials/filter_form.html" %}
+  {% set pagination_spacing_class = "mb-4" %}
+  {% include "partials/pagination_controls.html" %}
 
   <div
     class="overflow-x-visible rounded border border-none border-border bg-card-bg shadow-md md:overflow-x-auto"
@@ -35,29 +37,8 @@
     </table>
   </div>
 
-  <div
-    class="mt-8 flex-wrap items-center justify-center gap-3"
-    id="pagination-container"
-    data-initial-page="{{ pagination.page }}"
-    data-initial-total-pages="{{ pagination.total_pages }}"
-    data-initial-limit="{{ pagination.limit }}"
-  >
-    <button
-      class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-sky-hover disabled:cursor-not-allowed disabled:opacity-50"
-      id="prev-page-btn"
-      disabled
-    >
-      {{ _('Previous') }}
-    </button>
-    <div class="flex items-center gap-2" id="page-links"></div>
-    <button
-      class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-sky-hover disabled:cursor-not-allowed disabled:opacity-50"
-      id="next-page-btn"
-      disabled
-    >
-      {{ _('Next') }}
-    </button>
-  </div>
+  {% set pagination_spacing_class = "mt-8" %}
+  {% include "partials/pagination_controls.html" %}
 
   <script src="{{ url_for('static', path='js/main.min.js') }}"></script>
 {% endblock %}

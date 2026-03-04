@@ -1,0 +1,23 @@
+<div
+  class="{{ pagination_spacing_class | default('mt-8') }} flex-wrap items-center justify-center gap-3"
+  data-pagination-container
+  data-initial-page="{{ pagination.page }}"
+  data-initial-total-pages="{{ pagination.total_pages }}"
+  data-initial-limit="{{ pagination.limit }}"
+>
+  <button
+    class="cursor-pointer rounded border border-gray-text p-2 font-bold text-gray-text shadow-md ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-gray-hover disabled:cursor-not-allowed disabled:opacity-50"
+    data-pagination-action="prev"
+    disabled
+  >
+    {{ _('Previous') }}
+  </button>
+  <div class="flex items-center gap-2" data-page-links></div>
+  <button
+    class="cursor-pointer rounded border border-gray-text p-2 font-bold text-gray-text shadow-md ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-gray-hover disabled:cursor-not-allowed disabled:opacity-50"
+    data-pagination-action="next"
+    disabled
+  >
+    {{ _('Next') }}
+  </button>
+</div>

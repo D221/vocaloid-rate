@@ -109,14 +109,41 @@ document.addEventListener("DOMContentLoaded", async () => {
   const navLinks = document.getElementById("nav-links");
 
   if (menuToggle && navLinks) {
+    const closeMobileMenu = () => {
+      navLinks.classList.add("hidden");
+      navLinks.classList.remove("flex");
+      menuToggle.setAttribute("aria-expanded", "false");
+    };
+
+    const openMobileMenu = () => {
+      navLinks.classList.remove("hidden");
+      navLinks.classList.add("flex");
+      menuToggle.setAttribute("aria-expanded", "true");
+    };
+
     menuToggle.addEventListener("click", (e) => {
       e.stopPropagation();
-      navLinks.classList.toggle("hidden");
+      const isOpen = !navLinks.classList.contains("hidden");
+      if (isOpen) {
+        closeMobileMenu();
+      } else {
+        openMobileMenu();
+      }
     });
 
-    document.body.addEventListener("click", () => {
-      if (!navLinks.classList.contains("hidden")) {
-        navLinks.classList.add("hidden");
+    navLinks.addEventListener("click", (e) => {
+      if (
+        e.target === navLinks ||
+        e.target.closest("[data-mobile-menu-close]") ||
+        e.target.closest("a")
+      ) {
+        closeMobileMenu();
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !navLinks.classList.contains("hidden")) {
+        closeMobileMenu();
       }
     });
   }

@@ -1,6 +1,6 @@
 importScripts("/static/js/idb-helper.js");
 
-const CACHE_NAME = "vocarater-cache-v2";
+const CACHE_NAME = "vocarater-cache-v3";
 // List of files that make up the "app shell"
 const urlsToCache = [
   "/",
