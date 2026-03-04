@@ -218,8 +218,8 @@
     </div>
     {# music-player #}
 
-    <div id="user-status" class="flex justify-end p-2">
-      <!-- HTMX will load content here -->
+    <div id="user-status" class="flex min-h-9 items-center justify-end p-2">
+      <span class="invisible text-right text-sm">Loading user status</span>
     </div>
 
     {% block content %}{% endblock %}
