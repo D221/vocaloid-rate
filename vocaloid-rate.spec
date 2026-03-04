@@ -19,7 +19,14 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=[
+        'pkg_resources',
+        'setuptools',
+        'IPython',
+        'pytest',
+        'matplotlib',
+        'jedi'
+    ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=None,

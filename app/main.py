@@ -265,7 +265,7 @@ async def LocaleTemplateResponse(
     """
     # 1. Automatically add the locale to the context
     context["locale"] = translations.info()["language"]
-    context["is_local_env"] = not bool(os.environ.get("DATABASE_URL"))
+    context["is_local_env"] = is_local_mode()
 
     # 2. Inject current_user if not already explicitly provided
     if "current_user" not in context:
@@ -521,6 +521,8 @@ templates.env.filters["time_ago"] = time_ago_filter
 
 def is_local_mode():
     """Returns True if the app is running in local SQLite mode without a dedicated DB server."""
+    if getattr(sys, "frozen", False):
+        return True
     db_url = os.environ.get("DATABASE_URL")
     return not db_url or db_url.strip() == ""
 

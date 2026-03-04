@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -8,11 +9,13 @@ from sqlalchemy.orm import sessionmaker
 
 load_dotenv()  # Load environment variables as early as possible
 
-SQLALCHEMY_DATABASE_URL = os.environ.get("DATABASE_URL")
+is_frozen_build = getattr(sys, "frozen", False)
+SQLALCHEMY_DATABASE_URL = None if is_frozen_build else os.environ.get("DATABASE_URL")
 
 connect_args = {}
 if not SQLALCHEMY_DATABASE_URL:
-    # Fallback to SQLite for self-hosted option
+    # Frozen desktop builds always use local SQLite.
+    # Non-frozen runs also fall back to SQLite when DATABASE_URL is unset.
     DATA_DIR = Path(os.environ.get("DATA_DIR", "data"))
     DATA_DIR.mkdir(exist_ok=True)
     SQLALCHEMY_DATABASE_URL = f"sqlite:///{DATA_DIR / 'tracks.db'}"
