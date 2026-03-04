@@ -541,16 +541,19 @@ const updateSortIndicators = () => {
 };
 
 const updateActiveFilterDisplay = () => {
-  const container = document.getElementById(
+  const ratingContainer = document.getElementById(
     "rating-filter-indicator-container",
   );
-  if (!container) return;
+  const summaryContainer = document.getElementById(
+    "active-filter-summary-container",
+  );
 
   const params = new URLSearchParams(window.location.search);
   const ratingFilter = params.get("exact_rating_filter");
 
-  if (ratingFilter) {
-    container.innerHTML = `
+  if (ratingContainer) {
+    if (ratingFilter) {
+      ratingContainer.innerHTML = `
       <div data-active-rating-filter class="inline-flex items-center justify-between gap-3 rounded-3xl border border-gray-text bg-card-bg px-3 py-2 shadow-sm">
           <span>${window._("Filtering by rating: %s ★", ratingFilter)}</span>
           <button type="button" data-clear-rating-filter
@@ -558,11 +561,51 @@ const updateActiveFilterDisplay = () => {
               title="${window._("Clear rating filter")}">&times;</button>
       </div>
 		`;
-    container.style.display = "block";
-  } else {
-    container.innerHTML = "";
-    container.style.display = "none";
+      ratingContainer.style.display = "block";
+    } else {
+      ratingContainer.innerHTML = "";
+      ratingContainer.style.display = "none";
+    }
   }
+
+  if (!summaryContainer) return;
+
+  const chips = [];
+  const title = params.get("title_filter");
+  const producer = params.get("producer_filter");
+  const voicebank = params.get("voicebank_filter");
+  const rank = params.get("rank_filter");
+  const rated = params.get("rated_filter");
+
+  if (title) chips.push(window._("Title: %s", title));
+  if (producer) chips.push(window._("Producer: %s", producer));
+  if (voicebank) chips.push(window._("Voicebank: %s", voicebank));
+  if (rank && rank !== "ranked") chips.push(window._("Chart: %s", rank));
+  if (rated && rated !== "all") chips.push(window._("Rating: %s", rated));
+  if (ratingFilter) {
+    chips.push(window._("Exact rating: %s ★", ratingFilter));
+  }
+
+  if (chips.length === 0) {
+    summaryContainer.classList.add("hidden");
+    summaryContainer.innerHTML = "";
+    return;
+  }
+
+  summaryContainer.classList.remove("hidden");
+  summaryContainer.innerHTML = `
+    <div class="rounded border border-border bg-card-bg p-2 shadow-md">
+      <div class="flex flex-wrap items-center gap-2">
+        ${chips
+          .map(
+            (chip) =>
+              `<span class="rounded border border-gray-text px-2 py-1 text-xs font-semibold text-gray-text">${chip}</span>`,
+          )
+          .join("")}
+        <button type="button" data-clear-summary-filters class="ml-auto rounded border border-red-text px-2 py-1 text-xs font-bold text-red-text hover:bg-red-hover">${window._("Clear")}</button>
+      </div>
+    </div>
+  `;
 };
 
 const toggleClearButton = (input) => {
@@ -1638,7 +1681,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     const clearAllBtn = e.target.closest("#clear-filters-btn");
-    if (clearAllBtn) {
+    const clearSummaryBtn = e.target.closest("[data-clear-summary-filters]");
+    const shouldClearFilters = Boolean(clearAllBtn || clearSummaryBtn);
+    if (shouldClearFilters) {
       e.preventDefault();
 
       // 1. Manually and explicitly clear the form to its default state

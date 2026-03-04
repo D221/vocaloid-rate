@@ -1,5 +1,6 @@
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from math import exp
 from statistics import median
 from typing import List, Optional
 
@@ -1117,7 +1118,11 @@ def get_recently_added_snapshot(
 
 
 def get_recommended_tracks(
-    db: Session, user_id: int, locale: str = "en", limit: int = 25
+    db: Session,
+    user_id: int,
+    locale: str = "en",
+    limit: int = 25,
+    recent_bias: str = "off",
 ) -> List[models.Track]:
     """
     Generates track recommendations based on user's rated producers and voicebanks.
@@ -1125,6 +1130,9 @@ def get_recommended_tracks(
     """
 
     MINIMUM_SCORE_THRESHOLD = 0.3
+    bias_weights = {"off": 0.0, "light": 0.35, "strong": 0.75}
+    recency_weight = bias_weights.get(recent_bias, 0.0)
+    now_utc = datetime.now(timezone.utc)
 
     # 1. Get all user ratings and calculate average ratings for producers and voicebanks
     all_ratings_query = (
@@ -1238,6 +1246,15 @@ def get_recommended_tracks(
                 voicebank_scores.append(voicebank_avg_ratings[v] - global_avg_rating)
         if voicebank_scores:
             score += voicebank_weight * (sum(voicebank_scores) / len(voicebank_scores))
+
+        if recency_weight > 0 and track.published_date:
+            published_dt = track.published_date
+            if published_dt.tzinfo is None:
+                published_dt = published_dt.replace(tzinfo=timezone.utc)
+            age_days = max((now_utc - published_dt).days, 0)
+            # Exponential decay with ~2-year half-life equivalent.
+            recency_score = exp(-age_days / 730)
+            score += recency_weight * recency_score
 
         if score > MINIMUM_SCORE_THRESHOLD:
             track_scores.append((track, score))

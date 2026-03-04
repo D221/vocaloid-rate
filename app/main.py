@@ -1484,16 +1484,24 @@ async def read_recommendations(
     current_user: Optional[models.User] = Depends(
         get_optional_current_user
     ),  # Protect endpoint
+    recent_bias: str = "off",
     translations: Translations = Depends(get_translations),
 ):
     if current_user is None:
         return RedirectResponse(url="/login")
 
+    recent_bias = recent_bias.lower()
+    if recent_bias not in {"off", "light", "strong"}:
+        recent_bias = "off"
+
     stats = crud.get_rating_statistics(
         db, user_id=current_user.id, locale=translations.info()["language"]
     )
     recommended_tracks = crud.get_recommended_tracks(
-        db, user_id=current_user.id, locale=translations.info()["language"]
+        db,
+        user_id=current_user.id,
+        locale=translations.info()["language"],
+        recent_bias=recent_bias,
     )
     tracks_for_json = [track.to_dict() for track in recommended_tracks]
     tracks_json_string = json.dumps(tracks_for_json)
@@ -1504,6 +1512,7 @@ async def read_recommendations(
         "stats": stats,
         "recommended_tracks": recommended_tracks,
         "tracks_json": tracks_json_string,
+        "recent_bias": recent_bias,
     }
 
     return await LocaleTemplateResponse(

@@ -3,11 +3,39 @@
 {% block title %}{{ _('Recommendations') }} - {{ _('Vocaloid Rate') }}{% endblock %}
 
 {% block content %}
+  {% set title = _("Recommendations") %}
   {% include "partials/header.html" %}
-
-  <h1 class="mb-6 text-4xl font-bold text-header">
-    {{ _('Recommendations for You') }}
-  </h1>
+  <div class="mb-4 flex flex-wrap items-center gap-2">
+    <span class="font-bold text-header">{{ _('Recent Release Bias:') }}</span>
+    {% set current_lang = request.query_params.get('lang') %}
+    {% set current_bias = recent_bias or 'off' %}
+    {% set off_query = '?recent_bias=off' %}
+    {% set light_query = '?recent_bias=light' %}
+    {% set strong_query = '?recent_bias=strong' %}
+    {% if current_lang %}
+      {% set off_query = off_query ~ '&lang=' ~ current_lang %}
+      {% set light_query = light_query ~ '&lang=' ~ current_lang %}
+      {% set strong_query = strong_query ~ '&lang=' ~ current_lang %}
+    {% endif %}
+    <a
+      href="/recommendations{{ off_query }}"
+      class="{% if current_bias == 'off' %}border-cyan-text text-cyan-text{% else %}border-gray-text
+      text-gray-text{% endif %} rounded border px-2 py-1 font-bold shadow-md hover:bg-gray-hover"
+      >{{ _('Off') }}</a
+    >
+    <a
+      href="/recommendations{{ light_query }}"
+      class="{% if current_bias == 'light' %}border-cyan-text text-cyan-text{% else %}border-gray-text
+      text-gray-text{% endif %} rounded border px-2 py-1 font-bold shadow-md hover:bg-gray-hover"
+      >{{ _('Light') }}</a
+    >
+    <a
+      href="/recommendations{{ strong_query }}"
+      class="{% if current_bias == 'strong' %}border-cyan-text text-cyan-text{% else %}border-gray-text
+      text-gray-text{% endif %} rounded border px-2 py-1 font-bold shadow-md hover:bg-gray-hover"
+      >{{ _('Strong') }}</a
+    >
+  </div>
 
   {% if recommended_tracks %}
     <div
