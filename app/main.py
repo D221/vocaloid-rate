@@ -2031,6 +2031,8 @@ async def import_single_playlist(
 
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON format.")
+    except HTTPException:
+        raise
     except Exception:
         logging.error("Playlist import failed", exc_info=True)
         raise HTTPException(
