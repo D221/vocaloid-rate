@@ -1,4 +1,7 @@
 import logging
+import os
+import secrets
+import sys
 import bcrypt
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -8,12 +11,40 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
-from app import crud
+from app import crud, schemas
 from app.database import SessionLocal
 from app.security import ALGORITHM, SECRET_KEY
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
+LOCAL_DEFAULT_EMAIL = os.environ.get("LOCAL_DEFAULT_EMAIL", "local@vocaloid-rate.local")
+
+
+def is_local_auth_mode() -> bool:
+    """Disable account auth in local deployments by default."""
+    if getattr(sys, "frozen", False):
+        return True
+    db_url = os.environ.get("DATABASE_URL")
+    return not db_url or db_url.strip() == ""
+
+
+def get_or_create_local_user(db: Session):
+    user = crud.get_user_by_email(db, email=LOCAL_DEFAULT_EMAIL)
+    if user:
+        if not user.is_admin:
+            user.is_admin = True
+            db.commit()
+            db.refresh(user)
+        return user
+
+    temp_password = secrets.token_urlsafe(24)
+    user = crud.create_user(
+        db, schemas.UserCreate(email=LOCAL_DEFAULT_EMAIL, password=temp_password)
+    )
+    user.is_admin = True
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 def verify_password(plain_password: str, hashed_password: str):
@@ -71,6 +102,9 @@ async def get_current_user(
     token: Optional[str] = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ):
+    if is_local_auth_mode():
+        return get_or_create_local_user(db)
+
     if token is None:
         token = request.cookies.get("access_token")
 
@@ -110,6 +144,9 @@ async def get_optional_current_user(
     token: Optional[str] = Depends(oauth2_scheme_optional),
     db: Session = Depends(get_db),
 ):
+    if is_local_auth_mode():
+        return get_or_create_local_user(db)
+
     if token is None:
         token = request.cookies.get("access_token")
 
