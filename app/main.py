@@ -43,6 +43,7 @@ from app.auth import (
     create_access_token,
     get_current_user,
     get_optional_current_user,
+    is_local_auth_mode,
 )
 from app.database import SessionLocal
 from app.security import ACCESS_TOKEN_EXPIRE_MINUTES
@@ -525,6 +526,11 @@ def is_local_mode():
         return True
     db_url = os.environ.get("DATABASE_URL")
     return not db_url or db_url.strip() == ""
+
+
+def should_use_secure_cookies() -> bool:
+    """Use secure cookies only when auth is running in cloud/HTTPS mode."""
+    return not is_local_auth_mode()
 
 
 @app.post("/scrape", tags=["Scraping"])
@@ -1113,6 +1119,9 @@ async def login_page(
     request: Request,
     translations: Translations = Depends(get_translations),
 ):
+    if is_local_auth_mode():
+        return RedirectResponse(url="/")
+
     context = {"request": request, "_": translations.gettext}
     return await LocaleTemplateResponse(
         "login.html",
@@ -1127,6 +1136,9 @@ async def register_page(
     request: Request,
     translations: Translations = Depends(get_translations),
 ):
+    if is_local_auth_mode():
+        return RedirectResponse(url="/")
+
     context = {"request": request, "_": translations.gettext}
     return await LocaleTemplateResponse(
         "register.html",
@@ -2180,6 +2192,11 @@ async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
+    if is_local_auth_mode():
+        raise HTTPException(
+            status_code=404, detail="Authentication is disabled in local mode"
+        )
+
     logging.info(f"Login attempt for username: {form_data.username}")
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
@@ -2202,7 +2219,7 @@ async def login_for_access_token(
         value=access_token,
         httponly=True,
         samesite="lax",
-        secure=True,
+        secure=should_use_secure_cookies(),
     )  # Set as httponly cookie
     return response
 
@@ -2211,6 +2228,11 @@ async def login_for_access_token(
 def create_user(
     response: Response, user: schemas.UserCreate, db: Session = Depends(get_db)
 ):
+    if is_local_auth_mode():
+        raise HTTPException(
+            status_code=404, detail="Authentication is disabled in local mode"
+        )
+
     logging.info(f"Registration attempt for email: {user.email}")
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
@@ -2232,7 +2254,7 @@ def create_user(
             value=access_token,
             httponly=True,
             samesite="lax",
-            secure=True,
+            secure=should_use_secure_cookies(),
         )
 
         return new_user
@@ -2249,6 +2271,9 @@ async def read_users_me(
     current_user: Optional[models.User] = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
+    if is_local_auth_mode():
+        return Response(content="", media_type="text/html")
+
     context = {
         "request": request,
         "_": translations.gettext,
@@ -2259,8 +2284,14 @@ async def read_users_me(
 
 @app.post("/logout", tags=["Authentication"])
 async def logout(response: Response):
-    response.delete_cookie(key="access_token", samesite="lax", secure=True)
-    return Response(status_code=204)
+    response.status_code = 204
+    response.delete_cookie(
+        key="access_token",
+        httponly=True,
+        samesite="lax",
+        secure=should_use_secure_cookies(),
+    )
+    return response
 
 
 if __name__ == "__main__":
