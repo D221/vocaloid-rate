@@ -43,7 +43,14 @@ from app.auth import (
     create_access_token,
     get_current_user,
     get_optional_current_user,
+)
+from app.config import (
+    get_data_dir,
     is_local_auth_mode,
+    is_local_mode,
+    is_vercel,
+    should_run_migrations_on_startup,
+    should_use_secure_cookies,
 )
 from app.database import SessionLocal
 from app.security import ACCESS_TOKEN_EXPIRE_MINUTES
@@ -57,8 +64,8 @@ BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 
 # Environment-aware directories
-DATA_DIR = os.environ.get("DATA_DIR", "data")
-if "VERCEL" in os.environ:
+DATA_DIR = str(get_data_dir())
+if is_vercel():
     # On Vercel, use /tmp for any temporary file operations
     SCRAPE_STATUS_FILE = os.path.join("/tmp", "scrape_status.txt")
 else:
@@ -93,11 +100,7 @@ async def app_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         # Running in a development environment
         RESOURCE_BASE_PATH = Path(__file__).resolve().parent.parent  # Project root
 
-    should_run_migrations = os.environ.get("RUN_MIGRATIONS_ON_STARTUP")
-    if should_run_migrations is None:
-        should_run_migrations = "false" if "VERCEL" in os.environ else "true"
-
-    if should_run_migrations.lower() == "true":
+    if should_run_migrations_on_startup():
         alembic_ini_path = RESOURCE_BASE_PATH / "alembic.ini"
         alembic_cfg = Config(str(alembic_ini_path))
         command.upgrade(alembic_cfg, "head")
@@ -518,20 +521,6 @@ def time_ago_filter(date: datetime) -> str:
 
 
 templates.env.filters["time_ago"] = time_ago_filter
-
-
-def is_local_mode():
-    """Returns True if the app is running in local SQLite mode without a dedicated DB server."""
-    if getattr(sys, "frozen", False):
-        return True
-    db_url = os.environ.get("DATABASE_URL")
-    return not db_url or db_url.strip() == ""
-
-
-def should_use_secure_cookies() -> bool:
-    """Use secure cookies only when auth is running in cloud/HTTPS mode."""
-    return not is_local_auth_mode()
-
 
 @app.post("/scrape", tags=["Scraping"])
 def scrape_and_populate(

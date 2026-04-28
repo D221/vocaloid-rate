@@ -1,7 +1,5 @@
 import logging
-import os
 import secrets
-import sys
 import bcrypt
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -12,20 +10,13 @@ from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
+from app.config import get_secret_key, is_local_auth_mode
 from app.database import SessionLocal
-from app.security import ALGORITHM, SECRET_KEY
+from app.security import ALGORITHM
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
-LOCAL_DEFAULT_EMAIL = os.environ.get("LOCAL_DEFAULT_EMAIL", "local@vocaloid-rate.local")
-
-
-def is_local_auth_mode() -> bool:
-    """Disable account auth in local deployments by default."""
-    if getattr(sys, "frozen", False):
-        return True
-    db_url = os.environ.get("DATABASE_URL")
-    return not db_url or db_url.strip() == ""
+LOCAL_DEFAULT_EMAIL = "local@vocaloid-rate.local"
 
 
 def get_or_create_local_user(db: Session):
@@ -74,7 +65,8 @@ def authenticate_user(db: Session, email: str, password: str):
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
-    if SECRET_KEY is None:  # Check if SECRET_KEY is set
+    secret_key = get_secret_key()
+    if secret_key is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Server configuration error: SECRET_KEY not set",
@@ -85,7 +77,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=ALGORITHM)
     return encoded_jwt
 
 
@@ -115,7 +107,8 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    if SECRET_KEY is None:
+    secret_key = get_secret_key()
+    if secret_key is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Server configuration error: SECRET_KEY not set",
@@ -127,7 +120,7 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, secret_key, algorithms=[ALGORITHM])
         email: Optional[str] = payload.get("sub")
         if email is None:
             raise credentials_exception
@@ -152,10 +145,11 @@ async def get_optional_current_user(
 
     if token is None:
         return None
-    if SECRET_KEY is None:
+    secret_key = get_secret_key()
+    if secret_key is None:
         return None
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, secret_key, algorithms=[ALGORITHM])
         email: Optional[str] = payload.get("sub")
         if email is None:
             return None

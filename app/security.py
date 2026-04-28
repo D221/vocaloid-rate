@@ -1,5 +1,5 @@
-import os
+from app.config import get_secret_key
 
-SECRET_KEY = os.environ.get("SECRET_KEY")
+SECRET_KEY = get_secret_key()
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30

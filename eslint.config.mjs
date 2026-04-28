@@ -4,7 +4,14 @@ import { defineConfig } from "eslint/config";
 
 export default defineConfig([
   {
-    ignores: ["docs/"],
+    ignores: [
+      "docs/",
+      "dist/",
+      "build/",
+      "public/",
+      "app/static/js/*.min.js",
+      "app/static/css/app.css",
+    ],
   },
   {
     files: ["**/*.{js,mjs,cjs}"],
