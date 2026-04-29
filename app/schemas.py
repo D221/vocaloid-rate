@@ -1,7 +1,7 @@
 import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class RatingBase(BaseModel):
@@ -9,16 +9,17 @@ class RatingBase(BaseModel):
 
 
 class Rating(RatingBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     track_id: int
     created_at: datetime.datetime
     updated_at: datetime.datetime
 
-    class Config:
-        from_attributes = True
-
 
 class Track(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     title: str
     producer: str
@@ -28,9 +29,6 @@ class Track(BaseModel):
     image_url: Optional[str] = None
     rank: Optional[int] = None
     ratings: List[Rating] = Field(default_factory=list)
-
-    class Config:
-        from_attributes = True
 
 
 class PlaylistBase(BaseModel):
@@ -43,10 +41,9 @@ class PlaylistCreate(PlaylistBase):
 
 
 class PlaylistSimple(PlaylistBase):
-    id: int
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        from_attributes = True
+    id: int
 
 
 class PlaylistTrackDetail(Track):
@@ -54,12 +51,11 @@ class PlaylistTrackDetail(Track):
 
 
 class Playlist(PlaylistBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     created_at: datetime.datetime
     tracks: List[PlaylistTrackDetail] = Field(default_factory=list)
-
-    class Config:
-        from_attributes = True
 
 
 class UserBase(BaseModel):
@@ -71,11 +67,10 @@ class UserCreate(UserBase):
 
 
 class User(UserBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     is_active: bool
-
-    class Config:
-        from_attributes = True
 
 
 class Token(BaseModel):
