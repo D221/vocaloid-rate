@@ -76,6 +76,7 @@
     "*.js": "eslint --fix",
     "*.py": [
       "ruff check --fix",
+      "ruff format",
       "ty check"
     ]
   }

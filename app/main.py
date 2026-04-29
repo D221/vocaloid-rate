@@ -520,6 +520,7 @@ def time_ago_filter(date: datetime) -> str:
 
 templates.env.filters["time_ago"] = time_ago_filter
 
+
 @app.post("/scrape", tags=["Scraping"])
 def scrape_and_populate(
     background_tasks: BackgroundTasks,

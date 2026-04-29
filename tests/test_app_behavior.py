@@ -100,7 +100,7 @@ def test_logout_clears_auth_cookie(monkeypatch):
 
     assert response.status_code == 204
     set_cookie = response.headers["set-cookie"]
-    assert "access_token=\"\"" in set_cookie
+    assert 'access_token=""' in set_cookie
     assert "HttpOnly" in set_cookie
     assert "SameSite=lax" in set_cookie
 
@@ -112,7 +112,9 @@ def test_bulk_playlist_import_rejects_non_list_payload(monkeypatch):
 
     response = client.post(
         "/api/playlists/import",
-        files={"file": ("playlists.json", b'{"name":"not-a-list"}', "application/json")},
+        files={
+            "file": ("playlists.json", b'{"name":"not-a-list"}', "application/json")
+        },
     )
 
     assert response.status_code == 400
