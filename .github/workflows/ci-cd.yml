@@ -26,8 +26,10 @@ jobs:
         run: |
           uvx ruff check .
           uvx ruff format --check .
-      - name: Run tests
-        run: uv run --with pytest --with httpx pytest
+      - name: Run tests and clean cache
+        run: |
+          uv run --with pytest --with httpx pytest
+          rm -rf .pytest_cache
 
       # --- Frontend Checks ---
       - name: Set up Bun
