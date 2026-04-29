@@ -1,7 +1,9 @@
 {
   "scripts": {
     "// --- CODE QUALITY ---": "",
-    "lint": "eslint . && uv run ruff check . && uv run ty check",
+    "lint:js": "eslint .",
+    "lint:py": "uv run ruff check . && uv run ty check",
+    "lint": "bun run lint:js && bun run lint:py",
     "lint:fix": "eslint . --fix && uv run ruff check . --fix && uv run ruff format",
     "typecheck": "uv run ty check",
     "format": "prettier --write .",
