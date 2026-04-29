@@ -1,10 +1,12 @@
 {
   "scripts": {
     "// --- CODE QUALITY ---": "",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "lint": "eslint . && uv run ruff check . && npm run typecheck",
+    "lint:fix": "eslint . --fix && uv run ruff check . --fix",
+    "typecheck": "uv run ty check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "test": "uv run --with pytest --with httpx pytest",
     "prepare": "husky",
     "// --- TRANSLATIONS ---": "",
     "i18n:extract:py": "uv run --with \"babel[jinja2]\" pybabel extract -F babel.cfg -o locales/messages.pot .",
@@ -72,6 +74,9 @@
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown",
     "*.js": "eslint --fix",
-    "*.py": "ruff check --fix"
+    "*.py": [
+      "ruff check --fix",
+      "ty check"
+    ]
   }
 }
