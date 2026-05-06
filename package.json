@@ -9,6 +9,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "uv run --with pytest --with httpx pytest",
+    "test:cov": "uv run --with pytest --with pytest-cov --with httpx pytest --cov=app --cov-report=term-missing --cov-report=html --cov-report=xml --cov-fail-under=80",
     "prepare": "husky",
     "// --- TRANSLATIONS ---": "",
     "i18n:extract:py": "uv run --with \"babel[jinja2]\" pybabel extract -F babel.cfg -o locales/messages.pot .",
