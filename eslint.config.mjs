@@ -5,6 +5,12 @@ import { defineConfig } from "eslint/config";
 export default defineConfig([
   {
     ignores: [
+      ".pytest_cache/",
+      ".ruff_cache/",
+      "htmlcov/",
+      "coverage.xml",
+      "__pycache__/",
+      ".venv/",
       "docs/",
       "dist/",
       "build/",
