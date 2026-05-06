@@ -205,7 +205,7 @@
 
                       if (status.startsWith("in_progress")) {
                         const page = status.split(":")[1] || "?";
-                        btn.textContent = `{{ _('Updating') }} (${page}/6)...`;
+                        btn.textContent = `{{ _('Updating') }} (${page})...`;
                       } else if (status === "completed") {
                         clearInterval(pollInterval);
                         if (typeof showToast === "function") {
