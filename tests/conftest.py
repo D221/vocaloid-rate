@@ -75,6 +75,7 @@ def client_factory(monkeypatch, session_factory):
         main.app.dependency_overrides = {
             main.get_db: override_db,
             app_dependencies.get_db: override_db,
+            app_auth.get_db: override_db,
         }
         if current_user is not None:
             main.app.dependency_overrides[main.get_current_user] = lambda: current_user
