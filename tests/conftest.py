@@ -56,11 +56,15 @@ def db_session(session_factory) -> Iterator[Session]:
 @pytest.fixture
 def client_factory(monkeypatch, session_factory):
     monkeypatch.setattr(main.app.router, "lifespan_context", noop_lifespan)
+    created_clients: list[TestClient] = []
 
     def _make_client(
         current_user: SimpleNamespace | models.User | None = None,
         optional_user: SimpleNamespace | models.User | None = None,
     ) -> TestClient:
+        from app import auth as app_auth
+        from app import dependencies as app_dependencies
+
         def override_db():
             db = session_factory()
             try:
@@ -68,16 +72,29 @@ def client_factory(monkeypatch, session_factory):
             finally:
                 db.close()
 
-        main.app.dependency_overrides = {main.get_db: override_db}
+        main.app.dependency_overrides = {
+            main.get_db: override_db,
+            app_dependencies.get_db: override_db,
+        }
         if current_user is not None:
             main.app.dependency_overrides[main.get_current_user] = lambda: current_user
+            main.app.dependency_overrides[app_auth.get_current_user] = lambda: (
+                current_user
+            )
         if optional_user is not None:
             main.app.dependency_overrides[main.get_optional_current_user] = lambda: (
                 optional_user
             )
-        return TestClient(main.app)
+            main.app.dependency_overrides[app_auth.get_optional_current_user] = lambda: (
+                optional_user
+            )
+        client = TestClient(main.app)
+        created_clients.append(client)
+        return client
 
     yield _make_client
+    for client in created_clients:
+        client.close()
     main.app.dependency_overrides = {}
 
 

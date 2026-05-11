@@ -12,7 +12,7 @@ Vocaloid Rate is a personal, self-hosted web application for tracking, rating, a
 
 The application is built with a Python/FastAPI backend and a optimized vanilla JavaScript frontend using Tailwind CSS.
 
-For the current backend/module layout after the FastAPI refactor, see [STRUCTURE.md](STRUCTURE.md).
+For the current backend/module layout after the FastAPI refactor, see [STRUCTURE.md](https://github.com/d221/vocaloid-rate/blob/main/STRUCTURE.md).
 
 ## Features
 
