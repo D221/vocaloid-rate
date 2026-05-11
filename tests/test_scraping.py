@@ -48,6 +48,12 @@ def test_cron_scrape_requires_secret(client_factory):
 def test_cron_scrape_requires_valid_bearer_token(client_factory, monkeypatch):
     client = client_factory()
     monkeypatch.setenv("CRON_SECRET", "secret")
+    seen = {"called": False}
+    monkeypatch.setattr(
+        scraping_router,
+        "scrape_and_populate_task",
+        lambda: seen.update(called=True),
+    )
 
     bad_response = client.get("/api/cron/scrape")
     good_response = client.get(
@@ -57,6 +63,7 @@ def test_cron_scrape_requires_valid_bearer_token(client_factory, monkeypatch):
 
     assert bad_response.status_code == 401
     assert good_response.status_code == 200
+    assert seen["called"] is True
 
 
 def test_scrape_status_endpoint_uses_service_read(client_factory, monkeypatch):
