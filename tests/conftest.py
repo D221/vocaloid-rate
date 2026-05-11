@@ -24,6 +24,17 @@ async def noop_lifespan(_app):
     yield
 
 
+@pytest.fixture(autouse=True)
+def stable_test_environment(monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "sqlite:///:memory:")
+    monkeypatch.setenv("SECRET_KEY", "test-secret")
+
+    from app import auth as app_auth
+
+    monkeypatch.setattr(main, "is_local_auth_mode", lambda: False)
+    monkeypatch.setattr(app_auth, "is_local_auth_mode", lambda: False)
+
+
 @pytest.fixture
 def session_factory() -> Iterator[sessionmaker]:
     engine = create_engine(
