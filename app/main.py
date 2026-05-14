@@ -6,20 +6,20 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator
 
-from alembic import command
 from alembic.config import Config
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from alembic import command
 from app import crud, models
 from app.auth import authenticate_user, get_current_user, get_optional_current_user
-from app.constants import BASE_DIR, STATIC_DIR, set_resource_base_path
 from app.config import (
     is_local_auth_mode,
     should_run_migrations_on_startup,
     should_use_secure_cookies,
 )
+from app.constants import BASE_DIR, STATIC_DIR, set_resource_base_path
 from app.database import SessionLocal
 from app.dependencies import get_db, templates
 from app.routers import auth, pages, playlists, scraping, tracks, vocadb
@@ -45,7 +45,7 @@ __all__ = [
 
 
 @asynccontextmanager
-async def app_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+async def app_lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     if getattr(sys, "frozen", False):
         resource_base_path = Path(str(getattr(sys, "_MEIPASS")))
     else:
@@ -85,7 +85,7 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
 @app.middleware("http")
-async def add_cache_control_header(request: Request, call_next):
+async def add_cache_control_header(request: Request, call_next) -> Response:
     response = await call_next(request)
     if request.url.path.startswith("/static/"):
         response.headers["Cache-Control"] = "public, max-age=86400"
@@ -93,16 +93,13 @@ async def add_cache_control_header(request: Request, call_next):
 
 
 @app.get("/static/sw.js", tags=["Internal"])
-async def serve_sw(request: Request):
+async def serve_sw(_request: Request) -> Response:
     sw_path = BASE_DIR / "static" / "sw.js"
     if not sw_path.exists():
         raise HTTPException(status_code=404, detail="Service worker not found.")
 
-    with open(sw_path, "r", encoding="utf-8") as file_handle:
-        content = file_handle.read()
-
     return Response(
-        content=content,
+        content=sw_path.read_text(encoding="utf-8"),
         media_type="application/javascript",
         headers={"Service-Worker-Allowed": "/"},
     )

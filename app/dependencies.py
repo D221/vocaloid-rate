@@ -100,7 +100,7 @@ def get_translations(
         return TranslationProxy(NullTranslations(), locale)
 
 
-async def LocaleTemplateResponse(
+async def locale_template_response(
     template_name: str,
     context: dict,
     request: Request,

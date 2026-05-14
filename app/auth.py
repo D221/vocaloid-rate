@@ -1,10 +1,10 @@
 import logging
 import secrets
-import bcrypt
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import Depends, HTTPException, status, Request
+import bcrypt
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
@@ -19,7 +19,7 @@ oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="token", auto_error=False
 LOCAL_DEFAULT_EMAIL = "local@vocaloid-rate.local"
 
 
-def get_or_create_local_user(db: Session):
+def get_or_create_local_user(db: Session) -> crud.models.User:
     user = crud.get_user_by_email(db, email=LOCAL_DEFAULT_EMAIL)
     if user:
         if not user.is_admin:
@@ -38,14 +38,14 @@ def get_or_create_local_user(db: Session):
     return user
 
 
-def verify_password(plain_password: str, hashed_password: str):
+def verify_password(plain_password: str, hashed_password: str) -> bool:
     # bcrypt expects bytes
     password_bytes = plain_password.encode("utf-8")
     hashed_bytes = hashed_password.encode("utf-8")
     return bcrypt.checkpw(password_bytes, hashed_bytes)
 
 
-def get_password_hash(password: str):
+def get_password_hash(password: str) -> str:
     # bcrypt expects bytes, and returns a hashed byte string
     password_bytes = password.encode("utf-8")
     salt = bcrypt.gensalt()
@@ -53,18 +53,23 @@ def get_password_hash(password: str):
     return hashed_password.decode("utf-8")
 
 
-def authenticate_user(db: Session, email: str, password: str):
+def authenticate_user(
+    db: Session, email: str, password: str
+) -> Optional[crud.models.User]:
     user = crud.get_user_by_email(db, email=email)
+
     if not user:
         logging.warning(f"Auth failed: User with email {email} not found")
-        return False
+        return None
+
     if not verify_password(password, user.hashed_password):
         logging.warning(f"Auth failed: Incorrect password for user {email}")
-        return False
+        return None
+
     return user
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     secret_key = get_secret_key()
     if secret_key is None:
         raise HTTPException(
@@ -93,7 +98,7 @@ async def get_current_user(
     request: Request,  # Add request
     token: Optional[str] = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
-):
+) -> crud.models.User:
     if is_local_auth_mode():
         return get_or_create_local_user(db)
 
@@ -136,7 +141,7 @@ async def get_optional_current_user(
     request: Request,  # Add request
     token: Optional[str] = Depends(oauth2_scheme_optional),
     db: Session = Depends(get_db),
-):
+) -> Optional[crud.models.User]:
     if is_local_auth_mode():
         return get_or_create_local_user(db)
 

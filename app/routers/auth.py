@@ -24,7 +24,7 @@ def _main_module():
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
-):
+) -> Response:
     main = _main_module()
     if main.is_local_auth_mode():
         raise HTTPException(
@@ -63,7 +63,7 @@ async def login_for_access_token(
 @router.post("/users/", response_model=schemas.User)
 def create_user(
     response: Response, user: schemas.UserCreate, db: Session = Depends(get_db)
-):
+) -> models.User:
     main = _main_module()
     if main.is_local_auth_mode():
         raise HTTPException(
@@ -109,7 +109,7 @@ async def read_users_me(
     request: Request,
     current_user: models.User | None = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
-):
+) -> Response:
     if _main_module().is_local_auth_mode():
         return Response(content="", media_type="text/html")
 
@@ -122,7 +122,7 @@ async def read_users_me(
 
 
 @router.post("/logout")
-async def logout(response: Response):
+async def logout(response: Response) -> Response:
     main = _main_module()
     response.status_code = 204
     response.delete_cookie(
