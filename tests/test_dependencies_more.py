@@ -86,7 +86,7 @@ async def test_locale_template_response_injects_user_and_language_cookie(monkeyp
     request = make_request(headers=[(b"accept-language", b"ja")])
     translations = dependencies.TranslationProxy(NullTranslations(), "ja")
 
-    response = await dependencies.LocaleTemplateResponse(
+    response = await dependencies.locale_template_response(
         "options.html",
         {"request": request, "_": translations.gettext},
         request,

@@ -38,9 +38,9 @@ def test_authenticate_user_success_and_failures(db_session):
     )
 
     assert auth.authenticate_user(db_session, user.email, "secret123") == user
-    assert auth.authenticate_user(db_session, user.email, "wrong") is False
+    assert auth.authenticate_user(db_session, user.email, "wrong") is None
     assert (
-        auth.authenticate_user(db_session, "missing@example.com", "secret123") is False
+        auth.authenticate_user(db_session, "missing@example.com", "secret123") is None
     )
 
 

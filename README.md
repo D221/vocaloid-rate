@@ -1,6 +1,7 @@
 # Vocaloid Rate
 
-> **Web Version:** Access the application at [vocaloid-rate.vercel.app](https://vocaloid-rate.vercel.app/).
+> **Web Version:** Access the application at [vocaloid-rate.vercel.app](https://vocaloid-rate.vercel.app/).  
+> **Demo login** - demo@example.com - demo
 >
 > - **Note on Performance:** The web version may be significantly slower than running the application locally via the downloadable `.exe` due to cloud database latency.
 > - **User Accounts:** You can create an account and log in. Passwords are securely hashed and encrypted.

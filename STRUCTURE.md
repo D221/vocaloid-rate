@@ -85,7 +85,7 @@ Examples:
 - `get_locale`
 - `get_translations`
 - `get_slim_mode`
-- `LocaleTemplateResponse`
+- `locale_template_response`
 
 Use this for dependency-injected helpers that are shared across routers.
 

@@ -60,24 +60,21 @@ def test_rating_statistics_returns_distribution_and_top_entities(
     db_session,
     user,
 ):
-    tracks = []
     for idx, rating in enumerate([9, 8, 7], start=1):
-        track = models.Track(
-            title=f"Track {idx}",
-            producer="Producer A",
-            voicebank="Miku",
-            published_date=user.id and __import__("datetime").datetime.now(),
-            link=f"https://example.com/stats/{idx}",
-            title_jp="",
-            producer_jp="",
-            voicebank_jp="",
-            image_url=None,
-            rank=idx,
-        )
-        db_session.add(track)
-        db_session.flush()
+        track_data = {
+            "title": f"Track {idx}",
+            "producer": "Producer A",
+            "voicebank": "Miku",
+            "published_date": __import__("datetime").datetime.now(),
+            "link": f"https://example.com/stats/{idx}",
+            "title_jp": "",
+            "producer_jp": "",
+            "voicebank_jp": "",
+            "image_url": None,
+            "rank": idx,
+        }
+        track = crud.create_track(db_session, track_data)
         db_session.add(models.Rating(track_id=track.id, user_id=user.id, rating=rating))
-        tracks.append(track)
     db_session.commit()
 
     stats = crud.get_rating_statistics(db_session, user.id)
@@ -101,47 +98,47 @@ def test_recommendations_prefer_matching_highly_rated_producer(
         ("Neutral", "Producer B", "Luka", 5),
     ]
     for idx, (title, producer, voicebank, rating) in enumerate(rated_tracks, start=1):
-        track = models.Track(
-            title=title,
-            producer=producer,
-            voicebank=voicebank,
-            published_date=__import__("datetime").datetime.now(),
-            link=f"https://example.com/reco/rated/{idx}",
-            title_jp="",
-            producer_jp="",
-            voicebank_jp="",
-            image_url=None,
-            rank=idx,
-        )
-        db_session.add(track)
-        db_session.flush()
+        track_data = {
+            "title": title,
+            "producer": producer,
+            "voicebank": voicebank,
+            "published_date": __import__("datetime").datetime.now(),
+            "link": f"https://example.com/reco/rated/{idx}",
+            "title_jp": "",
+            "producer_jp": "",
+            "voicebank_jp": "",
+            "image_url": None,
+            "rank": idx,
+        }
+        track = crud.create_track(db_session, track_data)
         db_session.add(models.Rating(track_id=track.id, user_id=user.id, rating=rating))
 
-    recommended = models.Track(
-        title="Should Recommend",
-        producer="Producer A",
-        voicebank="Miku",
-        published_date=__import__("datetime").datetime.now(),
-        link="https://example.com/reco/candidate/1",
-        title_jp="",
-        producer_jp="",
-        voicebank_jp="",
-        image_url=None,
-        rank=10,
-    )
-    unrecommended = models.Track(
-        title="Should Not Recommend",
-        producer="Producer C",
-        voicebank="Len",
-        published_date=__import__("datetime").datetime.now(),
-        link="https://example.com/reco/candidate/2",
-        title_jp="",
-        producer_jp="",
-        voicebank_jp="",
-        image_url=None,
-        rank=11,
-    )
-    db_session.add_all([recommended, unrecommended])
+    recommended_data = {
+        "title": "Should Recommend",
+        "producer": "Producer A",
+        "voicebank": "Miku",
+        "published_date": __import__("datetime").datetime.now(),
+        "link": "https://example.com/reco/candidate/1",
+        "title_jp": "",
+        "producer_jp": "",
+        "voicebank_jp": "",
+        "image_url": None,
+        "rank": 10,
+    }
+    unrecommended_data = {
+        "title": "Should Not Recommend",
+        "producer": "Producer C",
+        "voicebank": "Len",
+        "published_date": __import__("datetime").datetime.now(),
+        "link": "https://example.com/reco/candidate/2",
+        "title_jp": "",
+        "producer_jp": "",
+        "voicebank_jp": "",
+        "image_url": None,
+        "rank": 11,
+    }
+    crud.create_track(db_session, recommended_data)
+    crud.create_track(db_session, unrecommended_data)
     db_session.commit()
 
     recommendations = crud.get_recommended_tracks(db_session, user.id)
