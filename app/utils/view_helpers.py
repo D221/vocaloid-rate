@@ -6,7 +6,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from app import crud
+from app import models
 from app.dependencies import templates
 
 
@@ -17,8 +17,8 @@ def serialize_tracks(tracks) -> str:
 def collect_producers_and_voicebanks(
     tracks, locale: str
 ) -> tuple[list[str], list[str]]:
-    producers_flat = []
-    voicebanks_flat = []
+    producers_flat: list[str] = []
+    voicebanks_flat: list[str] = []
 
     for track in tracks:
         if locale == "ja" and track.producer_jp:
@@ -45,17 +45,26 @@ def collect_producers_and_voicebanks(
 def get_user_filter_options(
     db: Session, user_id: int, locale: str
 ) -> tuple[list[str], list[str]]:
-    all_tracks_count = crud.get_tracks_count(
-        db, user_id=user_id, rank_filter="all", locale=locale
+    # Query producers and voicebanks directly from their tables for efficiency
+    p_name_col = models.Producer.name_jp if locale == "ja" else models.Producer.name
+    v_name_col = models.Voicebank.name_jp if locale == "ja" else models.Voicebank.name
+
+    producers = (
+        db.query(p_name_col)
+        .filter(p_name_col.isnot(None), p_name_col != "")
+        .distinct()
+        .order_by(p_name_col)
+        .all()
     )
-    all_db_tracks = crud.get_tracks(
-        db,
-        user_id=user_id,
-        limit=max(all_tracks_count, 1),
-        rank_filter="all",
-        locale=locale,
+    voicebanks = (
+        db.query(v_name_col)
+        .filter(v_name_col.isnot(None), v_name_col != "")
+        .distinct()
+        .order_by(v_name_col)
+        .all()
     )
-    return collect_producers_and_voicebanks(all_db_tracks, locale)
+
+    return [p[0] for p in producers], [v[0] for v in voicebanks]
 
 
 def build_limit_offset(

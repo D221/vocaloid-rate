@@ -1,4 +1,3 @@
-from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from math import exp
 from statistics import median
@@ -17,9 +16,62 @@ def get_track_by_link(db: Session, link: str):
     return db.query(models.Track).filter(models.Track.link == link).first()
 
 
+def _sync_track_relationships(db: Session, db_track: models.Track):
+    """Syncs many-to-many relationships for a track based on its producer/voicebank strings."""
+    # Sync Producers
+    if db_track.producer:
+        p_en = [p.strip() for p in db_track.producer.split(",")]
+        p_jp = (
+            [p.strip() for p in db_track.producer_jp.split(",")]
+            if db_track.producer_jp
+            else []
+        )
+
+        producers = []
+        for i, name in enumerate(p_en):
+            if not name:
+                continue
+            producer = (
+                db.query(models.Producer).filter(models.Producer.name == name).first()
+            )
+            if not producer:
+                name_jp = p_jp[i] if i < len(p_jp) else None
+                producer = models.Producer(name=name, name_jp=name_jp)
+                db.add(producer)
+                db.flush()
+            producers.append(producer)
+        db_track.producers = producers
+
+    # Sync Voicebanks
+    if db_track.voicebank:
+        v_en = [v.strip() for v in db_track.voicebank.split(",")]
+        v_jp = (
+            [v.strip() for v in db_track.voicebank_jp.split(",")]
+            if db_track.voicebank_jp
+            else []
+        )
+
+        voicebanks = []
+        for i, name in enumerate(v_en):
+            if not name:
+                continue
+            voicebank = (
+                db.query(models.Voicebank).filter(models.Voicebank.name == name).first()
+            )
+            if not voicebank:
+                name_jp = v_jp[i] if i < len(v_jp) else None
+                voicebank = models.Voicebank(name=name, name_jp=name_jp)
+                db.add(voicebank)
+                db.flush()
+            voicebanks.append(voicebank)
+        db_track.voicebanks = voicebanks
+
+
 def create_track(db: Session, track: dict):
     db_track = models.Track(**track)
     db.add(db_track)
+    db.flush()
+    _sync_track_relationships(db, db_track)
     db.commit()
     db.refresh(db_track)
     return db_track
@@ -28,6 +80,7 @@ def create_track(db: Session, track: dict):
 def update_track(db: Session, db_track: models.Track, track: dict):
     for key, value in track.items():
         setattr(db_track, key, value)
+    _sync_track_relationships(db, db_track)
     db.commit()
     db.refresh(db_track)
     return db_track
@@ -47,7 +100,7 @@ def get_tracks(
     rank_filter: str = "ranked",
     exact_rating_filter: Optional[int] = None,
     locale: str = "en",
-):
+) -> List[models.Track]:
     # Optimized subquery for checking if track is in ANY of the current user's playlists
     playlist_exists = (
         exists()
@@ -153,7 +206,7 @@ def get_tracks_count(
     rank_filter: str = "ranked",
     exact_rating_filter: Optional[int] = None,
     locale: str = "en",
-):
+) -> int:
     query = db.query(func.count(distinct(models.Track.id)))
 
     if rank_filter == "ranked":
@@ -210,7 +263,8 @@ def get_tracks_count(
         else:
             query = query.filter(models.Track.voicebank.ilike(search_term))
 
-    return query.scalar()
+    result = query.scalar()
+    return int(result or 0)
 
 
 def get_recently_added_tracks(
@@ -335,81 +389,58 @@ def get_rating_statistics(db: Session, user_id: int, locale: str = "en"):
 
     all_ratings_values = [r for (r,) in all_ratings_query]
     total_ratings = len(all_ratings_values)
-    global_avg_rating = round(sum(all_ratings_values) / total_ratings, 2)
+    global_avg_rating = sum(all_ratings_values) / total_ratings
     MINIMUM_RATINGS_FOR_FAVORITE = 3
 
-    # --- NEW PYTHON-BASED AGGREGATION LOGIC ---
+    def get_top_entities(
+        model_class, junction_table, entity_id_col, name_attr, name_jp_attr
+    ):
+        name_col = getattr(model_class, name_jp_attr if locale == "ja" else name_attr)
 
-    # Fetch all rated tracks with their producer, voicebank, and rating
-    rated_tracks_data = (
-        db.query(
-            models.Track.producer,
-            models.Track.voicebank,
-            models.Track.producer_jp,
-            models.Track.voicebank_jp,
-            models.Rating.rating,
+        query = (
+            db.query(
+                name_col.label("name"),
+                func.avg(models.Rating.rating).label("avg_rating"),
+                func.count(models.Rating.rating).label("count"),
+            )
+            .join(junction_table, entity_id_col == model_class.id)
+            .join(models.Rating, models.Rating.track_id == junction_table.c.track_id)
+            .filter(models.Rating.user_id == user_id)
+            .group_by(model_class.id, name_col)
+            .having(func.count(models.Rating.rating) >= MINIMUM_RATINGS_FOR_FAVORITE)
         )
-        .join(models.Rating)
-        .filter(models.Rating.user_id == user_id)  # Filter by user_id
-        .all()
+
+        results = query.all()
+        scored = []
+        for row in results:
+            v = row.count
+            R = row.avg_rating
+            score = ((v * R) + (MINIMUM_RATINGS_FOR_FAVORITE * global_avg_rating)) / (
+                v + MINIMUM_RATINGS_FOR_FAVORITE
+            )
+            scored.append(
+                {
+                    "name": row.name,
+                    "avg_rating": round(float(R), 2),
+                    "score": float(score),
+                }
+            )
+        return sorted(scored, key=lambda x: x["score"], reverse=True)[:10]
+
+    top_producers = get_top_entities(
+        models.Producer,
+        models.track_producers,
+        models.track_producers.c.producer_id,
+        "name",
+        "name_jp",
     )
-
-    producer_ratings = defaultdict(list)
-    voicebank_ratings = defaultdict(list)
-
-    # De-normalize the data: split comma-separated strings
-    for (
-        producer_en_str,
-        voicebank_en_str,
-        producer_jp_str,
-        voicebank_jp_str,
-        rating,
-    ) in rated_tracks_data:
-        if locale == "ja" and producer_jp_str:
-            producers = [p.strip() for p in producer_jp_str.split(",")]
-        else:
-            producers = [p.strip() for p in producer_en_str.split(",")]
-
-        if locale == "ja" and voicebank_jp_str:
-            voicebanks = [v.strip() for v in voicebank_jp_str.split(",")]
-        else:
-            voicebanks = [v.strip() for v in voicebank_en_str.split(",")]
-
-        for p in producers:
-            producer_ratings[p].append(rating)
-        for v in voicebanks:
-            voicebank_ratings[v].append(rating)
-
-    # Now, calculate the weighted score for each individual producer/voicebank
-    top_producers = []
-    for name, ratings in producer_ratings.items():
-        if len(ratings) >= MINIMUM_RATINGS_FOR_FAVORITE:
-            v = len(ratings)
-            R = sum(ratings) / v
-            score = ((v * R) + (MINIMUM_RATINGS_FOR_FAVORITE * global_avg_rating)) / (
-                v + MINIMUM_RATINGS_FOR_FAVORITE
-            )
-            top_producers.append(
-                {"name": name, "avg_rating": round(R, 2), "score": score}
-            )
-
-    top_voicebanks = []
-    for name, ratings in voicebank_ratings.items():
-        if len(ratings) >= MINIMUM_RATINGS_FOR_FAVORITE:
-            v = len(ratings)
-            R = sum(ratings) / v
-            score = ((v * R) + (MINIMUM_RATINGS_FOR_FAVORITE * global_avg_rating)) / (
-                v + MINIMUM_RATINGS_FOR_FAVORITE
-            )
-            top_voicebanks.append(
-                {"name": name, "avg_rating": round(R, 2), "score": score}
-            )
-
-    # Sort the lists by the weighted score and take the top 10
-    top_producers = sorted(top_producers, key=lambda x: x["score"], reverse=True)[:10]
-    top_voicebanks = sorted(top_voicebanks, key=lambda x: x["score"], reverse=True)[:10]
-
-    # --- END OF NEW LOGIC ---
+    top_voicebanks = get_top_entities(
+        models.Voicebank,
+        models.track_voicebanks,
+        models.track_voicebanks.c.voicebank_id,
+        "name",
+        "name_jp",
+    )
 
     median_rating = median(all_ratings_values)
 
@@ -424,7 +455,7 @@ def get_rating_statistics(db: Session, user_id: int, locale: str = "en"):
 
     return {
         "total_ratings": total_ratings,
-        "average_rating": global_avg_rating,
+        "average_rating": round(global_avg_rating, 2),
         "median_rating": median_rating,
         "top_producers": top_producers,
         "top_voicebanks": top_voicebanks,
@@ -717,6 +748,20 @@ def get_track_playlist_membership(db: Session, track_id: int, user_id: int) -> d
     return {"member_of": member_of, "not_member_of": not_member_of}
 
 
+def _calculate_snapshot(all_track_ids: List[int], limit: str) -> List[dict]:
+    """Helper to calculate page numbers for a list of track IDs."""
+    limit_val = len(all_track_ids)
+    if limit.isdigit() and int(limit) > 0:
+        limit_val = int(limit)
+
+    snapshot = []
+    if limit_val > 0:
+        for i, track_id in enumerate(all_track_ids):
+            page_num = (i // limit_val) + 1
+            snapshot.append({"id": str(track_id), "page": page_num})
+    return snapshot
+
+
 def get_playlist_snapshot(
     db: Session,
     user_id: Optional[int] = None,
@@ -813,25 +858,11 @@ def get_playlist_snapshot(
         else:
             query = query.order_by(models.Track.rank.asc())
 
-    # if rating_join_applied:
-    #     query = query.distinct()
-
     # --- 2. Execute the query to get ALL matching track IDs in order ---
     all_track_ids_tuples = query.all()
     all_track_ids = [id_tuple[0] for id_tuple in all_track_ids_tuples]
 
-    # --- 3. Calculate page number for each track ---
-    limit_val = len(all_track_ids)  # Default to all tracks on one page
-    if limit.isdigit() and int(limit) > 0:
-        limit_val = int(limit)
-
-    snapshot = []
-    if limit_val > 0:
-        for i, track_id in enumerate(all_track_ids):
-            page_num = (i // limit_val) + 1
-            snapshot.append({"id": str(track_id), "page": page_num})
-
-    return snapshot
+    return _calculate_snapshot(all_track_ids, limit)
 
 
 def get_playlist_tracks_filtered(
@@ -965,7 +996,7 @@ def get_playlist_tracks_count(
 def get_playlist_snapshot_for_playlist(
     db: Session,
     playlist_id: int,
-    user_id: int,  # Add user_id
+    user_id: int,
     limit: str = "all",
     title_filter: Optional[str] = None,
     producer_filter: Optional[str] = None,
@@ -982,13 +1013,13 @@ def get_playlist_snapshot_for_playlist(
     query = (
         db.query(models.Track.id)
         .join(models.PlaylistTrack)
-        .join(models.Playlist)  # Join with Playlist to filter by user_id
+        .join(models.Playlist)
         .filter(
             models.PlaylistTrack.playlist_id == playlist_id,
-            models.Playlist.user_id == user_id,  # Filter by user_id
+            models.Playlist.user_id == user_id,
         )
     )
-    # --- 2. Apply filters (same as get_playlist_tracks_filtered) ---
+    # --- 2. Apply filters ---
     if title_filter:
         search_term = f"%{title_filter}%"
         query = query.filter(
@@ -1020,7 +1051,7 @@ def get_playlist_snapshot_for_playlist(
         else:
             query = query.filter(models.Track.voicebank.ilike(search_term))
 
-    # --- 3. Apply sorting (same as get_playlist_tracks_filtered) ---
+    # --- 3. Apply sorting ---
     if sort_by:
         sort_column = getattr(models.Track, sort_by, None)
         if sort_column:
@@ -1032,21 +1063,10 @@ def get_playlist_snapshot_for_playlist(
         # Default sort for playlists is their manually set position
         query = query.order_by(models.PlaylistTrack.position.asc())
 
-    # --- 4. Execute query and calculate pages (same as global snapshot) ---
     all_track_ids_tuples = query.all()
     all_track_ids = [id_tuple[0] for id_tuple in all_track_ids_tuples]
 
-    limit_val = len(all_track_ids)
-    if limit.isdigit() and int(limit) > 0:
-        limit_val = int(limit)
-
-    snapshot = []
-    if limit_val > 0:
-        for i, track_id in enumerate(all_track_ids):
-            page_num = (i // limit_val) + 1
-            snapshot.append({"id": str(track_id), "page": page_num})
-
-    return snapshot
+    return _calculate_snapshot(all_track_ids, limit)
 
 
 def get_recently_added_snapshot(
@@ -1104,17 +1124,7 @@ def get_recently_added_snapshot(
     all_track_ids_tuples = query.all()
     all_track_ids = [id_tuple[0] for id_tuple in all_track_ids_tuples]
 
-    limit_val = len(all_track_ids)
-    if limit.isdigit() and int(limit) > 0:
-        limit_val = int(limit)
-
-    snapshot = []
-    if limit_val > 0:
-        for i, track_id in enumerate(all_track_ids):
-            page_num = (i // limit_val) + 1
-            snapshot.append({"id": str(track_id), "page": page_num})
-
-    return snapshot
+    return _calculate_snapshot(all_track_ids, limit)
 
 
 def get_recommended_tracks(
@@ -1134,7 +1144,27 @@ def get_recommended_tracks(
     recency_weight = bias_weights.get(recent_bias, 0.0)
     now_utc = datetime.now(timezone.utc)
 
-    # 1. Get all user ratings and calculate average ratings for producers and voicebanks
+    # 1. Get average ratings for producers and voicebanks from the normalized tables
+    def get_avg_ratings(model_class, junction_table, entity_id_col):
+        results = (
+            db.query(model_class.id, func.avg(models.Rating.rating).label("avg_rating"))
+            .join(junction_table, entity_id_col == model_class.id)
+            .join(models.Rating, models.Rating.track_id == junction_table.c.track_id)
+            .filter(models.Rating.user_id == user_id)
+            .group_by(model_class.id)
+            .all()
+        )
+        return {row.id: float(row.avg_rating) for row in results}
+
+    producer_avg_ratings = get_avg_ratings(
+        models.Producer, models.track_producers, models.track_producers.c.producer_id
+    )
+    voicebank_avg_ratings = get_avg_ratings(
+        models.Voicebank,
+        models.track_voicebanks,
+        models.track_voicebanks.c.voicebank_id,
+    )
+
     all_ratings_query = (
         db.query(models.Rating.rating).filter(models.Rating.user_id == user_id).all()
     )
@@ -1144,60 +1174,12 @@ def get_recommended_tracks(
     all_ratings_values = [r for (r,) in all_ratings_query]
     global_avg_rating = sum(all_ratings_values) / len(all_ratings_values)
 
-    rated_tracks_data = (
-        db.query(
-            models.Track.producer,
-            models.Track.voicebank,
-            models.Track.producer_jp,
-            models.Track.voicebank_jp,
-            models.Rating.rating,
-        )
-        .join(models.Rating)
-        .filter(models.Rating.user_id == user_id)
-        .all()
-    )
-
-    # <<< FIX: Use separate dictionaries for accumulation and final averages
-    producer_data = defaultdict(lambda: {"sum_ratings": 0, "count": 0})
-    voicebank_data = defaultdict(lambda: {"sum_ratings": 0, "count": 0})
-
-    for (
-        producer_en_str,
-        voicebank_en_str,
-        producer_jp_str,
-        voicebank_jp_str,
-        rating,
-    ) in rated_tracks_data:
-        producers = []
-        if locale == "ja" and producer_jp_str:
-            producers.extend([p.strip() for p in producer_jp_str.split(",")])
-        else:
-            producers.extend([p.strip() for p in producer_en_str.split(",")])
-
-        voicebanks = []
-        if locale == "ja" and voicebank_jp_str:
-            voicebanks.extend([v.strip() for v in voicebank_jp_str.split(",")])
-        else:
-            voicebanks.extend([v.strip() for v in voicebank_en_str.split(",")])
-
-        for p in producers:
-            producer_data[p]["sum_ratings"] += rating
-            producer_data[p]["count"] += 1
-        for v in voicebanks:
-            voicebank_data[v]["sum_ratings"] += rating
-            voicebank_data[v]["count"] += 1
-
-    # <<< FIX: Calculate averages into new, correctly-typed dictionaries
-    producer_avg_ratings: dict[str, float] = {
-        p: data["sum_ratings"] / data["count"] for p, data in producer_data.items()
-    }
-    voicebank_avg_ratings: dict[str, float] = {
-        v: data["sum_ratings"] / data["count"] for v, data in voicebank_data.items()
-    }
-
-    # 2. Get all unrated tracks
+    # 2. Get unrated tracks with their producers and voicebanks
     unrated_tracks = (
         db.query(models.Track)
+        .options(
+            joinedload(models.Track.producers), joinedload(models.Track.voicebanks)
+        )
         .filter(
             ~exists().where(
                 and_(
@@ -1217,66 +1199,49 @@ def get_recommended_tracks(
     for track in unrated_tracks:
         score = 0.0
 
-        track_producers = []
-        if locale == "ja" and track.producer_jp:
-            track_producers.extend([p.strip() for p in track.producer_jp.split(",")])
-        else:
-            track_producers.extend([p.strip() for p in track.producer.split(",")])
-
-        track_voicebanks = []
-        if locale == "ja" and track.voicebank_jp:
-            track_voicebanks.extend([v.strip() for v in track.voicebank_jp.split(",")])
-        else:
-            track_voicebanks.extend([v.strip() for v in track.voicebank.split(",")])
-
         # Score from producers
-        producer_scores = []
-        for p in track_producers:
-            if p in producer_avg_ratings:
-                # <<< FIX: This is now a valid float - float operation
-                producer_scores.append(producer_avg_ratings[p] - global_avg_rating)
-        if producer_scores:
-            score += producer_weight * (sum(producer_scores) / len(producer_scores))
+        p_scores = [
+            producer_avg_ratings[p.id] - global_avg_rating
+            for p in track.producers
+            if p.id in producer_avg_ratings
+        ]
+        if p_scores:
+            score += producer_weight * (sum(p_scores) / len(p_scores))
 
         # Score from voicebanks
-        voicebank_scores = []
-        for v in track_voicebanks:
-            if v in voicebank_avg_ratings:
-                # <<< FIX: This is now a valid float - float operation
-                voicebank_scores.append(voicebank_avg_ratings[v] - global_avg_rating)
-        if voicebank_scores:
-            score += voicebank_weight * (sum(voicebank_scores) / len(voicebank_scores))
+        v_scores = [
+            voicebank_avg_ratings[v.id] - global_avg_rating
+            for v in track.voicebanks
+            if v.id in voicebank_avg_ratings
+        ]
+        if v_scores:
+            score += voicebank_weight * (sum(v_scores) / len(v_scores))
 
         if recency_weight > 0 and track.published_date:
             published_dt = track.published_date
             if published_dt.tzinfo is None:
                 published_dt = published_dt.replace(tzinfo=timezone.utc)
             age_days = max((now_utc - published_dt).days, 0)
-            # Exponential decay with ~2-year half-life equivalent.
             recency_score = exp(-age_days / 730)
             score += recency_weight * recency_score
 
         if score > MINIMUM_SCORE_THRESHOLD:
             track_scores.append((track, score))
 
-    # 4. Sort and return top N tracks
     track_scores.sort(key=lambda x: x[1], reverse=True)
-
-    recommended_tracks = [track for track, _ in track_scores[:limit]]
-
-    return recommended_tracks
+    return [track for track, _ in track_scores[:limit]]
 
 
 # User CRUD operations
-def get_user(db: Session, user_id: int):
+def get_user(db: Session, user_id: int) -> Optional[models.User]:
     return db.query(models.User).filter(models.User.id == user_id).first()
 
 
-def get_user_by_email(db: Session, email: str):
+def get_user_by_email(db: Session, email: str) -> Optional[models.User]:
     return db.query(models.User).filter(models.User.email == email).first()
 
 
-def create_user(db: Session, user: schemas.UserCreate):
+def create_user(db: Session, user: schemas.UserCreate) -> models.User:
     hashed_password = get_password_hash(user.password)
     db_user = models.User(email=user.email, hashed_password=hashed_password)
     db.add(db_user)

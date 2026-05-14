@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from typing import Optional
 
+import anyio
 from babel.support import Translations
 from fastapi import (
     APIRouter,
@@ -286,10 +287,16 @@ async def restore_ratings(
 
 
 @router.get("/api/translations", tags=["Internal"])
-def get_js_translations(locale: str = Depends(get_locale)):
+async def get_js_translations(locale: str = Depends(get_locale)):
     js_translations_path = get_resource_base_path() / "locales" / "js_translations.json"
-    with open(js_translations_path, "r", encoding="utf-8") as file_handle:
-        all_translations = json.load(file_handle)
+
+    # Use anyio for non-blocking file I/O
+    async with await anyio.open_file(
+        js_translations_path, mode="r", encoding="utf-8"
+    ) as f:
+        content = await f.read()
+
+    all_translations = json.loads(content)
     return JSONResponse(
         content=all_translations.get(locale, all_translations["en"]),
         headers={"Cache-Control": "public, max-age=3600"},

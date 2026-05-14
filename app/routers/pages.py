@@ -10,10 +10,10 @@ from app import crud, models
 from app.auth import get_optional_current_user
 from app.constants import VALID_PAGE_LIMITS
 from app.dependencies import (
-    LocaleTemplateResponse,
     get_db,
     get_slim_mode,
     get_translations,
+    locale_template_response,
 )
 from app.services.scraping import is_initial_scrape_in_progress
 from app.utils.view_helpers import (
@@ -48,7 +48,7 @@ async def _render_page(
     translations: Translations,
     context: dict,
 ):
-    return await LocaleTemplateResponse(
+    return await locale_template_response(
         template_name,
         context,
         request=request,
