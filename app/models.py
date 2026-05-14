@@ -2,16 +2,33 @@ import datetime
 
 from sqlalchemy import (
     Boolean,
+    Column,
     DateTime,
     Float,
     ForeignKey,
     Integer,
     String,
+    Table,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+# Junction tables for many-to-many relationships
+track_producers = Table(
+    "track_producers",
+    Base.metadata,
+    Column("track_id", ForeignKey("tracks.id"), primary_key=True),
+    Column("producer_id", ForeignKey("producers.id"), primary_key=True),
+)
+
+track_voicebanks = Table(
+    "track_voicebanks",
+    Base.metadata,
+    Column("track_id", ForeignKey("tracks.id"), primary_key=True),
+    Column("voicebank_id", ForeignKey("voicebanks.id"), primary_key=True),
+)
 
 
 class Track(Base):
@@ -34,7 +51,14 @@ class Track(Base):
         "Lyric", back_populates="track", cascade="all, delete-orphan"
     )
 
-    def to_dict(self):
+    producers: Mapped[list["Producer"]] = relationship(
+        "Producer", secondary=track_producers, back_populates="tracks"
+    )
+    voicebanks: Mapped[list["Voicebank"]] = relationship(
+        "Voicebank", secondary=track_voicebanks, back_populates="tracks"
+    )
+
+    def to_dict(self) -> dict:
         """Returns a dictionary representation of the track for JSON serialization."""
         return {
             "id": str(self.id),  # Ensure ID is a string for JS consistency
@@ -134,3 +158,27 @@ class Lyric(Base):
     content: Mapped[str] = mapped_column(String)  # The HTML or text content
 
     track: Mapped["Track"] = relationship("Track", back_populates="lyrics")
+
+
+class Producer(Base):
+    __tablename__ = "producers"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String, index=True, unique=True)
+    name_jp: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    tracks: Mapped[list["Track"]] = relationship(
+        "Track", secondary=track_producers, back_populates="producers"
+    )
+
+
+class Voicebank(Base):
+    __tablename__ = "voicebanks"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String, index=True, unique=True)
+    name_jp: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    tracks: Mapped[list["Track"]] = relationship(
+        "Track", secondary=track_voicebanks, back_populates="voicebanks"
+    )

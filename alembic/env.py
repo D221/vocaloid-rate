@@ -27,6 +27,7 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 # We need to import the models here so that Base is populated
+from app import models  # noqa: F401, E402
 
 target_metadata = Base.metadata
 
