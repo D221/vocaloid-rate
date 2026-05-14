@@ -69,20 +69,22 @@ def initial_scrape_task() -> None:
             for track_data in all_scraped_tracks:
                 existing_track = crud.get_track_by_link(db, track_data["link"])
                 if existing_track:
-                    logging.info(
-                        "Track with link %s already exists. Skipping.",
-                        track_data["link"],
-                    )
+                    # Update existing track to sync relationships if needed
+                    crud.update_track(db, existing_track, track_data)
                 else:
-                    db_track = models.Track(**track_data)
-                    db.add(db_track)
+                    crud.create_track(db, track_data)
                     new_tracks_count += 1
 
-            logging.info("Added %s new tracks.", new_tracks_count)
-            logging.info("Committing all changes to the database...")
-            db.commit()
+            logging.info("Processed all tracks. Added %s new tracks.", new_tracks_count)
             crud.create_update_log(db)
-            logging.info("Database commit successful and update time logged.")
+            logging.info("Update time logged.")
+
+        except Exception as exc:
+            final_status = "error"
+            logging.error(
+                "An error occurred in the initial scrape task: %s", exc, exc_info=True
+            )
+            db.rollback()
 
         finally:
             write_scrape_status(final_status)
@@ -149,37 +151,18 @@ def scrape_and_populate_task() -> None:
                 link = track_data["link"]
                 db_track = existing_tracks_map.get(link)
                 if db_track:
-                    is_changed = (
-                        db_track.rank != track_data["rank"]
-                        or db_track.title != track_data["title"]
-                    )
-                    if is_changed:
-                        for key, value in track_data.items():
-                            setattr(db_track, key, value)
-                        logging.info(
-                            "UPDATED: '%s' (Rank is now %s)",
-                            track_data["title"],
-                            track_data["rank"],
-                        )
-                        updated_tracks_count += 1
+                    crud.update_track(db, db_track, track_data)
+                    updated_tracks_count += 1
                 else:
-                    db_track = models.Track(**track_data)
-                    db.add(db_track)
-                    logging.info(
-                        "ADDED: '%s' (Rank %s)",
-                        track_data["title"],
-                        track_data["rank"],
-                    )
+                    crud.create_track(db, track_data)
                     new_tracks_count += 1
 
             logging.info("--- Scrape Summary ---")
             logging.info("New tracks added: %s", new_tracks_count)
             logging.info("Existing tracks updated: %s", updated_tracks_count)
 
-            logging.info("Committing all changes to the database...")
-            db.commit()
             crud.create_update_log(db)
-            logging.info("Database commit successful and update time logged.")
+            logging.info("Update time logged.")
 
         except Exception as exc:
             final_status = "error"

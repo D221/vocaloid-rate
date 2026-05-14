@@ -1,5 +1,6 @@
 import datetime
 import logging
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 from bs4 import BeautifulSoup
@@ -11,19 +12,28 @@ BASE_URL_EN = "https://vocaloard.injpok.tokyo/en/"
 BASE_URL_JP = "https://vocaloard.injpok.tokyo/"
 
 
+def _fetch_page(url: str) -> requests.Response:
+    """Helper to fetch a URL with requests."""
+    response = requests.get(url, timeout=15)
+    response.raise_for_status()
+    return response
+
+
 # This is the new helper function that scrapes just ONE page.
-def _scrape_single_page(page_num: int):
+def _scrape_single_page(page_num: int) -> list[dict]:
     """Scrapes a single page of the ranking and returns a list of track dictionaries."""
     tracks_on_page = []
     url_en = f"{BASE_URL_EN}?g={page_num}"
     url_jp = f"{BASE_URL_JP}?g={page_num}"
 
-    logger.info(f"Fetching page {page_num}: {url_en}")
+    logger.info(f"Fetching page {page_num} in parallel.")
     try:
-        response_en = requests.get(url_en, timeout=15)
-        response_jp = requests.get(url_jp, timeout=15)
-        response_en.raise_for_status()
-        response_jp.raise_for_status()
+        # Fetch English and Japanese versions in parallel to save time
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            future_en = executor.submit(_fetch_page, url_en)
+            future_jp = executor.submit(_fetch_page, url_jp)
+            response_en = future_en.result()
+            response_jp = future_jp.result()
     except requests.exceptions.RequestException as e:
         logger.error(f"Error fetching data for page {page_num}: {e}")
         return []
@@ -50,6 +60,7 @@ def _scrape_single_page(page_num: int):
             image_tag = row_en.select_one(".image-area img")
             rank_tag = row_en.select_one(".rank-p")
 
+            # Robust checks instead of asserts
             if not all(
                 [
                     title_tag,
@@ -60,16 +71,10 @@ def _scrape_single_page(page_num: int):
                     rank_tag,
                 ]
             ):
+                logger.warning(
+                    f"Skipping row on page {page_num} due to missing elements."
+                )
                 continue
-
-            assert (
-                title_tag
-                and producer_tag
-                and voicebank_tag
-                and published_tag
-                and image_tag
-                and rank_tag
-            )
 
             image_url = image_tag.get("src")
             if not image_url:
