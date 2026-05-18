@@ -62,8 +62,10 @@ def test_delete_update_user_and_get_users(db_session):
         db_session,
         schemas.UserCreate(email="a@example.com", password="secret123"),
     )
-
-    assert crud.get_user(db_session, user.id).email == "a@example.com"
+    
+    db_user = crud.get_user(db_session, user.id)
+    assert db_user is not None
+    assert db_user.email == "a@example.com"
     assert crud.get_users(db_session)
     updated = crud.update_user_admin_status(db_session, user.id, True)
     assert updated is not None

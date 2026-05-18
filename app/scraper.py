@@ -60,25 +60,22 @@ def _scrape_single_page(page_num: int) -> list[dict]:
             image_tag = row_en.select_one(".image-area img")
             rank_tag = row_en.select_one(".rank-p")
 
-            # Robust checks instead of asserts
-            if not all(
-                [
-                    title_tag,
-                    producer_tag,
-                    voicebank_tag,
-                    published_tag,
-                    image_tag,
-                    rank_tag,
-                ]
+            # Robust checks and type narrowing
+            if (
+                not isinstance(title_tag, Tag)
+                or not isinstance(producer_tag, Tag)
+                or not isinstance(voicebank_tag, Tag)
+                or not isinstance(published_tag, Tag)
+                or not isinstance(image_tag, Tag)
+                or not isinstance(rank_tag, Tag)
             ):
-                logger.warning(
-                    f"Skipping row on page {page_num} due to missing elements."
-                )
+                logger.warning(f"Skipping row on page {page_num} due to missing elements.")
                 continue
 
             image_url = image_tag.get("src")
-            if not image_url:
+            if not isinstance(image_url, str):
                 continue
+
 
             title_jp_tag = row_jp.select_one(".song-title")
             producer_jp_tag = row_jp.select_one(".artists")

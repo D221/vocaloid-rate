@@ -10,6 +10,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import orm as sa_orm
 
 
 # revision identifiers, used by Alembic.
@@ -74,7 +75,7 @@ def upgrade() -> None:
 
     # --- Data Migration ---
     bind = op.get_bind()
-    session = sa.orm.Session(bind=bind)
+    session = sa_orm.Session(bind=bind)
 
     # Reflect tables to use them for DML
     metadata = sa.MetaData()
