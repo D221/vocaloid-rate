@@ -140,49 +140,48 @@ def admin_user(db_session: Session) -> models.User:
 
 @pytest.fixture
 def sample_tracks(db_session: Session) -> list[models.Track]:
+    from app import crud
+
     now = datetime.now(timezone.utc)
-    tracks = [
-        models.Track(
-            title="First Track",
-            producer="Producer A",
-            voicebank="Miku",
-            published_date=now - timedelta(days=3),
-            link="https://example.com/1",
-            title_jp="",
-            producer_jp="",
-            voicebank_jp="",
-            image_url=None,
-            rank=1,
-        ),
-        models.Track(
-            title="Second Track",
-            producer="Producer B",
-            voicebank="Luka",
-            published_date=now - timedelta(days=8),
-            link="https://example.com/2",
-            title_jp="",
-            producer_jp="",
-            voicebank_jp="",
-            image_url=None,
-            rank=2,
-        ),
-        models.Track(
-            title="Old Track",
-            producer="Producer A",
-            voicebank="Rin",
-            published_date=now - timedelta(days=60),
-            link="https://example.com/3",
-            title_jp="",
-            producer_jp="",
-            voicebank_jp="",
-            image_url=None,
-            rank=None,
-        ),
+    tracks_data = [
+        {
+            "title": "First Track",
+            "producer": "Producer A",
+            "voicebank": "Miku",
+            "published_date": now - timedelta(days=3),
+            "link": "https://example.com/1",
+            "title_jp": "",
+            "producer_jp": "",
+            "voicebank_jp": "",
+            "image_url": None,
+            "rank": 1,
+        },
+        {
+            "title": "Second Track",
+            "producer": "Producer B",
+            "voicebank": "Luka",
+            "published_date": now - timedelta(days=8),
+            "link": "https://example.com/2",
+            "title_jp": "",
+            "producer_jp": "",
+            "voicebank_jp": "",
+            "image_url": None,
+            "rank": 2,
+        },
+        {
+            "title": "Old Track",
+            "producer": "Producer A",
+            "voicebank": "Rin",
+            "published_date": now - timedelta(days=60),
+            "link": "https://example.com/3",
+            "title_jp": "",
+            "producer_jp": "",
+            "voicebank_jp": "",
+            "image_url": None,
+            "rank": None,
+        },
     ]
-    db_session.add_all(tracks)
-    db_session.commit()
-    for track in tracks:
-        db_session.refresh(track)
+    tracks = [crud.create_track(db_session, data) for data in tracks_data]
     return tracks
 
 
