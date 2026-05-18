@@ -156,6 +156,28 @@ async def get_robots_txt():
     return Response(content=content, media_type="text/plain")
 
 
+@router.get("/about")
+async def view_about_page(
+    request: Request,
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    translations: Translations = Depends(get_translations),
+):
+    _ = translations.gettext
+    context = {
+        "request": request,
+        "current_user": current_user,
+        "_": _,
+        "title": _("About Vocaloid Rate"),
+        "subtitle": _("A searchable Vocaloid music rating and playlist tracker."),
+        "meta_title": _("About Vocaloid Rate"),
+        "meta_description": _(
+            "Learn how Vocaloid Rate helps fans discover, rate, and organize "
+            "Vocaloid songs, producers, voicebanks, and public playlists."
+        ),
+    }
+    return await _render_page("about.html", request, translations, context)
+
+
 @router.get("/playlists")
 async def view_playlists_page(
     request: Request,
@@ -568,13 +590,21 @@ async def view_producers_index(
     current_user: Optional[models.User] = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
+    _ = translations.gettext
     producers = db.query(models.Producer).order_by(models.Producer.name).all()
     context = {
         "request": request,
         "current_user": current_user,
-        "_": translations.gettext,
+        "_": _,
         "entities": producers,
         "type": "producer",
+        "title": _("Vocaloid Producers"),
+        "subtitle": _("Browse Vocaloid producers with track pages sorted by newest songs."),
+        "meta_title": _("Vocaloid Producers"),
+        "meta_description": _(
+            "Browse Vocaloid producers on Vocaloid Rate and open producer pages "
+            "with their songs sorted by newest uploads."
+        ),
     }
     return await _render_page("entity_index.html", request, translations, context)
 
@@ -587,6 +617,7 @@ async def view_producer_page(
     current_user: Optional[models.User] = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
+    _ = translations.gettext
     # Use ilike for case-insensitive lookup
     producer = (
         db.query(models.Producer)
@@ -599,10 +630,19 @@ async def view_producer_page(
     context = {
         "request": request,
         "current_user": current_user,
-        "_": translations.gettext,
+        "_": _,
         "entity": producer,
         "type": "producer",
         "tracks": _tracks_by_newest(producer.tracks),
+        "title": _("%(name)s Vocaloid Songs") % {"name": producer.name},
+        "subtitle": _("Newest Vocaloid tracks by %(name)s.")
+        % {"name": producer.name},
+        "meta_title": _("%(name)s Vocaloid Songs") % {"name": producer.name},
+        "meta_description": _(
+            "Browse %(name)s Vocaloid songs on Vocaloid Rate, sorted by "
+            "newest uploads."
+        )
+        % {"name": producer.name},
     }
     return await _render_page("entity_view.html", request, translations, context)
 
@@ -614,13 +654,21 @@ async def view_voicebanks_index(
     current_user: Optional[models.User] = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
+    _ = translations.gettext
     voicebanks = db.query(models.Voicebank).order_by(models.Voicebank.name).all()
     context = {
         "request": request,
         "current_user": current_user,
-        "_": translations.gettext,
+        "_": _,
         "entities": voicebanks,
         "type": "voicebank",
+        "title": _("Vocaloid Voicebanks"),
+        "subtitle": _("Browse Vocaloid voicebanks with track pages sorted by newest songs."),
+        "meta_title": _("Vocaloid Voicebanks"),
+        "meta_description": _(
+            "Browse Vocaloid voicebanks on Vocaloid Rate and open voicebank pages "
+            "with their songs sorted by newest uploads."
+        ),
     }
     return await _render_page("entity_index.html", request, translations, context)
 
@@ -633,6 +681,7 @@ async def view_voicebank_page(
     current_user: Optional[models.User] = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
+    _ = translations.gettext
     voicebank = (
         db.query(models.Voicebank).filter(models.Voicebank.name.ilike(name)).first()
     )
@@ -642,9 +691,18 @@ async def view_voicebank_page(
     context = {
         "request": request,
         "current_user": current_user,
-        "_": translations.gettext,
+        "_": _,
         "entity": voicebank,
         "type": "voicebank",
         "tracks": _tracks_by_newest(voicebank.tracks),
+        "title": _("%(name)s Vocaloid Songs") % {"name": voicebank.name},
+        "subtitle": _("Newest Vocaloid tracks featuring %(name)s.")
+        % {"name": voicebank.name},
+        "meta_title": _("%(name)s Vocaloid Songs") % {"name": voicebank.name},
+        "meta_description": _(
+            "Browse %(name)s Vocaloid songs on Vocaloid Rate, sorted by "
+            "newest uploads."
+        )
+        % {"name": voicebank.name},
     }
     return await _render_page("entity_view.html", request, translations, context)

@@ -1,13 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Explore') }} - {{ _('Vocaloid Rate') }}{% endblock %}
+{% block title %}{{ meta_title or title }} - {{ _('Vocaloid Rate') }}{% endblock %}
+
+{% block meta_description %}{{ meta_description }}{% endblock %}
+
+{% block og_title %}{{ meta_title or title }} - {{ _('Vocaloid Rate') }}{% endblock %}
+
+{% block og_description %}{{ meta_description }}{% endblock %}
 
 {% block content %}
-  {% set title = _("Explore") %}
   {% include "partials/header.html" %}
 
   <div class="mx-auto my-8 max-w-4xl p-4">
-    <h1 class="text-3xl font-bold text-header">{{ _('Explore Entities') }}</h1>
+    <h1 class="text-3xl font-bold text-header">{{ title }}</h1>
+    <p class="mt-2 text-gray-text">{{ subtitle }}</p>
 
     <div class="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
       {% for entity in entities %}

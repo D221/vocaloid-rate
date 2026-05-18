@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}{{ meta_title }} - {{ _('Vocaloid Rate') }}{% endblock %}
+
+{% block meta_description %}{{ meta_description }}{% endblock %}
+
+{% block og_title %}{{ meta_title }} - {{ _('Vocaloid Rate') }}{% endblock %}
+
+{% block og_description %}{{ meta_description }}{% endblock %}
+
+{% block content %}
+  {% include "partials/header.html" %}
+
+  <main class="mx-auto my-8 max-w-4xl p-4">
+    <section class="space-y-4">
+      <h1 class="text-3xl font-bold text-header">{{ _('About Vocaloid Rate') }}</h1>
+      <p class="text-gray-text">
+        {{ _('Vocaloid Rate is a focused music tracker for Vocaloid fans who want to discover songs, rate tracks, build playlists, and browse music by producer or voicebank.') }}
+      </p>
+      <p class="text-gray-text">
+        {{ _('The public pages are built around searchable Vocaloid music data: recent chart entries, public playlists, producer pages, and voicebank pages. Entity pages are server-rendered and sorted by newest tracks so they are useful both for listeners and search engines.') }}
+      </p>
+    </section>
+
+    <section class="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+      <a
+        href="/recently_added"
+        class="rounded border border-border bg-card-bg p-4 shadow-md transition-colors hover:bg-cyan-hover"
+      >
+        <h2 class="font-bold text-cyan-text">{{ _('New Vocaloid Songs') }}</h2>
+        <p class="mt-2 text-sm text-gray-text">
+          {{ _('Follow recently added tracks and discover new uploads.') }}
+        </p>
+      </a>
+      <a
+        href="/producers"
+        class="rounded border border-border bg-card-bg p-4 shadow-md transition-colors hover:bg-cyan-hover"
+      >
+        <h2 class="font-bold text-cyan-text">{{ _('Vocaloid Producers') }}</h2>
+        <p class="mt-2 text-sm text-gray-text">
+          {{ _('Open producer pages with their newest tracked songs.') }}
+        </p>
+      </a>
+      <a
+        href="/voicebanks"
+        class="rounded border border-border bg-card-bg p-4 shadow-md transition-colors hover:bg-cyan-hover"
+      >
+        <h2 class="font-bold text-cyan-text">{{ _('Vocaloid Voicebanks') }}</h2>
+        <p class="mt-2 text-sm text-gray-text">
+          {{ _('Browse songs by voicebank, including Hatsune Miku and more.') }}
+        </p>
+      </a>
+    </section>
+  </main>
+{% endblock %}

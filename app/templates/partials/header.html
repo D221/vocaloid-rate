@@ -134,6 +134,17 @@
               {% endif %} block rounded border px-4 py-2 font-bold shadow-md"
               >{{ _('Options') }}</a
             >
+            {% set is_active = request.url.path == '/about' %}
+            <a
+              href="/about"
+              class="{% if is_active %}
+                border-gray-text text-gray-text cursor-default
+                pointer-events-none
+              {% else %}
+                border-cyan-text text-cyan-text
+              {% endif %} block rounded border px-4 py-2 font-bold shadow-md"
+              >{{ _('About') }}</a
+            >
             <a
               href="{% if locale == 'ja' %}?lang=en{% else %}?lang=ja{% endif %}"
               class="block rounded border border-gray-text px-4 py-2 text-center font-bold text-gray-text shadow-md"
@@ -344,6 +355,18 @@
         {% endif %} rounded border p-3 font-bold shadow-md transition-colors duration-200 ease-in-out"
       >
         {{ _('Options') }}
+      </a>
+      {% set is_active = request.url.path == '/about' %}
+      <a
+        href="/about"
+        class="{% if is_active %}
+          border-gray-text text-gray-text hover:bg-gray-hover cursor-default
+          pointer-events-none
+        {% else %}
+          border-cyan-text text-cyan-text
+        {% endif %} rounded border p-3 font-bold shadow-md transition-colors duration-200 ease-in-out"
+      >
+        {{ _('About') }}
       </a>
 
       <!-- Language Switcher -->

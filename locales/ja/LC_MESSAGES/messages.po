@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-13 00:05+0200\n"
+"POT-Creation-Date: 2026-05-18 18:12+0300\n"
 "PO-Revision-Date: 2025-11-06 23:59+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -16,158 +16,299 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.18.0\n"
+"Generated-By: Babel 2.17.0\n"
 
-#: app/templates/base.html:236
-msgid "Data sourced from"
-msgstr "データ提供元"
+#: app/routers/pages.py:170 app/routers/pages.py:172
+#: app/templates/about.html:16
+msgid "About Vocaloid Rate"
+msgstr "Vocaloid Rateについて"
 
-#: app/templates/base.html:241
-msgid "Vocaloard"
-msgstr "Vocaloard"
+#: app/routers/pages.py:171
+msgid "A searchable Vocaloid music rating and playlist tracker."
+msgstr "検索できるVocaloid音楽の評価・プレイリスト管理ツールです。"
 
-#: app/templates/base.html:242
-msgid "This is an independent project."
-msgstr "これは独立したプロジェクトです。"
+#: app/routers/pages.py:174
+msgid ""
+"Learn how Vocaloid Rate helps fans discover, rate, and organize Vocaloid "
+"songs, producers, voicebanks, and public playlists."
+msgstr ""
+"Vocaloid RateでVocaloid楽曲、プロデューサー、ボイスバンク、公開プレイリストを"
+"見つけ、評価し、整理する方法を紹介します。"
 
-#: app/templates/index.html:3 app/templates/index.html:6
+#: app/routers/pages.py:601 app/routers/pages.py:603
+#: app/templates/about.html:39
+msgid "Vocaloid Producers"
+msgstr "Vocaloidプロデューサー"
+
+#: app/routers/pages.py:602
+msgid "Browse Vocaloid producers with track pages sorted by newest songs."
+msgstr "新しい楽曲順のトラックページでVocaloidプロデューサーを閲覧できます。"
+
+#: app/routers/pages.py:605
+msgid ""
+"Browse Vocaloid producers on Vocaloid Rate and open producer pages with "
+"their songs sorted by newest uploads."
+msgstr ""
+"Vocaloid RateでVocaloidプロデューサーを閲覧し、最新投稿順に並んだ楽曲ページを"
+"開けます。"
+
+#: app/routers/pages.py:637 app/routers/pages.py:640 app/routers/pages.py:698
+#: app/routers/pages.py:701
+#, python-format
+msgid "%(name)s Vocaloid Songs"
+msgstr "%(name)sのVocaloid楽曲"
+
+#: app/routers/pages.py:638
+#, python-format
+msgid "Newest Vocaloid tracks by %(name)s."
+msgstr "%(name)sによる最新のVocaloid楽曲。"
+
+#: app/routers/pages.py:642 app/routers/pages.py:703
+#, python-format
+msgid "Browse %(name)s Vocaloid songs on Vocaloid Rate, sorted by newest uploads."
+msgstr "Vocaloid Rateで%(name)sのVocaloid楽曲を最新投稿順に閲覧できます。"
+
+#: app/routers/pages.py:665 app/routers/pages.py:667
+#: app/templates/about.html:48
+msgid "Vocaloid Voicebanks"
+msgstr "Vocaloidボイスバンク"
+
+#: app/routers/pages.py:666
+msgid "Browse Vocaloid voicebanks with track pages sorted by newest songs."
+msgstr "新しい楽曲順のトラックページでVocaloidボイスバンクを閲覧できます。"
+
+#: app/routers/pages.py:669
+msgid ""
+"Browse Vocaloid voicebanks on Vocaloid Rate and open voicebank pages with"
+" their songs sorted by newest uploads."
+msgstr ""
+"Vocaloid RateでVocaloidボイスバンクを閲覧し、最新投稿順に並んだ楽曲ページを"
+"開けます。"
+
+#: app/routers/pages.py:699
+#, python-format
+msgid "Newest Vocaloid tracks featuring %(name)s."
+msgstr "%(name)sを使用した最新のVocaloid楽曲。"
+
+#: app/templates/about.html:3 app/templates/about.html:7
+#: app/templates/entity_index.html:3 app/templates/entity_index.html:7
+#: app/templates/entity_view.html:3 app/templates/entity_view.html:7
+#: app/templates/explore.html:3 app/templates/index.html:3
+#: app/templates/index.html:6 app/templates/login.html:3
+#: app/templates/options.html:3 app/templates/rated.html:3
+#: app/templates/recommendations.html:3 app/templates/register.html:3
+#: app/templates/scraping.html:3
 msgid "Vocaloid Rate"
 msgstr "Vocaloid Rate"
 
-#: app/templates/index.html:47 app/templates/playlist_view.html:50
-#: app/templates/rated.html:152
-msgid "Previous"
-msgstr "前へ"
+#: app/templates/about.html:18
+msgid ""
+"Vocaloid Rate is a focused music tracker for Vocaloid fans who want to "
+"discover songs, rate tracks, build playlists, and browse music by "
+"producer or voicebank."
+msgstr ""
+"Vocaloid Rateは、楽曲を見つけ、評価し、プレイリストを作成し、プロデューサーや"
+"ボイスバンク別に音楽を閲覧したいVocaloidファン向けの音楽トラッカーです。"
 
-#: app/templates/index.html:55 app/templates/playlist_view.html:58
-#: app/templates/rated.html:160
-msgid "Next"
-msgstr "次へ"
+#: app/templates/about.html:21
+msgid ""
+"The public pages are built around searchable Vocaloid music data: recent "
+"chart entries, public playlists, producer pages, and voicebank pages. "
+"Entity pages are server-rendered and sorted by newest tracks so they are "
+"useful both for listeners and search engines."
+msgstr ""
+"公開ページは、最近のチャート曲、公開プレイリスト、プロデューサーページ、ボイス"
+"バンクページなど、検索しやすいVocaloid音楽データを中心に構成されています。"
+"エンティティページはサーバー側でレンダリングされ、新しい楽曲順に並ぶため、"
+"リスナーにも検索エンジンにも役立ちます。"
 
-#: app/templates/login.html:8 app/templates/login.html:58
-#: app/templates/partials/user_status.html:17 app/templates/register.html:36
+#: app/templates/about.html:30
+msgid "New Vocaloid Songs"
+msgstr "新着Vocaloid楽曲"
+
+#: app/templates/about.html:32
+msgid "Follow recently added tracks and discover new uploads."
+msgstr "最近追加された楽曲を追い、新しい投稿を見つけられます。"
+
+#: app/templates/about.html:41
+msgid "Open producer pages with their newest tracked songs."
+msgstr "プロデューサーページで最新の登録楽曲を確認できます。"
+
+#: app/templates/about.html:50
+msgid "Browse songs by voicebank, including Hatsune Miku and more."
+msgstr "初音ミクなどのボイスバンク別に楽曲を閲覧できます。"
+
+#: app/templates/base.html:283
+msgid "Data sourced from"
+msgstr "データ提供元"
+
+#: app/templates/base.html:289
+msgid "Vocaloard"
+msgstr "Vocaloard"
+
+#: app/templates/base.html:290
+msgid "This is an independent project."
+msgstr "これは独立したプロジェクトです。"
+
+#: app/templates/base.html:298
+msgid "Source Code (GitHub)"
+msgstr "ソースコード（GitHub）"
+
+#: app/templates/base.html:304 app/templates/partials/header.html:146
+#: app/templates/partials/header.html:369
+msgid "About"
+msgstr "概要"
+
+#: app/templates/base.html:312
+msgid "Documentation"
+msgstr "ドキュメント"
+
+#: app/templates/entity_view.html:48
+#, python-format
+msgid "No tracks found for this %(type)s."
+msgstr "この%(type)sの楽曲は見つかりませんでした。"
+
+#: app/templates/explore.html:3 app/templates/explore.html:6
+#: app/templates/explore.html:10 app/templates/partials/header.html:275
+msgid "Explore"
+msgstr "探索"
+
+#: app/templates/explore.html:14 app/templates/partials/header.html:73
+#: app/templates/playlists.html:7
+msgid "Playlists"
+msgstr "プレイリスト"
+
+#: app/templates/explore.html:17
+msgid "Producers"
+msgstr "プロデューサー"
+
+#: app/templates/explore.html:20
+msgid "Voicebanks"
+msgstr "ボイスバンク"
+
+#: app/templates/login.html:3 app/templates/login.html:15
+#: app/templates/login.html:66 app/templates/partials/header.html:118
+#: app/templates/partials/header.html:336
+#: app/templates/partials/user_status.html:28 app/templates/register.html:86
 msgid "Login"
 msgstr ""
 
-#: app/templates/login.html:26 app/templates/register.html:14
+#: app/templates/login.html:32 app/templates/register.html:30
 msgid "Email"
 msgstr ""
 
-#: app/templates/login.html:33 app/templates/register.html:18
+#: app/templates/login.html:39 app/templates/register.html:37
 msgid "Your Email"
 msgstr ""
 
-#: app/templates/login.html:42 app/templates/register.html:22
+#: app/templates/login.html:49 app/templates/register.html:47
 msgid "Password"
 msgstr ""
 
-#: app/templates/login.html:49
+#: app/templates/login.html:56
 msgid "Your Password"
 msgstr ""
 
-#: app/templates/login.html:64
+#: app/templates/login.html:72
 msgid "Don't have an account?"
 msgstr ""
 
-#: app/templates/login.html:64 app/templates/partials/user_status.html:21
-#: app/templates/register.html:5 app/templates/register.html:32
+#: app/templates/login.html:72 app/templates/partials/header.html:123
+#: app/templates/partials/header.html:342
+#: app/templates/partials/user_status.html:35 app/templates/register.html:3
+#: app/templates/register.html:16 app/templates/register.html:80
 msgid "Register"
 msgstr ""
 
-#: app/templates/login.html:81 app/templates/register.html:52
+#: app/templates/login.html:89 app/templates/register.html:150
 msgid "An unknown error occurred."
 msgstr ""
 
 #: app/templates/options.html:3 app/templates/options.html:6
-#: app/templates/partials/header.html:98 app/templates/partials/header.html:291
+#: app/templates/partials/header.html:135
+#: app/templates/partials/header.html:357
 msgid "Options"
 msgstr "設定"
 
-#: app/templates/options.html:3 app/templates/rated.html:3
-#: app/templates/recommendations.html:3 app/templates/scraping.html:3
-#, fuzzy
-msgid "Vocaloid Rater"
-msgstr "Vocaloid Rate"
-
-#: app/templates/options.html:11
+#: app/templates/options.html:12
 msgid "Backup & Restore"
 msgstr "バックアップとリストア"
 
-#: app/templates/options.html:16
+#: app/templates/options.html:17
 msgid "Backup Rated Tracks"
 msgstr "評価済みトラックをバックアップ"
 
-#: app/templates/options.html:19
+#: app/templates/options.html:20
 msgid ""
 "Download a JSON file containing all your rated tracks, including their "
 "rating and any notes."
 msgstr "評価済みトラックの全データ（評価やメモ含む）をJSONファイルとしてダウンロードします。"
 
-#: app/templates/options.html:25
+#: app/templates/options.html:26
 msgid "Download Backup"
 msgstr "バックアップをダウンロード"
 
-#: app/templates/options.html:31
+#: app/templates/options.html:32
 msgid "Restore Rated Tracks"
 msgstr "評価済みトラックをリストア"
 
-#: app/templates/options.html:34
+#: app/templates/options.html:35
 msgid ""
 "Upload a JSON backup file to restore your ratings. If a track from the "
 "backup does not exist in the database, it will be added."
 msgstr "JSONバックアップファイルをアップロードして評価をリストアします。バックアップ内のトラックがデータベースに存在しない場合は、新規に追加されます。"
 
-#: app/templates/options.html:48
+#: app/templates/options.html:50
 msgid "Upload and Restore"
 msgstr "アップロードしてリストア"
 
-#: app/templates/options.html:56
+#: app/templates/options.html:60
 msgid "Display Options"
 msgstr "表示設定"
 
-#: app/templates/options.html:60
+#: app/templates/options.html:64
 msgid "Theme Selection"
 msgstr "テーマ選択"
 
-#: app/templates/options.html:63
+#: app/templates/options.html:67
 msgid "Choose your preferred theme for the application."
 msgstr "お好みのテーマを選択してください。"
 
-#: app/templates/options.html:73
+#: app/templates/options.html:77 app/templates/recommendations.html:36
 msgid "Light"
 msgstr "ライト"
 
-#: app/templates/options.html:82
+#: app/templates/options.html:86
 msgid "Dark"
 msgstr "ダーク"
 
-#: app/templates/options.html:91
+#: app/templates/options.html:95
 msgid "Night"
 msgstr "ナイト"
 
-#: app/templates/options.html:100
+#: app/templates/options.html:104
 msgid "Black"
 msgstr "ブラック"
 
-#: app/templates/options.html:106
+#: app/templates/options.html:110
 msgid "Default Page Size"
 msgstr "デフォルト表示件数"
 
-#: app/templates/options.html:109
+#: app/templates/options.html:113
 msgid "Set the default number of tracks to display per page on the main list."
 msgstr "メインリストで1ページに表示するトラックのデフォルト件数を設定"
 
-#: app/templates/options.html:115 app/templates/partials/filter_form.html:31
+#: app/templates/options.html:119 app/templates/partials/filter_form.html:31
 #: app/templates/partials/filter_form.html:53
 #: app/templates/partials/filter_form.html:135
 msgid "All"
 msgstr "すべて"
 
-#: app/templates/options.html:124
+#: app/templates/options.html:128
 msgid "Slim View Mode"
 msgstr "コンパクト表示"
 
-#: app/templates/options.html:127
+#: app/templates/options.html:131
 msgid "Hides thumbnails and secondary text for a more compact view."
 msgstr "サムネイルや補足情報を非表示にして、表示をよりコンパクトにします。"
 
@@ -177,7 +318,7 @@ msgid "Edit: %(playlist_name)s"
 msgstr "編集: %(playlist_name)s"
 
 #: app/templates/playlist_edit.html:8 app/templates/playlist_view.html:7
-#: app/templates/playlists.html:42
+#: app/templates/playlists.html:69
 msgid "No description."
 msgstr "説明はありません。"
 
@@ -189,19 +330,19 @@ msgstr "トラック一覧"
 msgid "Search all tracks..."
 msgstr "トラックを検索..."
 
-#: app/templates/playlist_edit.html:48 app/templates/playlist_edit.html:101
+#: app/templates/playlist_edit.html:48 app/templates/playlist_edit.html:102
 msgid "Play track"
 msgstr "トラックを再生"
 
-#: app/templates/playlist_edit.html:77
+#: app/templates/playlist_edit.html:78
 msgid "Playlist Tracks"
 msgstr "プレイリストのトラック"
 
-#: app/templates/playlist_edit.html:79
+#: app/templates/playlist_edit.html:80
 msgid "Drag to reorder, or drag from the left to add."
 msgstr "ドラッグで並び替え、または左のリストから追加"
 
-#: app/templates/playlist_edit.html:126
+#: app/templates/playlist_edit.html:128
 msgid "Remove from playlist"
 msgstr "プレイリストから削除"
 
@@ -214,107 +355,116 @@ msgstr "%(playlist_name)s - プレイリスト"
 msgid "My Playlists"
 msgstr "マイプレイリスト"
 
-#: app/templates/partials/header.html:52 app/templates/partials/header.html:224
-#: app/templates/playlists.html:7
-msgid "Playlists"
-msgstr "プレイリスト"
-
-#: app/templates/playlists.html:16
+#: app/templates/playlists.html:17
 msgid "Import Playlist"
 msgstr "プレイリストをインポート"
 
-#: app/templates/playlists.html:29
+#: app/templates/playlists.html:30
 msgid "Create New Playlist"
 msgstr "新規プレイリストを作成"
 
-#: app/templates/playlists.html:49
+#: app/templates/playlists.html:42
+#, fuzzy
+msgid "Playlist name"
+msgstr "プレイリスト名を編集"
+
+#: app/templates/playlists.html:50
+msgid "Save"
+msgstr ""
+
+#: app/templates/playlists.html:76
 msgid "View"
 msgstr "表示"
 
-#: app/templates/playlists.html:55
+#: app/templates/playlists.html:83
 msgid "Edit"
 msgstr "編集"
 
-#: app/templates/playlists.html:62
+#: app/templates/playlists.html:90
 #, fuzzy
 msgid "Export"
 msgstr "エクスポート"
 
-#: app/templates/playlists.html:70
+#: app/templates/playlists.html:98
 msgid "Delete"
 msgstr "削除"
 
-#: app/templates/playlists.html:81
+#: app/templates/playlists.html:112
 msgid "You haven't created any playlists yet."
 msgstr "プレイリストはまだ作成されていません。"
 
-#: app/templates/playlists.html:91
+#: app/templates/playlists.html:114
+msgid "No public playlists found."
+msgstr ""
+
+#: app/templates/playlists.html:127
 msgid "Manage Playlists"
 msgstr "プレイリストの管理"
 
-#: app/templates/playlists.html:96
+#: app/templates/playlists.html:132
 msgid "Export All"
 msgstr "すべてエクスポート"
 
-#: app/templates/playlists.html:98
+#: app/templates/playlists.html:134
 msgid "Download all your playlists as a single JSON file."
 msgstr "すべてのプレイリストを単一のJSONファイルとしてダウンロードします。"
 
-#: app/templates/playlists.html:104
+#: app/templates/playlists.html:140
 msgid "Export to File"
 msgstr "ファイルにエクスポート"
 
-#: app/templates/playlists.html:109
+#: app/templates/playlists.html:145
 msgid "Import"
 msgstr "インポート"
 
-#: app/templates/playlists.html:111
+#: app/templates/playlists.html:147
 msgid "Upload a JSON file to restore or add playlists."
 msgstr "JSONファイルをアップロードして、プレイリストを復元または追加します。"
 
-#: app/templates/playlists.html:124
+#: app/templates/playlists.html:160
 msgid "Import from File"
 msgstr "ファイルからインポート"
 
-#: app/templates/partials/header.html:78 app/templates/partials/header.html:264
-#: app/templates/rated.html:3
+#: app/templates/partials/header.html:101
+#: app/templates/partials/header.html:316 app/templates/rated.html:3
+#: app/templates/rated.html:10
 msgid "Rated Tracks"
 msgstr "評価済みトラック"
 
-#: app/templates/rated.html:17
+#: app/templates/rated.html:18
 msgid "Top Producers"
 msgstr "トッププロデューサー"
 
-#: app/templates/rated.html:34 app/templates/rated.html:67
+#: app/templates/rated.html:35 app/templates/rated.html:68
 msgid "avg"
 msgstr "平均"
 
-#: app/templates/rated.html:41
+#: app/templates/rated.html:42
 msgid "Not enough data. Rate at least 3 tracks from the same producer."
 msgstr "データが不足しています。同じプロデューサーのトラックを3つ以上評価してください。"
 
-#: app/templates/rated.html:50
+#: app/templates/rated.html:51
 msgid "Top Voicebanks"
 msgstr "トップボイスバンク"
 
-#: app/templates/rated.html:74
+#: app/templates/rated.html:75
 msgid "Not enough data. Rate at least 3 tracks from the same voicebank."
 msgstr "データが不足しています。同じボイスバンクのトラックを3つ以上評価してください。"
 
-#: app/templates/rated.html:83
+#: app/templates/rated.html:84
 #, python-format
 msgid "Overall Stats (Across %(total_ratings)s ratings)"
 msgstr "全体統計 (評価数: %(total_ratings)s件)"
 
-#: app/templates/rated.html:88
+#: app/templates/rated.html:89
 msgid "Average"
 msgstr "平均値"
 
-#: app/templates/rated.html:92
+#: app/templates/rated.html:93
 msgid "Median"
 msgstr "中央値"
 
-#: app/templates/rated.html:102
+#: app/templates/rated.html:103
 msgid "Rating Distribution"
 msgstr "評価の分布"
 
@@ -322,73 +472,94 @@ msgstr "評価の分布"
 msgid "Recently Added Tracks"
 msgstr "新着トラック"
 
-#: app/templates/partials/header.html:88 app/templates/partials/header.html:277
-#: app/templates/recommendations.html:3
+#: app/templates/partials/header.html:112
+#: app/templates/partials/header.html:329 app/templates/recommendations.html:3
+#: app/templates/recommendations.html:6
 msgid "Recommendations"
 msgstr "おすすめ"
 
 #: app/templates/recommendations.html:9
-msgid "Recommendations for You"
-msgstr "あなたへのおすすめ"
+msgid "Recent Release Bias:"
+msgstr ""
 
-#: app/templates/recommendations.html:31
+#: app/templates/recommendations.html:27
+msgid "Off"
+msgstr ""
+
+#: app/templates/recommendations.html:45
+msgid "Strong"
+msgstr ""
+
+#: app/templates/recommendations.html:68
 msgid ""
 "No track recommendations available. Rate more tracks to get personalized "
 "recommendations!"
 msgstr "おすすめのトラックはありません。トラックをさらに評価して、あなたに合ったおすすめを見つけましょう！"
 
-#: app/templates/register.html:26
+#: app/templates/register.html:54
 msgid "Choose a strong password"
 msgstr ""
 
-#: app/templates/register.html:36
+#: app/templates/register.html:64
+msgid "Confirm Password"
+msgstr ""
+
+#: app/templates/register.html:70
+msgid "Repeat your password"
+msgstr ""
+
+#: app/templates/register.html:86
 msgid "Already have an account?"
 msgstr ""
 
-#: app/templates/scraping.html:3
+#: app/templates/register.html:106
+msgid "Passwords do not match."
+msgstr ""
+
+#: app/templates/scraping.html:3 app/templates/scraping.html:6
 msgid "Scraping Tracks"
 msgstr "トラックのスクレイピング"
 
-#: app/templates/scraping.html:8
+#: app/templates/scraping.html:11
 msgid "Initial Data Scrape in Progress"
 msgstr "初回データ収集中"
 
-#: app/templates/scraping.html:11
+#: app/templates/scraping.html:14
 msgid ""
 "The database is being populated with the latest Vocaloid track rankings "
 "for the first time."
 msgstr "データベースに最新のボカロ曲ランキングを初回取り込み中です。"
 
-#: app/templates/scraping.html:13
+#: app/templates/scraping.html:16
 msgid ""
 "Please wait, this page will automatically reload once the process is "
 "complete. This can take a few minutes."
 msgstr "処理が完了するとページが自動的にリロードされます。数分かかる場合がありますので、しばらくお待ちください。"
 
-#: app/templates/scraping.html:17
+#: app/templates/scraping.html:20
 msgid "Status:"
 msgstr "ステータス:"
 
-#: app/templates/scraping.html:18 app/templates/scraping.html:43
+#: app/templates/scraping.html:21 app/templates/scraping.html:46
 msgid "Scraping..."
 msgstr "収集中..."
 
-#: app/templates/scraping.html:33
+#: app/templates/scraping.html:36
 msgid "Completed! Reloading..."
 msgstr "完了しました。リロードしています..."
 
-#: app/templates/scraping.html:38
+#: app/templates/scraping.html:41
 msgid ""
 "An error occurred. Please check the server logs and restart the "
 "application."
 msgstr "エラーが発生しました。サーバーログを確認し、アプリケーションを再起動してください。"
 
-#: app/templates/scraping.html:42
+#: app/templates/scraping.html:45
 #, python-format
 msgid "Scraping page %s..."
 msgstr "%sページを収集中..."
 
-#: app/templates/scraping.html:46
+#: app/templates/scraping.html:49
 msgid "Scraping... please wait."
 msgstr "スクレイピング処理中... しばらくお待ちください。"
 
@@ -441,127 +612,175 @@ msgid "Clear"
 msgstr "クリア"
 
 #: app/templates/partials/filter_form.html:181
-msgid "Update Tracks"
+#, fuzzy
+msgid "Update Database"
 msgstr "トラックを更新"
+
+#: app/templates/partials/filter_form.html:208
+#, fuzzy
+msgid "Updating"
+msgstr "評価:"
+
+#: app/templates/partials/filter_form.html:212
+msgid "Update complete!"
+msgstr ""
+
+#: app/templates/partials/filter_form.html:228
+msgid "No changes found. Database is already up-to-date."
+msgstr ""
+
+#: app/templates/partials/filter_form.html:239
+msgid "An error occurred during scraping."
+msgstr ""
 
 #: app/templates/partials/header.html:12
 msgid "Toggle menu"
 msgstr "メニューを開閉"
 
-#: app/templates/partials/header.html:32 app/templates/partials/header.html:197
+#: app/templates/partials/header.html:30
+#, fuzzy
+msgid "Menu"
+msgstr "中央値"
+
+#: app/templates/partials/header.html:35
+#, fuzzy
+msgid "Close menu"
+msgstr "メニューを開閉"
+
+#: app/templates/partials/header.html:51 app/templates/partials/header.html:249
 msgid "Main Chart"
 msgstr "メインチャート"
 
-#: app/templates/partials/header.html:42 app/templates/partials/header.html:210
+#: app/templates/partials/header.html:62 app/templates/partials/header.html:262
 msgid "Recently Added"
 msgstr "新着"
 
-#: app/templates/partials/header.html:60 app/templates/partials/header.html:238
+#: app/templates/partials/header.html:81 app/templates/partials/header.html:289
 msgid "View Playlist"
 msgstr "プレイリストを表示"
 
-#: app/templates/partials/header.html:66 app/templates/partials/header.html:248
+#: app/templates/partials/header.html:87 app/templates/partials/header.html:299
 msgid "Edit Details"
 msgstr "詳細を編集"
 
-#: app/templates/partials/header.html:129
+#: app/templates/partials/header.html:181
 msgid "Edit playlist name"
 msgstr "プレイリスト名を編集"
 
-#: app/templates/partials/header.html:152
+#: app/templates/partials/header.html:204
 msgid "Edit playlist description"
 msgstr "プレイリストの説明を編集"
 
-#: app/templates/partials/header.html:171
+#: app/templates/partials/header.html:223
 msgid "Last updated:"
 msgstr "最終更新日時:"
 
-#: app/templates/partials/header.html:174
+#: app/templates/partials/header.html:226
 #, python-format
 msgid "Your database is %(days)s day(s) old, please update."
 msgstr "データベースが%(days)s日間更新されていません。更新してください。"
 
-#: app/templates/partials/header.html:177
+#: app/templates/partials/header.html:229
 msgid "Database not updated yet. Please update."
 msgstr "データベースはまだ更新されていません。更新してください。"
 
-#: app/templates/partials/tracks_table_body.html:17
+#: app/templates/partials/pagination_controls.html:13
+msgid "Previous"
+msgstr "前へ"
+
+#: app/templates/partials/pagination_controls.html:21
+msgid "Next"
+msgstr "次へ"
+
+#: app/templates/partials/tracks_table_body.html:16
 #: app/templates/partials/tracks_table_head.html:9
 msgid "Image"
 msgstr "サムネイル"
 
-#: app/templates/partials/tracks_table_body.html:31
+#: app/templates/partials/tracks_table_body.html:32
 msgid "Rank"
 msgstr "順位"
 
-#: app/templates/partials/tracks_table_body.html:39
+#: app/templates/partials/tracks_table_body.html:40
 #: app/templates/partials/tracks_table_head.html:28
 #: app/templates/partials/tracks_table_head.html:31
 msgid "Title"
 msgstr "タイトル"
 
-#: app/templates/partials/tracks_table_body.html:80
+#: app/templates/partials/tracks_table_body.html:84
 msgid "Play this track"
 msgstr "このトラックを再生"
 
-#: app/templates/partials/tracks_table_body.html:86
+#: app/templates/partials/tracks_table_body.html:90
 msgid "Toggle video player"
 msgstr "動画プレイヤーの表示/非表示"
 
-#: app/templates/partials/tracks_table_body.html:112
+#: app/templates/partials/tracks_table_body.html:116
 msgid "Lyrics"
 msgstr "歌詞"
 
-#: app/templates/partials/tracks_table_body.html:122
+#: app/templates/partials/tracks_table_body.html:127
 msgid "Manage playlists"
 msgstr "プレイリストを管理"
 
-#: app/templates/partials/tracks_table_body.html:165
+#: app/templates/partials/tracks_table_body.html:171
 #: app/templates/partials/tracks_table_head.html:39
 #: app/templates/partials/tracks_table_head.html:42
 msgid "Producer"
 msgstr "プロデューサー"
 
-#: app/templates/partials/tracks_table_body.html:215
+#: app/templates/partials/tracks_table_body.html:221
 msgid "Search producer on VocaDB"
 msgstr "VocaDBでプロデューサーを検索"
 
-#: app/templates/partials/tracks_table_body.html:225
+#: app/templates/partials/tracks_table_body.html:231
 #: app/templates/partials/tracks_table_head.html:50
 #: app/templates/partials/tracks_table_head.html:53
 msgid "Voicebank"
 msgstr "ボイスバンク"
 
-#: app/templates/partials/tracks_table_body.html:269
 #: app/templates/partials/tracks_table_body.html:275
+#: app/templates/partials/tracks_table_body.html:281
 #: app/templates/partials/tracks_table_head.html:61
 #: app/templates/partials/tracks_table_head.html:64
 msgid "Published"
 msgstr "公開日"
 
-#: app/templates/partials/tracks_table_body.html:281
-#: app/templates/partials/tracks_table_head.html:70
-#: app/templates/partials/tracks_table_head.html:73
+#: app/templates/partials/tracks_table_body.html:288
+#: app/templates/partials/tracks_table_head.html:71
+#: app/templates/partials/tracks_table_head.html:74
 msgid "My Rating"
 msgstr "マイ評価"
 
-#: app/templates/partials/tracks_table_body.html:329
+#: app/templates/partials/tracks_table_body.html:341
+#, fuzzy
+msgid "Rate"
+msgstr "評価済み"
+
+#: app/templates/partials/tracks_table_body.html:355
+#, fuzzy
+msgid "Note"
+msgstr "メモを追加"
+
+#: app/templates/partials/tracks_table_body.html:357
 msgid "Edit Note"
 msgstr "メモを編集"
 
-#: app/templates/partials/tracks_table_body.html:329
+#: app/templates/partials/tracks_table_body.html:357
 msgid "Add Note"
 msgstr "メモを追加"
 
-#: app/templates/partials/tracks_table_body.html:334
+#: app/templates/partials/tracks_table_body.html:363
 msgid "Clear my rating for this track"
 msgstr "このトラックの評価をクリア"
 
-#: app/templates/partials/user_status.html:3
+#: app/templates/partials/user_status.html:6
 msgid "Logged in as"
 msgstr ""
 
-#: app/templates/partials/user_status.html:6
+#: app/templates/partials/user_status.html:14
 msgid "Logout"
 msgstr ""
 
+#~ msgid "Recommendations for You"
+#~ msgstr "あなたへのおすすめ"

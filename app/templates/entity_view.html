@@ -1,27 +1,53 @@
 {% extends "base.html" %}
 
-{% block title %}{{ entity.name }} - {{ _('Vocaloid Rate') }}{% endblock %}
+{% block title %}{{ meta_title or title }} - {{ _('Vocaloid Rate') }}{% endblock %}
+
+{% block meta_description %}{{ meta_description }}{% endblock %}
+
+{% block og_title %}{{ meta_title or title }} - {{ _('Vocaloid Rate') }}{% endblock %}
+
+{% block og_description %}{{ meta_description }}{% endblock %}
 
 {% block content %}
-  {% set title = entity.name %}
   {% include "partials/header.html" %}
 
   <div class="mx-auto my-8 max-w-4xl p-4">
     <h1 class="text-3xl font-bold text-header">{{ entity.name }}</h1>
-    <p class="text-gray-text">{{ _('Tracks by this entity') }}</p>
+    <p class="text-gray-text">{{ subtitle }}</p>
 
     <div class="mt-6 grid grid-cols-1 gap-4">
       {% for track in tracks %}
         <div
-          class="flex items-center justify-between rounded border border-border bg-card-bg p-4 shadow-md"
+          class="flex items-center justify-between gap-4 rounded border border-border bg-card-bg p-4 shadow-md"
         >
-          <a
-            href="{{ track.link }}"
-            target="_blank"
-            class="font-bold text-cyan-text hover:underline"
-          >
-            {{ track.title }}
-          </a>
+          <div class="flex min-w-0 items-center gap-4">
+            <a href="{{ track.link }}" target="_blank" rel="noopener noreferrer">
+              {% if track.image_url %}
+                <img
+                  src="{{ track.image_url }}"
+                  alt="{{ track.title }}"
+                  class="h-16 w-16 rounded object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
+              {% else %}
+                <span
+                  class="flex h-16 w-16 items-center justify-center rounded bg-border text-sm font-bold text-gray-text"
+                  aria-hidden="true"
+                >
+                  {{ track.title[:1] }}
+                </span>
+              {% endif %}
+            </a>
+            <a
+              href="{{ track.link }}"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="truncate font-bold text-cyan-text hover:underline"
+            >
+              {{ track.title }}
+            </a>
+          </div>
           <span class="text-sm text-gray-text"
             >{{ track.published_date.strftime('%Y-%m-%d') if track.published_date else '' }}</span
           >
