@@ -569,6 +569,10 @@ async def read_recommendations(
     return await _render_page("recommendations.html", request, translations, context)
 
 
+def _tracks_by_newest(tracks):
+    return sorted(tracks, key=lambda t: t.published_date or datetime.min, reverse=True)
+
+
 @router.get("/explore")
 async def view_explore_page(
     request: Request,
