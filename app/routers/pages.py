@@ -43,6 +43,14 @@ def _get_locale(translations: Translations) -> str:
     return translations.info()["language"]
 
 
+def _tracks_by_newest(tracks: list[models.Track]) -> list[models.Track]:
+    return sorted(
+        tracks,
+        key=lambda track: track.published_date or datetime.min,
+        reverse=True,
+    )
+
+
 async def _render_page(
     template_name: str,
     request: Request,
@@ -594,6 +602,7 @@ async def view_producer_page(
         "_": translations.gettext,
         "entity": producer,
         "type": "producer",
+        "tracks": _tracks_by_newest(producer.tracks),
     }
     return await _render_page("entity_view.html", request, translations, context)
 
@@ -636,5 +645,6 @@ async def view_voicebank_page(
         "_": translations.gettext,
         "entity": voicebank,
         "type": "voicebank",
+        "tracks": _tracks_by_newest(voicebank.tracks),
     }
     return await _render_page("entity_view.html", request, translations, context)

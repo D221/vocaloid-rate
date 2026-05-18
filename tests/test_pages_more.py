@@ -34,6 +34,35 @@ def test_options_page_renders(client_factory):
     assert response.status_code == 200
 
 
+def test_producers_index_renders(client_factory, sample_tracks):
+    client = client_factory()
+
+    response = client.get("/producers")
+
+    assert response.status_code == 200
+    assert "Producer A" in response.text
+    assert "Producer B" in response.text
+
+
+def test_voicebanks_index_renders(client_factory, sample_tracks):
+    client = client_factory()
+
+    response = client.get("/voicebanks")
+
+    assert response.status_code == 200
+    assert "Miku" in response.text
+    assert "Luka" in response.text
+
+
+def test_entity_page_sorts_tracks_by_newest_first(client_factory, sample_tracks):
+    client = client_factory()
+
+    response = client.get("/producer/Producer%20A")
+
+    assert response.status_code == 200
+    assert response.text.index("First Track") < response.text.index("Old Track")
+
+
 def test_recommendations_page_renders_for_authenticated_user(
     client_factory,
     db_session,
