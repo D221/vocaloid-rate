@@ -541,7 +541,18 @@ async def read_recommendations(
     return await _render_page("recommendations.html", request, translations, context)
 
 
-@router.get("/producers")
+@router.get("/explore")
+async def view_explore_page(
+    request: Request,
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    translations: Translations = Depends(get_translations),
+):
+    context = {
+        "request": request,
+        "current_user": current_user,
+        "_": translations.gettext,
+    }
+    return await _render_page("explore.html", request, translations, context)
 async def view_producers_index(
     request: Request,
     db: Session = Depends(get_db),
