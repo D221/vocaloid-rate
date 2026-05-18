@@ -93,12 +93,15 @@ def client_factory(monkeypatch, session_factory):
             main.app.dependency_overrides[app_auth.get_current_user] = lambda: (
                 current_user
             )
-        if optional_user is not None:
+        resolved_optional_user = (
+            optional_user if optional_user is not None else current_user
+        )
+        if resolved_optional_user is not None:
             main.app.dependency_overrides[main.get_optional_current_user] = lambda: (
-                optional_user
+                resolved_optional_user
             )
             main.app.dependency_overrides[app_auth.get_optional_current_user] = lambda: (
-                optional_user
+                resolved_optional_user
             )
         client = TestClient(main.app)
         created_clients.append(client)
