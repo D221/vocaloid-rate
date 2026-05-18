@@ -63,9 +63,7 @@ def test_entity_page_sorts_tracks_by_newest_first(client_factory, sample_tracks)
     assert response.text.index("First Track") < response.text.index("Old Track")
 
 
-def test_entity_page_renders_track_thumbnail(
-    client_factory, db_session, sample_tracks
-):
+def test_entity_page_renders_track_thumbnail(client_factory, db_session, sample_tracks):
     sample_tracks[0].image_url = "https://img.youtube.com/vi/abc123/mqdefault.jpg"
     db_session.commit()
     client = client_factory()

@@ -599,7 +599,9 @@ async def view_producers_index(
         "entities": producers,
         "type": "producer",
         "title": _("Vocaloid Producers"),
-        "subtitle": _("Browse Vocaloid producers with track pages sorted by newest songs."),
+        "subtitle": _(
+            "Browse Vocaloid producers with track pages sorted by newest songs."
+        ),
         "meta_title": _("Vocaloid Producers"),
         "meta_description": _(
             "Browse Vocaloid producers on Vocaloid Rate and open producer pages "
@@ -635,12 +637,10 @@ async def view_producer_page(
         "type": "producer",
         "tracks": _tracks_by_newest(producer.tracks),
         "title": _("%(name)s Vocaloid Songs") % {"name": producer.name},
-        "subtitle": _("Newest Vocaloid tracks by %(name)s.")
-        % {"name": producer.name},
+        "subtitle": _("Newest Vocaloid tracks by %(name)s.") % {"name": producer.name},
         "meta_title": _("%(name)s Vocaloid Songs") % {"name": producer.name},
         "meta_description": _(
-            "Browse %(name)s Vocaloid songs on Vocaloid Rate, sorted by "
-            "newest uploads."
+            "Browse %(name)s Vocaloid songs on Vocaloid Rate, sorted by newest uploads."
         )
         % {"name": producer.name},
     }
@@ -663,7 +663,9 @@ async def view_voicebanks_index(
         "entities": voicebanks,
         "type": "voicebank",
         "title": _("Vocaloid Voicebanks"),
-        "subtitle": _("Browse Vocaloid voicebanks with track pages sorted by newest songs."),
+        "subtitle": _(
+            "Browse Vocaloid voicebanks with track pages sorted by newest songs."
+        ),
         "meta_title": _("Vocaloid Voicebanks"),
         "meta_description": _(
             "Browse Vocaloid voicebanks on Vocaloid Rate and open voicebank pages "
@@ -700,8 +702,7 @@ async def view_voicebank_page(
         % {"name": voicebank.name},
         "meta_title": _("%(name)s Vocaloid Songs") % {"name": voicebank.name},
         "meta_description": _(
-            "Browse %(name)s Vocaloid songs on Vocaloid Rate, sorted by "
-            "newest uploads."
+            "Browse %(name)s Vocaloid songs on Vocaloid Rate, sorted by newest uploads."
         )
         % {"name": voicebank.name},
     }
