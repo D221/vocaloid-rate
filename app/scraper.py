@@ -69,13 +69,14 @@ def _scrape_single_page(page_num: int) -> list[dict]:
                 or not isinstance(image_tag, Tag)
                 or not isinstance(rank_tag, Tag)
             ):
-                logger.warning(f"Skipping row on page {page_num} due to missing elements.")
+                logger.warning(
+                    f"Skipping row on page {page_num} due to missing elements."
+                )
                 continue
 
             image_url = image_tag.get("src")
             if not isinstance(image_url, str):
                 continue
-
 
             title_jp_tag = row_jp.select_one(".song-title")
             producer_jp_tag = row_jp.select_one(".artists")
