@@ -8,7 +8,7 @@ from fastapi import Cookie, Depends, Request
 from fastapi.templating import Jinja2Templates
 
 from app.auth import get_optional_current_user
-from app.config import is_local_mode
+from app.config import get_public_base_url, is_local_mode
 from app.constants import (
     BASE_DIR,
     DEFAULT_LOCALE,
@@ -108,6 +108,7 @@ async def locale_template_response(
 ):
     context["locale"] = translations.info()["language"]
     context["is_local_env"] = is_local_mode()
+    context.setdefault("canonical_url", f"{get_public_base_url()}{request.url.path}")
 
     if "current_user" not in context:
         db = SessionLocal()

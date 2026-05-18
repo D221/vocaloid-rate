@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app import crud, models
 from app.auth import get_optional_current_user
+from app.config import get_public_base_url
 from app.constants import VALID_PAGE_LIMITS
 from app.dependencies import (
     get_db,
@@ -142,11 +143,8 @@ async def read_rated_tracks(
 
 @router.get("/robots.txt", response_class=Response)
 async def get_robots_txt():
-    content = (
-        "User-agent: *\n"
-        "Allow: /\n"
-        "Sitemap: https://vocaloid-rate.vercel.app/sitemap.xml\n"
-    )
+    base_url = get_public_base_url()
+    content = f"User-agent: *\nAllow: /\nSitemap: {base_url}/sitemap.xml\n"
     return Response(content=content, media_type="text/plain")
 
 

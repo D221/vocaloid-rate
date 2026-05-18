@@ -21,6 +21,12 @@ def get_data_dir() -> Path:
     return Path(os.environ.get("DATA_DIR", "data"))
 
 
+def get_public_base_url() -> str:
+    return os.environ.get("PUBLIC_BASE_URL", "https://vocaloid-rate.vercel.app").rstrip(
+        "/"
+    )
+
+
 def is_local_mode() -> bool:
     db_url = get_database_url()
     return not db_url or db_url.strip() == ""

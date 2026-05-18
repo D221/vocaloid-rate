@@ -5,17 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="A personal rating and playlist management tool for Vocaloid music tracks."
+      content="{% block meta_description %}A personal rating and playlist
+      management tool for Vocaloid music tracks.{% endblock %}"
     />
+    <link rel="canonical" href="{{ canonical_url }}" />
 
     <!-- OpenGraph Metadata -->
-    <meta property="og:title" content="Vocaloid Rate" />
+    <meta
+      property="og:title"
+      content="{% block og_title %}Vocaloid Rate{% endblock %}"
+    />
     <meta
       property="og:description"
-      content="Manage and rate your favorite Vocaloid tracks."
+      content="{% block og_description %}Manage and rate your favorite Vocaloid
+      tracks.{% endblock %}"
     />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="{{ request.url }}" />
+    <meta property="og:url" content="{{ canonical_url }}" />
     <meta
       name="google-site-verification"
       content="YxEecplX57ws0_P4EnpQsiY7qUmV20bMaQpWX2R8B70"
