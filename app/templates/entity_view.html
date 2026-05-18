@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}{{ entity.name }} - {{ _('Vocaloid Rate') }}{% endblock %}
+
+{% block content %}
+  {% set title = entity.name %}
+  {% include "partials/header.html" %}
+
+  <div class="mx-auto my-8 max-w-4xl p-4">
+    <h1 class="text-3xl font-bold text-header">{{ entity.name }}</h1>
+    <p class="text-gray-text">{{ _('Tracks by this %(type)s', type=type) }}</p>
+
+    <div class="mt-6 grid grid-cols-1 gap-4">
+      {% for track in entity.tracks %}
+        <div
+          class="flex items-center justify-between rounded border border-border bg-card-bg p-4 shadow-md"
+        >
+          <a
+            href="{{ track.link }}"
+            target="_blank"
+            class="font-bold text-cyan-text hover:underline"
+          >
+            {{ track.title }}
+          </a>
+          <span class="text-sm text-gray-text"
+            >{{ track.published_date.strftime('%Y-%m-%d') }}</span
+          >
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}

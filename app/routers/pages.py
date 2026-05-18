@@ -539,3 +539,48 @@ async def read_recommendations(
     }
 
     return await _render_page("recommendations.html", request, translations, context)
+
+
+async def view_producer_page(
+    producer_name: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    translations: Translations = Depends(get_translations),
+):
+    producer = (
+        db.query(models.Producer).filter(models.Producer.name == producer_name).first()
+    )
+    if not producer:
+        raise HTTPException(status_code=404, detail="Producer not found")
+
+    context = {
+        "request": request,
+        "current_user": current_user,
+        "_": translations.gettext,
+        "entity": producer,
+        "type": "producer",
+    }
+    return await _render_page("entity_view.html", request, translations, context)
+
+
+@router.get("/voicebank/{name}")
+async def view_voicebank_page(
+    name: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    translations: Translations = Depends(get_translations),
+):
+    voicebank = db.query(models.Voicebank).filter(models.Voicebank.name == name).first()
+    if not voicebank:
+        raise HTTPException(status_code=404, detail="Voicebank not found")
+
+    context = {
+        "request": request,
+        "current_user": current_user,
+        "_": translations.gettext,
+        "entity": voicebank,
+        "type": "voicebank",
+    }
+    return await _render_page("entity_view.html", request, translations, context)

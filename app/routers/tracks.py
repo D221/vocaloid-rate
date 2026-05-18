@@ -15,7 +15,8 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session
+from sqlalchemy import and_
+from sqlalchemy.orm import Session, contains_eager
 
 from app import crud, models
 from app.auth import get_current_user, get_optional_current_user
@@ -34,7 +35,7 @@ router = APIRouter()
 def get_tracks_partial(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
     page: int = 1,
     limit: str = "all",
     rated_filter: Optional[str] = None,
@@ -47,6 +48,7 @@ def get_tracks_partial(
     exact_rating_filter: Optional[int] = None,
     translations: Translations = Depends(get_translations),
 ):
+    user_id = current_user.id if current_user else None
     locale = translations.info()["language"]
     if rated_filter == "rated":
         rank_filter = "all"
@@ -56,7 +58,7 @@ def get_tracks_partial(
 
     total_tracks = crud.get_tracks_count(
         db,
-        user_id=current_user.id,
+        user_id=user_id,
         rated_filter=rated_filter,
         title_filter=title_filter,
         producer_filter=producer_filter,
@@ -70,7 +72,7 @@ def get_tracks_partial(
 
     tracks = crud.get_tracks(
         db,
-        user_id=current_user.id,
+        user_id=user_id,
         skip=skip,
         limit=limit_val,
         rated_filter=rated_filter,
@@ -84,6 +86,23 @@ def get_tracks_partial(
         locale=locale,
     )
 
+    # Re-fetch tracks with joined ratings if the user is authenticated to ensure template consistency
+    if current_user:
+        track_ids = [track.id for track in tracks]
+        tracks = (
+            db.query(models.Track)
+            .filter(models.Track.id.in_(track_ids))
+            .outerjoin(
+                models.Rating,
+                and_(
+                    models.Rating.track_id == models.Track.id,
+                    models.Rating.user_id == user_id,
+                ),
+            )
+            .options(contains_eager(models.Track.ratings))
+            .order_by(models.Track.rank)
+            .all()
+        )
     return build_tracks_partial_response(
         request=request,
         translations=translations,
@@ -95,6 +114,7 @@ def get_tracks_partial(
             "total_pages": total_pages,
             "total_tracks": total_tracks,
         },
+        current_user=current_user,
     )
 
 
@@ -152,7 +172,6 @@ def get_playlist_tracks_partial(
         sort_dir=sort_dir,
         locale=locale,
     )
-
     return build_tracks_partial_response(
         request=request,
         translations=translations,
@@ -164,6 +183,7 @@ def get_playlist_tracks_partial(
             "total_pages": total_pages,
             "total_tracks": total_tracks,
         },
+        current_user=current_user,
     )
 
 
@@ -197,9 +217,11 @@ def get_recently_added_tracks_partial(
         locale=locale,
         pagination={
             "page": 1,
+            "limit": "all",
             "total_pages": 1,
             "total_tracks": total_tracks,
         },
+        current_user=None,
     )
 
 
@@ -344,7 +366,7 @@ def get_track_playlist_status(
 @router.get("/api/playlist-snapshot", response_class=JSONResponse, tags=["Data"])
 def get_playlist_snapshot_endpoint(
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
     limit: str = "all",
     rated_filter: Optional[str] = None,
     title_filter: Optional[str] = None,
@@ -356,6 +378,7 @@ def get_playlist_snapshot_endpoint(
     exact_rating_filter: Optional[int] = None,
     translations: Translations = Depends(get_translations),
 ):
+    user_id = current_user.id if current_user else None
     locale = translations.info()["language"]
     if rated_filter == "rated":
         rank_filter = "all"
@@ -365,7 +388,7 @@ def get_playlist_snapshot_endpoint(
 
     return crud.get_playlist_snapshot(
         db=db,
-        user_id=current_user.id,
+        user_id=user_id,
         limit=limit,
         rated_filter=rated_filter,
         title_filter=title_filter,
@@ -387,7 +410,7 @@ def get_playlist_snapshot_endpoint(
 def get_playlist_snapshot_for_playlist_endpoint(
     playlist_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
     limit: str = "all",
     title_filter: Optional[str] = None,
     producer_filter: Optional[str] = None,
@@ -396,11 +419,21 @@ def get_playlist_snapshot_for_playlist_endpoint(
     sort_dir: str = "asc",
     translations: Translations = Depends(get_translations),
 ):
+    db_playlist = crud.get_playlist(db, playlist_id)
+    if not db_playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+
+    is_owner = current_user and db_playlist.user_id == current_user.id
+    if not db_playlist.is_public and not is_owner:
+        raise HTTPException(
+            status_code=403, detail="Not authorized to view this playlist"
+        )
+
     locale = translations.info()["language"]
     return crud.get_playlist_snapshot_for_playlist(
         db=db,
         playlist_id=playlist_id,
-        user_id=current_user.id,
+        user_id=db_playlist.user_id,
         limit=limit,
         title_filter=title_filter,
         producer_filter=producer_filter,
