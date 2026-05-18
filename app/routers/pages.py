@@ -541,27 +541,41 @@ async def read_recommendations(
     return await _render_page("recommendations.html", request, translations, context)
 
 
-async def view_producer_page(
-    producer_name: str,
+@router.get("/producer/{producer_name}")
+@router.get("/producers")
+async def view_producers_index(
     request: Request,
     db: Session = Depends(get_db),
     current_user: Optional[models.User] = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
-    producer = (
-        db.query(models.Producer).filter(models.Producer.name.ilike(producer_name)).first()
-    )
-    if not producer:
-        raise HTTPException(status_code=404, detail="Producer not found")
-
+    producers = db.query(models.Producer).order_by(models.Producer.name).all()
     context = {
         "request": request,
         "current_user": current_user,
         "_": translations.gettext,
-        "entity": producer,
+        "entities": producers,
         "type": "producer",
     }
-    return await _render_page("entity_view.html", request, translations, context)
+    return await _render_page("entity_index.html", request, translations, context)
+
+
+@router.get("/voicebanks")
+async def view_voicebanks_index(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    translations: Translations = Depends(get_translations),
+):
+    voicebanks = db.query(models.Voicebank).order_by(models.Voicebank.name).all()
+    context = {
+        "request": request,
+        "current_user": current_user,
+        "_": translations.gettext,
+        "entities": voicebanks,
+        "type": "voicebank",
+    }
+    return await _render_page("entity_index.html", request, translations, context)
 
 
 @router.get("/voicebank/{name}")

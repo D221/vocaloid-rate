@@ -17,6 +17,8 @@ def generate_sitemap(db: Session = Depends(get_db)):
         f"{base_url}/recently_added",
         f"{base_url}/playlists",
         f"{base_url}/options",
+        f"{base_url}/producers",
+        f"{base_url}/voicebanks",
     ]
 
     # Add public playlists

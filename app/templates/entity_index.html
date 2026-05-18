@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('All %(type)ss', type=type) }} - {{ _('Vocaloid Rate') }}{% endblock %}
+
+{% block content %}
+  {% set title = _("All " + type + "s") %}
+  {% include "partials/header.html" %}
+
+  <div class="mx-auto my-8 max-w-4xl p-4">
+    <h1 class="text-3xl font-bold text-header">
+      {{ _('All %(type)ss', type=type) }}
+    </h1>
+
+    <div class="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+      {% for entity in entities %}
+        <a
+          href="/{{ type }}/{{ entity.name }}"
+          class="rounded border border-border bg-card-bg p-4 shadow-md transition-colors hover:bg-cyan-hover"
+        >
+          <h2 class="font-bold text-cyan-text">{{ entity.name }}</h2>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}

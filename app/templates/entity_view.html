@@ -12,14 +12,24 @@
 
     <div class="mt-6 grid grid-cols-1 gap-4">
       {% for track in entity.tracks %}
-        <div class="rounded border border-border bg-card-bg p-4 shadow-md flex justify-between items-center">
-            <a href="{{ track.link }}" target="_blank" class="font-bold text-cyan-text hover:underline">
-                {{ track.title }}
-            </a>
-            <span class="text-sm text-gray-text">{{ track.published_date.strftime('%Y-%m-%d') if track.published_date else '' }}</span>
+        <div
+          class="flex items-center justify-between rounded border border-border bg-card-bg p-4 shadow-md"
+        >
+          <a
+            href="{{ track.link }}"
+            target="_blank"
+            class="font-bold text-cyan-text hover:underline"
+          >
+            {{ track.title }}
+          </a>
+          <span class="text-sm text-gray-text"
+            >{{ track.published_date.strftime('%Y-%m-%d') if track.published_date else '' }}</span
+          >
         </div>
       {% else %}
-        <p class="text-gray-text">{{ _('No tracks found for this %(type)s.', type=type) }}</p>
+        <p class="text-gray-text">
+          {{ _('No tracks found for this %(type)s.', type=type) }}
+        </p>
       {% endfor %}
     </div>
   </div>
