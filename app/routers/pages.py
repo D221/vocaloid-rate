@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from babel.support import Translations
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -138,6 +138,16 @@ async def read_rated_tracks(
     }
 
     return await _render_page("rated.html", request, translations, context)
+
+
+@router.get("/robots.txt", response_class=Response)
+async def get_robots_txt():
+    content = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Sitemap: https://vocaloid-rate.vercel.app/sitemap.xml\n"
+    )
+    return Response(content=content, media_type="text/plain")
 
 
 @router.get("/playlists")
