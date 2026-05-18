@@ -22,7 +22,7 @@ from app.config import (
 from app.constants import BASE_DIR, STATIC_DIR, set_resource_base_path
 from app.database import SessionLocal
 from app.dependencies import get_db, templates
-from app.routers import auth, pages, playlists, scraping, tracks, vocadb
+from app.routers import auth, pages, playlists, scraping, tracks, vocadb, sitemap
 from app.services.scraping import (
     initial_scrape_task,
     set_initial_scrape_in_progress,
@@ -114,6 +114,7 @@ app.include_router(vocadb.router)
 app.include_router(playlists.router)
 app.include_router(tracks.router)
 app.include_router(pages.router)
+app.include_router(sitemap.router)
 
 
 if __name__ == "__main__":
