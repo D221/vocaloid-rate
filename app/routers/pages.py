@@ -553,6 +553,9 @@ async def view_explore_page(
         "_": translations.gettext,
     }
     return await _render_page("explore.html", request, translations, context)
+
+
+@router.get("/producers")
 async def view_producers_index(
     request: Request,
     db: Session = Depends(get_db),
@@ -580,7 +583,9 @@ async def view_producer_page(
 ):
     # Use ilike for case-insensitive lookup
     producer = (
-        db.query(models.Producer).filter(models.Producer.name.ilike(producer_name)).first()
+        db.query(models.Producer)
+        .filter(models.Producer.name.ilike(producer_name))
+        .first()
     )
     if not producer:
         raise HTTPException(status_code=404, detail="Producer not found")
@@ -593,7 +598,6 @@ async def view_producer_page(
         "type": "producer",
     }
     return await _render_page("entity_view.html", request, translations, context)
-
 
 
 @router.get("/voicebanks")

@@ -11,15 +11,12 @@
 
     <div class="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
       {% for entity in entities %}
-        <a href="/{{ type }}/{{ entity.name }}" class="rounded border border-border bg-card-bg p-4 shadow-md hover:bg-cyan-hover transition-colors">
-            <h2 class="font-bold text-cyan-text">{{ entity.name }}</h2>
+        <a
+          href="/{{ type }}/{{ entity.name }}"
+          class="rounded border border-border bg-card-bg p-4 shadow-md transition-colors hover:bg-cyan-hover"
+        >
+          <h2 class="font-bold text-cyan-text">{{ entity.name }}</h2>
         </a>
-      {% endfor %}
-    </div>
-  </div>
-{% endblock %}
-
-
       {% endfor %}
     </div>
   </div>
