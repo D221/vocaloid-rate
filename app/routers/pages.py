@@ -549,7 +549,7 @@ async def view_producer_page(
     translations: Translations = Depends(get_translations),
 ):
     producer = (
-        db.query(models.Producer).filter(models.Producer.name == producer_name).first()
+        db.query(models.Producer).filter(models.Producer.name.ilike(producer_name)).first()
     )
     if not producer:
         raise HTTPException(status_code=404, detail="Producer not found")
@@ -572,7 +572,9 @@ async def view_voicebank_page(
     current_user: Optional[models.User] = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
-    voicebank = db.query(models.Voicebank).filter(models.Voicebank.name == name).first()
+    voicebank = (
+        db.query(models.Voicebank).filter(models.Voicebank.name.ilike(name)).first()
+    )
     if not voicebank:
         raise HTTPException(status_code=404, detail="Voicebank not found")
 
