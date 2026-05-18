@@ -9,6 +9,7 @@
 {% block og_description %}{{ meta_description }}{% endblock %}
 
 {% block content %}
+  <link rel="canonical" href="{{ canonical_url }}" />
   {% include "partials/header.html" %}
 
   <div class="mx-auto my-8 max-w-4xl p-4">

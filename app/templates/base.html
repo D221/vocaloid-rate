@@ -24,11 +24,13 @@
       {% endblock %}"
     />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="{{ canonical_url }}" />
+    <meta property="og:url" content="{{ request.url }}" />
+    <link rel="canonical" href="{{ request.url | replace(request.url.query, '') }}" />
     <meta
       name="google-site-verification"
       content="YxEecplX57ws0_P4EnpQsiY7qUmV20bMaQpWX2R8B70"
     />
+
 
     <!-- Umami Analytics -->
     <script
