@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="{% block meta_description %}A personal rating and playlist
-      management tool for Vocaloid music tracks.{% endblock %}"
+      content="{% block meta_description %}
+        A personal rating and playlist management tool for Vocaloid music
+        tracks.
+      {% endblock %}"
     />
     <link rel="canonical" href="{{ canonical_url }}" />
 
@@ -17,8 +19,9 @@
     />
     <meta
       property="og:description"
-      content="{% block og_description %}Manage and rate your favorite Vocaloid
-      tracks.{% endblock %}"
+      content="{% block og_description %}
+        Manage and rate your favorite Vocaloid tracks.
+      {% endblock %}"
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="{{ canonical_url }}" />
@@ -298,9 +301,7 @@
           >{{ _('Source Code (GitHub)') }}</a
         >
         |
-        <a
-          class="hover:text-cyan-text hover:underline"
-          href="/about"
+        <a class="hover:text-cyan-text hover:underline" href="/about"
           >{{ _('About') }}</a
         >
         |
