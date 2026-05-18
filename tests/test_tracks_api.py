@@ -53,16 +53,19 @@ def test_get_tracks_partial_supports_rated_filter_and_rating_sort(
     assert "Second Track" in response.json()["table_body_html"]
 
 
-def test_playlist_tracks_partial_rejects_non_owner(
+def test_playlist_tracks_partial_allows_access_if_public(
     client_factory,
+    db_session,
     playlist,
 ):
+    playlist.is_public = True
+    db_session.commit()
     other_user = type("User", (), {"id": 999, "email": "other@example.com"})()
     client = client_factory(current_user=other_user)
 
     response = client.get(f"/api/playlist/{playlist.id}/get_tracks")
 
-    assert response.status_code == 403
+    assert response.status_code == 200
 
 
 def test_playlist_tracks_partial_returns_html(

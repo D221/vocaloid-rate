@@ -18,7 +18,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app import crud, models
-from app.auth import get_current_user
+from app.auth import get_current_user, get_optional_current_user
 from app.constants import get_resource_base_path
 from app.dependencies import get_db, get_locale, get_translations
 from app.utils.uploads import read_upload_with_size_limit
@@ -105,7 +105,7 @@ def get_playlist_tracks_partial(
     playlist_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
     page: int = 1,
     limit: str = "all",
     title_filter: Optional[str] = None,
@@ -118,7 +118,10 @@ def get_playlist_tracks_partial(
     db_playlist = crud.get_playlist(db, playlist_id)
     if not db_playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
-    if db_playlist.user_id != current_user.id:
+
+    # Access control: Owner OR Public
+    is_owner = current_user and db_playlist.user_id == current_user.id
+    if not db_playlist.is_public and not is_owner:
         raise HTTPException(
             status_code=403, detail="Not authorized to view this playlist"
         )
@@ -127,7 +130,7 @@ def get_playlist_tracks_partial(
     total_tracks = crud.get_playlist_tracks_count(
         db,
         playlist_id=playlist_id,
-        user_id=current_user.id,
+        user_id=db_playlist.user_id,
         title_filter=title_filter,
         producer_filter=producer_filter,
         voicebank_filter=voicebank_filter,
@@ -139,7 +142,7 @@ def get_playlist_tracks_partial(
     tracks = crud.get_playlist_tracks_filtered(
         db,
         playlist_id=playlist_id,
-        user_id=current_user.id,
+        user_id=db_playlist.user_id,
         skip=skip,
         limit=limit_val,
         title_filter=title_filter,

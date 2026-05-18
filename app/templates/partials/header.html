@@ -80,7 +80,7 @@
                   class="block rounded border border-amber-text px-4 py-2 font-bold text-amber-text shadow-md"
                   >{{ _('View Playlist') }}</a
                 >
-              {% else %}
+              {% elif current_user and playlist and playlist.user_id == current_user.id %}
                 <a
                   href="/playlist/edit/{{ playlist_id }}"
                   class="block rounded border border-amber-text px-4 py-2 font-bold text-amber-text shadow-md"
@@ -88,28 +88,41 @@
                 >
               {% endif %}
             {% endif %}
-            {% set is_active = request.url.path == '/rated_tracks' %}
-            <a
-              href="/rated_tracks"
-              class="{% if is_active %}
-                border-gray-text text-gray-text cursor-default
-                pointer-events-none
-              {% else %}
-                border-cyan-text text-cyan-text
-              {% endif %} block rounded border px-4 py-2 font-bold shadow-md"
-              >{{ _('Rated Tracks') }}</a
-            >
-            {% set is_active = request.url.path == '/recommendations' %}
-            <a
-              href="/recommendations"
-              class="{% if is_active %}
-                border-gray-text text-gray-text cursor-default
-                pointer-events-none
-              {% else %}
-                border-cyan-text text-cyan-text
-              {% endif %} block rounded border px-4 py-2 font-bold shadow-md"
-              >{{ _('Recommendations') }}</a
-            >
+            {% if current_user %}
+              {% set is_active = request.url.path == '/rated_tracks' %}
+              <a
+                href="/rated_tracks"
+                class="{% if is_active %}
+                  border-gray-text text-gray-text cursor-default
+                  pointer-events-none
+                {% else %}
+                  border-cyan-text text-cyan-text
+                {% endif %} block rounded border px-4 py-2 font-bold shadow-md"
+                >{{ _('Rated Tracks') }}</a
+              >
+              {% set is_active = request.url.path == '/recommendations' %}
+              <a
+                href="/recommendations"
+                class="{% if is_active %}
+                  border-gray-text text-gray-text cursor-default
+                  pointer-events-none
+                {% else %}
+                  border-cyan-text text-cyan-text
+                {% endif %} block rounded border px-4 py-2 font-bold shadow-md"
+                >{{ _('Recommendations') }}</a
+              >
+            {% else %}
+              <a
+                href="/login"
+                class="block rounded border border-amber-text px-4 py-2 font-bold text-amber-text shadow-md"
+                >{{ _('Login') }}</a
+              >
+              <a
+                href="/register"
+                class="block rounded border border-amber-text px-4 py-2 font-bold text-amber-text shadow-md"
+                >{{ _('Register') }}</a
+              >
+            {% endif %}
             {% set is_active = request.url.path == '/options' %}
             <a
               href="/options"
@@ -266,8 +279,8 @@
             {{ _('View Playlist') }}
           </a>
 
-          {# CASE 2: We are on the VIEW page, so show an "Edit" button #}
-        {% else %}
+          {# CASE 2: We are on the VIEW page, so show an "Edit" button if owner #}
+        {% elif current_user and playlist and playlist.user_id == current_user.id %}
           <a
             href="/playlist/edit/{{ playlist_id }}"
             id="toggle-edit-playlist"
@@ -278,32 +291,47 @@
         {% endif %}
       {% endif %}
 
-      {# Show "View Rated" if we are NOT on the rated tracks page #}
-      {% set is_active = request.url.path =='/rated_tracks' %}
-      <a
-        href="/rated_tracks"
-        class="{% if is_active %}
-          border-gray-text text-gray-text hover:bg-gray-hover cursor-default
-          pointer-events-none
-        {% else %}
-          border-cyan-text text-cyan-text
-        {% endif %} rounded border p-3 font-bold shadow-md transition-colors duration-200 ease-in-out"
-      >
-        {{ _('Rated Tracks') }}
-      </a>
+      {% if current_user %}
+        {# Show "View Rated" if we are NOT on the rated tracks page #}
+        {% set is_active = request.url.path =='/rated_tracks' %}
+        <a
+          href="/rated_tracks"
+          class="{% if is_active %}
+            border-gray-text text-gray-text hover:bg-gray-hover cursor-default
+            pointer-events-none
+          {% else %}
+            border-cyan-text text-cyan-text
+          {% endif %} rounded border p-3 font-bold shadow-md transition-colors duration-200 ease-in-out"
+        >
+          {{ _('Rated Tracks') }}
+        </a>
 
-      {% set is_active = request.url.path == '/recommendations' %}
-      <a
-        href="/recommendations"
-        class="{% if is_active %}
-          border-gray-text text-gray-text hover:bg-gray-hover cursor-default
-          pointer-events-none
-        {% else %}
-          border-cyan-text text-cyan-text
-        {% endif %} rounded border p-3 font-bold shadow-md transition-colors duration-200 ease-in-out"
-      >
-        {{ _('Recommendations') }}
-      </a>
+        {% set is_active = request.url.path == '/recommendations' %}
+        <a
+          href="/recommendations"
+          class="{% if is_active %}
+            border-gray-text text-gray-text hover:bg-gray-hover cursor-default
+            pointer-events-none
+          {% else %}
+            border-cyan-text text-cyan-text
+          {% endif %} rounded border p-3 font-bold shadow-md transition-colors duration-200 ease-in-out"
+        >
+          {{ _('Recommendations') }}
+        </a>
+      {% else %}
+        <a
+          href="/login"
+          class="cursor-pointer rounded border border-amber-text p-3 font-bold text-amber-text shadow-md ease-in-out hover:bg-amber-hover hover:transition-colors hover:duration-200"
+        >
+          {{ _('Login') }}
+        </a>
+        <a
+          href="/register"
+          class="cursor-pointer rounded border border-amber-text p-3 font-bold text-amber-text shadow-md ease-in-out hover:bg-amber-hover hover:transition-colors hover:duration-200"
+        >
+          {{ _('Register') }}
+        </a>
+      {% endif %}
 
       {# Show "Options" if we are NOT on the rated tracks page #}
       {% set is_active = request.url.path == '/options' %}

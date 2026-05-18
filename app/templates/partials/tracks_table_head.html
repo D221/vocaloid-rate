@@ -64,14 +64,16 @@
         {{ _('Published') }}
       {% endif %}
     </th>
-    <th class="w-1 min-w-0 border border-border px-3 py-2 text-left">
-      {% if not is_recently_added_page %}
-        <a href="{{ request.url.path }}?sort_by=rating" data-sort="rating"
-          >{{ _('My Rating') }}</a
-        >
-      {% else %}
-        {{ _('My Rating') }}
-      {% endif %}
-    </th>
+    {% if current_user %}
+      <th class="w-1 min-w-0 border border-border px-3 py-2 text-left">
+        {% if not is_recently_added_page %}
+          <a href="{{ request.url.path }}?sort_by=rating" data-sort="rating"
+            >{{ _('My Rating') }}</a
+          >
+        {% else %}
+          {{ _('My Rating') }}
+        {% endif %}
+      </th>
+    {% endif %}
   </tr>
 </thead>

@@ -115,18 +115,20 @@
           >
             {{ _('Lyrics') }}
           </button>
-          <button
-            data-add-to-playlist-button
-            data-track-id="{{ track.id }}"
-            class="{% if track.is_in_playlist %}
-              border-cyan-text text-cyan-text hover:bg-cyan-hover
-            {% else %}
-              border-gray-text text-gray-text hover:bg-gray-hover
-            {% endif %} cursor-pointer rounded border px-2 py-1 shadow-md ease-in-out hover:transition-colors hover:duration-200"
-            title="{{ _('Manage playlists') }}"
-          >
-            {{ icon('plus', size="h-4 w-4") }}
-          </button>
+          {% if current_user %}
+            <button
+              data-add-to-playlist-button
+              data-track-id="{{ track.id }}"
+              class="{% if track.is_in_playlist %}
+                border-cyan-text text-cyan-text hover:bg-cyan-hover
+              {% else %}
+                border-gray-text text-gray-text hover:bg-gray-hover
+              {% endif %} cursor-pointer rounded border px-2 py-1 shadow-md ease-in-out hover:transition-colors hover:duration-200"
+              title="{{ _('Manage playlists') }}"
+            >
+              {{ icon('plus', size="h-4 w-4") }}
+            </button>
+          {% endif %}
         </div>
       </div>
 
@@ -280,91 +282,95 @@
       >
     </td>
 
-    <!-- My Rating -->
-    <td
-      data-label="{{ _('My Rating') }}"
-      class="block border-b border-border p-3 text-left last:border-b-0 md:table-cell md:w-1 md:min-w-0 md:border md:px-3 md:py-2 md:text-left md:whitespace-nowrap"
-    >
-      {% set current_rating = track.ratings[0].rating if track.ratings else 0 %}
-      {% set has_note = track.ratings and track.ratings[0].notes %}
-      <form
-        data-rating-form
-        action="/rate/{{ track.id }}"
-        method="post"
-        class="flex items-center justify-center gap-2.5 2xl:justify-between"
+    {% if current_user %}
+      <!-- My Rating -->
+      <td
+        data-label="{{ _('My Rating') }}"
+        class="block border-b border-border p-3 text-left last:border-b-0 md:table-cell md:w-1 md:min-w-0 md:border md:px-3 md:py-2 md:text-left md:whitespace-nowrap"
       >
-        <div
-          data-star-rating
-          class="relative hidden cursor-pointer text-lg leading-none xl:text-xl 2xl:inline-block 2xl:text-2xl"
-          data-rating="{{ current_rating }}"
-          style="--rating-width: {{ (current_rating / 10.0) * 100 }}%;"
+        {% set current_rating = track.ratings[0].rating if track.ratings else 0 %}
+        {% set has_note = track.ratings and track.ratings[0].notes %}
+        <form
+          data-rating-form
+          action="/rate/{{ track.id }}"
+          method="post"
+          class="flex items-center justify-center gap-2.5 2xl:justify-between"
         >
-          <div class="text-gray-400 select-none">★★★★★★★★★★</div>
           <div
-            class="pointer-events-none absolute top-0 left-0 overflow-hidden text-yellow-400 select-none"
-            style="width: var(--rating-width, 0%);"
+            data-star-rating
+            class="relative hidden cursor-pointer text-lg leading-none xl:text-xl 2xl:inline-block 2xl:text-2xl"
+            data-rating="{{ current_rating }}"
+            style="--rating-width: {{ (current_rating / 10.0) * 100 }}%;"
           >
-            ★★★★★★★★★★
+            <div class="text-gray-400 select-none">★★★★★★★★★★</div>
+            <div
+              class="pointer-events-none absolute top-0 left-0 overflow-hidden text-yellow-400 select-none"
+              style="width: var(--rating-width, 0%);"
+            >
+              ★★★★★★★★★★
+            </div>
+            {% for i in range(1, 11) %}
+              <input
+                class="hidden"
+                type="radio"
+                name="rating"
+                value="{{ i }}"
+                id="star-{{ track.id }}-{{ i }}"
+                {% if current_rating==i %}
+                  checked
+                {% endif %}
+              />
+            {% endfor %}
           </div>
-          {% for i in range(1, 11) %}
-            <input
-              class="hidden"
-              type="radio"
-              name="rating"
-              value="{{ i }}"
-              id="star-{{ track.id }}-{{ i }}"
-              {% if current_rating==i %}
-                checked
-              {% endif %}
-            />
-          {% endfor %}
-        </div>
-        <button
-          type="button"
-          data-open-rating-modal
-          class="{% if has_note %}
-            border-cyan-text text-cyan-text hover:bg-cyan-hover
-          {% elif current_rating > 0 %}
-            border-yellow-500 text-yellow-500 hover:bg-amber-hover
-          {% else %}
-            border-amber-text text-amber-text hover:bg-amber-hover
-          {% endif %} cursor-pointer rounded border px-2 py-1 font-bold shadow-md ease-in-out hover:transition-colors hover:duration-200 2xl:hidden"
-        >
-          {% if current_rating > 0 %}
-            ★ {{ current_rating|int }}
-          {% else %}
-            ☆ {{ _('Rate') }}
-          {% endif %}
-        </button>
-
-        <div class="hidden items-center gap-2 2xl:flex 2xl:flex-nowrap">
           <button
             type="button"
-            data-notes-toggle
+            data-open-rating-modal
             class="{% if has_note %}
-              border-cyan-text text-cyan-text hover:bg-green-hover
+              border-cyan-text text-cyan-text hover:bg-cyan-hover
             {% else %}
-              text-gray-text hover:bg-gray-hover
-            {% endif %} cursor-pointer rounded border px-2 py-1 text-xs font-bold shadow-md ease-in-out hover:transition-colors hover:duration-200 xl:text-sm"
+              {% if current_rating > 0 %}
+                border-yellow-500 text-yellow-500 hover:bg-amber-hover
+              {% else %}
+                border-amber-text text-amber-text hover:bg-amber-hover
+              {% endif %}
+            {% endif %} cursor-pointer rounded border px-2 py-1 font-bold shadow-md ease-in-out hover:transition-colors hover:duration-200 2xl:hidden"
           >
-            <span class="2xl:hidden">{{ _('Note') }}</span>
-            <span class="hidden 2xl:inline"
-              >{{ _('Edit Note') if has_note else _('Add Note') }}</span
-            >
+            {% if current_rating > 0 %}
+              ★ {{ current_rating|int }}
+            {% else %}
+              ☆ {{ _('Rate') }}
+            {% endif %}
           </button>
-          {% if track.ratings %}
+
+          <div class="hidden items-center gap-2 2xl:flex 2xl:flex-nowrap">
             <button
-              data-clear-rating
-              title="{{ _('Clear my rating for this track') }}"
               type="button"
-              data-delete-endpoint="/rate/{{ track.id }}/delete"
-              class="cursor-pointer rounded border border-red-text p-1 font-bold text-red-text shadow-md ease-in-out hover:bg-red-hover hover:transition-colors hover:duration-200"
+              data-notes-toggle
+              class="{% if has_note %}
+                border-cyan-text text-cyan-text hover:bg-green-hover
+              {% else %}
+                text-gray-text hover:bg-gray-hover
+              {% endif %} cursor-pointer rounded border px-2 py-1 text-xs font-bold shadow-md ease-in-out hover:transition-colors hover:duration-200 xl:text-sm"
             >
-              {{ icon('xmark', size="h-6 w-6") }}
+              <span class="2xl:hidden">{{ _('Note') }}</span>
+              <span class="hidden 2xl:inline"
+                >{{ _('Edit Note') if has_note else _('Add Note') }}</span
+              >
             </button>
-          {% endif %}
-        </div>
-      </form>
-    </td>
+            {% if track.ratings %}
+              <button
+                data-clear-rating
+                title="{{ _('Clear my rating for this track') }}"
+                type="button"
+                data-delete-endpoint="/rate/{{ track.id }}/delete"
+                class="cursor-pointer rounded border border-red-text p-1 font-bold text-red-text shadow-md ease-in-out hover:bg-red-hover hover:transition-colors hover:duration-200"
+              >
+                {{ icon('xmark', size="h-6 w-6") }}
+              </button>
+            {% endif %}
+          </div>
+        </form>
+      </td>
+    {% endif %}
   </tr>
 {% endfor %}

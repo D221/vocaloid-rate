@@ -1,13 +1,12 @@
 from app.services import scraping as scraping_service
 
 
-def test_root_redirects_when_unauthenticated(client_factory):
+def test_root_loads_when_unauthenticated(client_factory):
     client = client_factory()
 
     response = client.get("/", follow_redirects=False)
 
-    assert response.status_code == 307
-    assert response.headers["location"] == "/login"
+    assert response.status_code == 200
 
 
 def test_root_renders_track_listing_for_authenticated_user(
@@ -70,14 +69,16 @@ def test_recently_added_excludes_old_tracks(client_factory, user, sample_tracks)
     assert "Old Track" not in response.text
 
 
-def test_playlist_detail_page_requires_owner(
+def test_playlist_detail_page_accessible_to_others_if_public(
     client_factory,
+    db_session,
     playlist,
 ):
+    playlist.is_public = True
+    db_session.commit()
     other_user = type("User", (), {"id": 999, "email": "other@example.com"})()
     client = client_factory(optional_user=other_user)
 
     response = client.get(f"/playlist/{playlist.id}")
 
-    assert response.status_code == 403
-    assert response.json()["detail"] == "Not authorized to view this playlist"
+    assert response.status_code == 200

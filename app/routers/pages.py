@@ -147,12 +147,18 @@ async def view_playlists_page(
     current_user: Optional[models.User] = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
-    if current_user is None:
-        return RedirectResponse(url="/login")
-    user = _require_current_user(current_user)
+    if current_user:
+        playlists = crud.get_playlists(db, user_id=current_user.id)
+    else:
+        # Show all public playlists for guests
+        playlists = db.query(models.Playlist).filter(models.Playlist.is_public).all()
 
-    playlists = crud.get_playlists(db, user_id=user.id)
-    context = {"request": request, "_": translations.gettext, "playlists": playlists}
+    context = {
+        "request": request,
+        "current_user": current_user,
+        "_": translations.gettext,
+        "playlists": playlists,
+    }
     return await _render_page("playlists.html", request, translations, context)
 
 
@@ -171,15 +177,14 @@ async def view_playlist_detail_page(
     sort_dir: str = "asc",
     translations: Translations = Depends(get_translations),
 ):
-    if current_user is None:
-        return RedirectResponse(url="/login")
-    user = _require_current_user(current_user)
-
     locale = _get_locale(translations)
     db_playlist = crud.get_playlist(db, playlist_id)
     if not db_playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
-    if db_playlist.user_id != user.id:
+
+    # Access control: Owner OR Public
+    is_owner = current_user and db_playlist.user_id == current_user.id
+    if not db_playlist.is_public and not is_owner:
         raise HTTPException(
             status_code=403, detail="Not authorized to view this playlist"
         )
@@ -189,10 +194,11 @@ async def view_playlist_detail_page(
         "producer_filter": producer_filter,
         "voicebank_filter": voicebank_filter,
     }
+
     total_tracks = crud.get_playlist_tracks_count(
         db,
         playlist_id=playlist_id,
-        user_id=user.id,
+        user_id=db_playlist.user_id,
         locale=locale,
         **filters,
     )
@@ -201,7 +207,7 @@ async def view_playlist_detail_page(
     tracks_in_playlist = crud.get_playlist_tracks_filtered(
         db,
         playlist_id=playlist_id,
-        user_id=user.id,
+        user_id=db_playlist.user_id,
         skip=skip,
         limit=limit_val,
         sort_by=sort_by,
@@ -217,6 +223,7 @@ async def view_playlist_detail_page(
 
     context = {
         "request": request,
+        "current_user": current_user,
         "_": translations.gettext,
         "playlist": db_playlist,
         "tracks": tracks_in_playlist,
@@ -243,8 +250,6 @@ async def edit_playlist_page(
     current_user: Optional[models.User] = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
-    if current_user is None:
-        return RedirectResponse(url="/login")
     user = _require_current_user(current_user)
 
     db_playlist = crud.get_playlist(db, playlist_id)
@@ -258,6 +263,7 @@ async def edit_playlist_page(
     all_tracks = crud.get_tracks(db, limit=10000, sort_by="title", rank_filter="all")
     context = {
         "request": request,
+        "current_user": user,
         "_": translations.gettext,
         "playlist": db_playlist,
         "all_tracks": all_tracks,
@@ -269,33 +275,49 @@ async def edit_playlist_page(
 
 @router.get("/options")
 async def read_options(
-    request: Request, translations: Translations = Depends(get_translations)
+    request: Request,
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    translations: Translations = Depends(get_translations),
 ):
-    context = {"request": request, "_": translations.gettext}
+    context = {
+        "request": request,
+        "current_user": current_user,
+        "_": translations.gettext,
+    }
     return await _render_page("options.html", request, translations, context)
 
 
 @router.get("/login")
 async def login_page(
     request: Request,
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
-    if _main_module().is_local_auth_mode():
+    if _main_module().is_local_auth_mode() or current_user:
         return RedirectResponse(url="/")
 
-    context = {"request": request, "_": translations.gettext}
+    context = {
+        "request": request,
+        "current_user": None,
+        "_": translations.gettext,
+    }
     return await _render_page("login.html", request, translations, context)
 
 
 @router.get("/register")
 async def register_page(
     request: Request,
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
-    if _main_module().is_local_auth_mode():
+    if _main_module().is_local_auth_mode() or current_user:
         return RedirectResponse(url="/")
 
-    context = {"request": request, "_": translations.gettext}
+    context = {
+        "request": request,
+        "current_user": None,
+        "_": translations.gettext,
+    }
     return await _render_page("register.html", request, translations, context)
 
 
@@ -316,17 +338,18 @@ async def read_root(
     translations: Translations = Depends(get_translations),
     is_slim_mode: bool = Depends(get_slim_mode),
 ):
-    if current_user is None:
-        return RedirectResponse(url="/login")
-    user = _require_current_user(current_user)
-
+    user_id = current_user.id if current_user else None
     locale = _get_locale(translations)
     if is_initial_scrape_in_progress():
         return await _render_page(
             "scraping.html",
             request,
             translations,
-            {"request": request, "_": translations.gettext},
+            {
+                "request": request,
+                "current_user": current_user,
+                "_": translations.gettext,
+            },
         )
 
     filters = {
@@ -344,7 +367,7 @@ async def read_root(
 
     total_tracks = crud.get_tracks_count(
         db,
-        user_id=user.id,
+        user_id=user_id,
         rated_filter=rated_filter,
         title_filter=title_filter,
         producer_filter=producer_filter,
@@ -365,7 +388,7 @@ async def read_root(
 
     tracks = crud.get_tracks(
         db,
-        user_id=user.id,
+        user_id=user_id,
         skip=skip,
         limit=limit_val,
         rated_filter=rated_filter,
@@ -378,7 +401,9 @@ async def read_root(
         locale=locale,
     )
 
-    all_producers, all_voicebanks = get_user_filter_options(db, user.id, locale)
+    # Filter user ID 1 or current user for options
+    filter_user_id = user_id if user_id else 1
+    all_producers, all_voicebanks = get_user_filter_options(db, filter_user_id, locale)
 
     last_update = crud.get_last_update_time(db)
     update_age_days = None
@@ -394,7 +419,7 @@ async def read_root(
 
     context = {
         "request": request,
-        "current_user": user,
+        "current_user": current_user,
         "_": translations.gettext,
         "is_slim_mode": is_slim_mode,
         "tracks": tracks,
@@ -426,10 +451,7 @@ async def read_recently_added(
     voicebank_filter: Optional[str] = None,
     translations: Translations = Depends(get_translations),
 ):
-    if current_user is None:
-        return RedirectResponse(url="/login")
-    user = _require_current_user(current_user)
-
+    user_id = current_user.id if current_user else None
     locale = _get_locale(translations)
     filters = {
         "title_filter": title_filter,
@@ -448,10 +470,12 @@ async def read_recently_added(
     )
     total_tracks = len(tracks)
 
-    all_producers, all_voicebanks = get_user_filter_options(db, user.id, locale)
+    filter_user_id = user_id if user_id else 1
+    all_producers, all_voicebanks = get_user_filter_options(db, filter_user_id, locale)
 
     context = {
         "request": request,
+        "current_user": current_user,
         "_": translations.gettext,
         "tracks": tracks,
         "tracks_json": serialize_tracks(tracks),
@@ -496,6 +520,7 @@ async def read_recommendations(
 
     context = {
         "request": request,
+        "current_user": user,
         "_": translations.gettext,
         "stats": stats,
         "recommended_tracks": recommended_tracks,

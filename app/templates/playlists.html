@@ -8,49 +8,51 @@
   {% include "partials/header.html" %}
 
   <div class="mx-auto max-w-4xl">
-    <div class="mb-3 flex justify-end gap-2">
-      <label
-        for="import-single-playlist-input"
-        class="flex cursor-pointer items-center gap-2 rounded border border-green-text p-2 font-bold text-green-text shadow-md ease-in-out hover:bg-green-hover hover:transition-colors hover:duration-200"
-      >
-        {{ icon('upload', size="h-6 w-6") }} {{ _('Import Playlist') }}
-      </label>
-      <input
-        type="file"
-        id="import-single-playlist-input"
-        accept=".json"
-        class="hidden"
-      />
-
-      <button
-        id="create-new-playlist-btn"
-        class="flex cursor-pointer items-center gap-2 rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:bg-sky-hover hover:transition-colors hover:duration-200"
-      >
-        {{ icon('plus', size="h-6 w-6") }} {{ _('Create New Playlist') }}
-      </button>
-    </div>
-    <div
-      id="create-playlist-panel"
-      class="mb-6 hidden rounded border border-border bg-card-bg p-3 shadow-md"
-    >
-      <div class="flex flex-col gap-2 md:flex-row">
-        <input
-          type="text"
-          id="new-playlist-name-input"
-          maxlength="100"
-          placeholder="{{ _('Playlist name') }}"
-          class="w-full rounded border border-border bg-background p-2 text-foreground"
-        />
-        <button
-          type="button"
-          id="save-new-playlist-btn"
-          class="cursor-pointer rounded border border-sky-text px-3 py-2 font-bold text-sky-text shadow-md ease-in-out hover:bg-sky-hover hover:transition-colors hover:duration-200"
+    {% if current_user %}
+      <div class="mb-3 flex justify-end gap-2">
+        <label
+          for="import-single-playlist-input"
+          class="flex cursor-pointer items-center gap-2 rounded border border-green-text p-2 font-bold text-green-text shadow-md ease-in-out hover:bg-green-hover hover:transition-colors hover:duration-200"
         >
-          {{ _('Save') }}
+          {{ icon('upload', size="h-6 w-6") }} {{ _('Import Playlist') }}
+        </label>
+        <input
+          type="file"
+          id="import-single-playlist-input"
+          accept=".json"
+          class="hidden"
+        />
+
+        <button
+          id="create-new-playlist-btn"
+          class="flex cursor-pointer items-center gap-2 rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:bg-sky-hover hover:transition-colors hover:duration-200"
+        >
+          {{ icon('plus', size="h-6 w-6") }} {{ _('Create New Playlist') }}
         </button>
       </div>
-      <div id="create-playlist-status" class="mt-2 text-sm font-bold"></div>
-    </div>
+      <div
+        id="create-playlist-panel"
+        class="mb-6 hidden rounded border border-border bg-card-bg p-3 shadow-md"
+      >
+        <div class="flex flex-col gap-2 md:flex-row">
+          <input
+            type="text"
+            id="new-playlist-name-input"
+            maxlength="100"
+            placeholder="{{ _('Playlist name') }}"
+            class="w-full rounded border border-border bg-background p-2 text-foreground"
+          />
+          <button
+            type="button"
+            id="save-new-playlist-btn"
+            class="cursor-pointer rounded border border-sky-text px-3 py-2 font-bold text-sky-text shadow-md ease-in-out hover:bg-sky-hover hover:transition-colors hover:duration-200"
+          >
+            {{ _('Save') }}
+          </button>
+        </div>
+        <div id="create-playlist-status" class="mt-2 text-sm font-bold"></div>
+      </div>
+    {% endif %}
 
     <div class="space-y-4" id="playlists-list">
       {% if playlists %}
@@ -74,28 +76,30 @@
                 title="{{ _('View') }}"
                 >{{ icon('eye', size="h-6 w-6") }}</a
               >
-              <a
-                href="/playlist/edit/{{ playlist.id }}"
-                class="cursor-pointer rounded border border-amber-text p-2 font-bold text-amber-text shadow-md ease-in-out hover:bg-amber-hover hover:transition-colors hover:duration-200"
-                title="{{ _('Edit') }}"
-                >{{ icon('pencil', size="h-6 w-6") }}</a
-              >
-              <!-- NEW: Export Single Playlist Button -->
-              <button
-                data-export-single-playlist="{{ playlist.id }}"
-                class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:bg-sky-hover hover:transition-colors hover:duration-200"
-                title="{{ _('Export') }}"
-              >
-                {{ icon('download', size="h-6 w-6") }}
-              </button>
-              <button
-                data-delete-playlist="{{ playlist.id }}"
-                data-playlist-name="{{ playlist.name }}"
-                class="cursor-pointer rounded border border-red-text p-2 font-bold text-red-text shadow-md ease-in-out hover:bg-red-hover hover:transition-colors hover:duration-200"
-                title="{{ _('Delete') }}"
-              >
-                {{ icon('trash', size="h-6 w-6") }}
-              </button>
+              {% if current_user and playlist.user_id == current_user.id %}
+                <a
+                  href="/playlist/edit/{{ playlist.id }}"
+                  class="cursor-pointer rounded border border-amber-text p-2 font-bold text-amber-text shadow-md ease-in-out hover:bg-amber-hover hover:transition-colors hover:duration-200"
+                  title="{{ _('Edit') }}"
+                  >{{ icon('pencil', size="h-6 w-6") }}</a
+                >
+                <!-- NEW: Export Single Playlist Button -->
+                <button
+                  data-export-single-playlist="{{ playlist.id }}"
+                  class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:bg-sky-hover hover:transition-colors hover:duration-200"
+                  title="{{ _('Export') }}"
+                >
+                  {{ icon('download', size="h-6 w-6") }}
+                </button>
+                <button
+                  data-delete-playlist="{{ playlist.id }}"
+                  data-playlist-name="{{ playlist.name }}"
+                  class="cursor-pointer rounded border border-red-text p-2 font-bold text-red-text shadow-md ease-in-out hover:bg-red-hover hover:transition-colors hover:duration-200"
+                  title="{{ _('Delete') }}"
+                >
+                  {{ icon('trash', size="h-6 w-6") }}
+                </button>
+              {% endif %}
             </div>
           </div>
         {% endfor %}
@@ -104,55 +108,62 @@
           id="empty-playlists-state"
           class="rounded border border-border bg-card-bg p-8 text-center text-gray-text shadow-md"
         >
-          {{ _("You haven't created any playlists yet.") }}
+          {% if current_user %}
+            {{ _("You haven't created any playlists yet.") }}
+          {% else %}
+            {{ _("No public playlists found.") }}
+          {% endif %}
         </div>
       {% endif %}
     </div>
-    <div
-      class="mt-6 mb-6 rounded border border-border bg-card-bg p-4 shadow-md"
-    >
-      <h2
-        class="mb-2 border-b border-border pb-2 text-xl font-semibold text-header"
+
+    {% if current_user %}
+      <div
+        class="mt-6 mb-6 rounded border border-border bg-card-bg p-4 shadow-md"
       >
-        {{ _('Manage Playlists') }}
-      </h2>
-      <div class="flex flex-wrap items-start gap-8">
-        <!-- Export -->
-        <div>
-          <h3 class="font-bold">{{ _('Export All') }}</h3>
-          <p class="text-sm text-gray-text">
-            {{ _('Download all your playlists as a single JSON file.') }}
-          </p>
-          <button
-            id="export-playlists-btn"
-            class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:bg-sky-hover hover:transition-colors hover:duration-200"
-          >
-            {{ _('Export to File') }}
-          </button>
-        </div>
-        <!-- Import -->
-        <div>
-          <h3 class="font-bold">{{ _('Import') }}</h3>
-          <p class="text-sm text-gray-text">
-            {{ _('Upload a JSON file to restore or add playlists.') }}
-          </p>
-          <input
-            type="file"
-            id="import-playlists-input"
-            accept=".json"
-            class="rounded border border-sky-text shadow-md ease-in-out file:border-r file:border-sky-text file:p-2 file:font-bold file:text-sky-text hover:transition-colors hover:duration-200 hover:file:cursor-pointer hover:file:bg-sky-hover"
-          />
-          <button
-            id="import-playlists-btn"
-            class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-sky-hover disabled:cursor-not-allowed disabled:opacity-50"
-            disabled
-          >
-            {{ _('Import from File') }}
-          </button>
-          <div id="import-status" class="mt-2 text-sm font-bold"></div>
+        <h2
+          class="mb-2 border-b border-border pb-2 text-xl font-semibold text-header"
+        >
+          {{ _('Manage Playlists') }}
+        </h2>
+        <div class="flex flex-wrap items-start gap-8">
+          <!-- Export -->
+          <div>
+            <h3 class="font-bold">{{ _('Export All') }}</h3>
+            <p class="text-sm text-gray-text">
+              {{ _('Download all your playlists as a single JSON file.') }}
+            </p>
+            <button
+              id="export-playlists-btn"
+              class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:bg-sky-hover hover:transition-colors hover:duration-200"
+            >
+              {{ _('Export to File') }}
+            </button>
+          </div>
+          <!-- Import -->
+          <div>
+            <h3 class="font-bold">{{ _('Import') }}</h3>
+            <p class="text-sm text-gray-text">
+              {{ _('Upload a JSON file to restore or add playlists.') }}
+            </p>
+            <input
+              type="file"
+              id="import-playlists-input"
+              accept=".json"
+              class="rounded border border-sky-text shadow-md ease-in-out file:border-r file:border-sky-text file:p-2 file:font-bold file:text-sky-text hover:transition-colors hover:duration-200 hover:file:cursor-pointer hover:file:bg-sky-hover"
+            />
+            <button
+              id="import-playlists-btn"
+              class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:transition-colors hover:duration-200 enabled:hover:bg-sky-hover disabled:cursor-not-allowed disabled:opacity-50"
+              disabled
+            >
+              {{ _('Import from File') }}
+            </button>
+            <div id="import-status" class="mt-2 text-sm font-bold"></div>
+          </div>
         </div>
       </div>
-    </div>
+    {% endif %}
   </div>
 
   <script src="{{ url_for('static', path='js/main.min.js') }}"></script>
