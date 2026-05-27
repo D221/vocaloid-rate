@@ -142,8 +142,12 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)  # New admin flag
-    username: Mapped[str | None] = mapped_column(String, unique=True, index=True, nullable=True)
-    is_profile_public: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    username: Mapped[str | None] = mapped_column(
+        String, unique=True, index=True, nullable=True
+    )
+    is_profile_public: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false"
+    )
 
 
 class Lyric(Base):

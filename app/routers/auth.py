@@ -148,14 +148,17 @@ def update_profile(
         )
 
     # Check if username is already taken by another user
-    existing_user = db.query(models.User).filter(
-        models.User.username.ilike(profile_data.username),
-        models.User.id != current_user.id
-    ).first()
+    existing_user = (
+        db.query(models.User)
+        .filter(
+            models.User.username.ilike(profile_data.username),
+            models.User.id != current_user.id,
+        )
+        .first()
+    )
     if existing_user:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username is already taken"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Username is already taken"
         )
 
     crud.update_user_profile(

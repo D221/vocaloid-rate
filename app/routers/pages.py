@@ -598,7 +598,7 @@ async def view_profiles_index(
     main = _main_module()
     if main.is_local_auth_mode():
         return RedirectResponse(url="/explore")
-    
+
     _ = translations.gettext
     users = crud.get_public_users(db)
     context = {

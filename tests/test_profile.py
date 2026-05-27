@@ -3,8 +3,6 @@ import re
 from app import auth, main, models
 
 
-
-
 def test_registration_assigns_unique_username(client_factory, db_session, monkeypatch):
     client = client_factory()
     monkeypatch.setattr(auth, "get_secret_key", lambda: "test-secret")
@@ -16,11 +14,16 @@ def test_registration_assigns_unique_username(client_factory, db_session, monkey
         json={"email": "profile_test@example.com", "password": "secret"},
     )
     assert response.status_code == 200
-    user = db_session.query(models.User).filter_by(email="profile_test@example.com").first()
+    user = (
+        db_session.query(models.User)
+        .filter_by(email="profile_test@example.com")
+        .first()
+    )
     assert user is not None
     assert user.username is not None
     assert user.username == "profile_test"
     assert not user.is_profile_public
+
 
 def test_update_profile_settings(client_factory, db_session, monkeypatch):
     client = client_factory()
@@ -33,18 +36,21 @@ def test_update_profile_settings(client_factory, db_session, monkeypatch):
         "/users/",
         json={"email": "update_test@example.com", "password": "secret"},
     )
-    
+
     # Update profile
     response = client.put(
         "/api/users/me/profile",
-        json={"username": "CoolUser", "is_profile_public": True}
+        json={"username": "CoolUser", "is_profile_public": True},
     )
     assert response.status_code == 204
 
     db_session.commit()
-    user = db_session.query(models.User).filter_by(email="update_test@example.com").first()
+    user = (
+        db_session.query(models.User).filter_by(email="update_test@example.com").first()
+    )
     assert user.username == "CoolUser"
     assert user.is_profile_public is True
+
 
 def test_public_profile_visibility(client_factory, db_session, monkeypatch):
     client = client_factory()
