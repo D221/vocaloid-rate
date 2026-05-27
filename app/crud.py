@@ -645,7 +645,6 @@ def export_playlists(db: Session, user_id: int) -> list[dict]:
             {
                 "name": playlist.name,
                 "description": playlist.description,
-                "is_public": playlist.is_public,
                 "tracks": track_links,
             }
         )
@@ -674,7 +673,6 @@ def export_single_playlist(
     return {
         "name": playlist.name,
         "description": playlist.description,
-        "is_public": playlist.is_public,
         "tracks": track_links,
     }
 
@@ -705,7 +703,6 @@ def import_playlists(db: Session, user_id: int, data: list[dict]) -> tuple[int, 
             db.add(db_playlist)
             created_count += 1
         else:
-            db_playlist.description = playlist_data.get("description")
             db_playlist.is_public = playlist_data.get(
                 "is_public", db_playlist.is_public
             )

@@ -79,5 +79,4 @@ def test_export_single_playlist_returns_tracks(client_factory, user, playlist):
     assert response.status_code == 200
     payload = response.json()
     assert payload["name"] == "Favorites"
-    assert payload["is_public"] is True
     assert len(payload["tracks"]) == 2
