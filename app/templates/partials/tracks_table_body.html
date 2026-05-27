@@ -178,7 +178,7 @@
           {% if locale == 'ja' and track.producer_jp %}
             {% for producer in track.producer_jp.split(',') %}
               <a
-                href="#"
+                href="/producer/{{ producer.strip() | urlencode }}"
                 class="filter-link font-semibold hover:text-sky-text hover:underline"
                 data-filter-type="producer_filter"
                 data-filter-value="{{ producer.strip() }}"
@@ -193,7 +193,7 @@
           {% else %}
             {% for producer in track.producer.split(',') %}
               <a
-                href="#"
+                href="/producer/{{ producer.strip() | urlencode }}"
                 class="filter-link font-semibold hover:text-sky-text hover:underline"
                 data-filter-type="producer_filter"
                 data-filter-value="{{ producer.strip() }}"
@@ -235,7 +235,7 @@
         {% for voicebank in track.voicebank_jp.split(',') %}
           {% if voicebank.strip() %}
             <a
-              href="#"
+              href="/voicebank/{{ voicebank.strip() | urlencode }}"
               class="filter-link font-semibold hover:text-sky-text hover:underline"
               data-filter-type="voicebank_filter"
               data-filter-value="{{ voicebank.strip() }}"
@@ -252,7 +252,7 @@
         {% for voicebank in track.voicebank.split(',') %}
           {% if voicebank.strip() %}
             <a
-              href="#"
+              href="/voicebank/{{ voicebank.strip() | urlencode }}"
               class="filter-link font-semibold hover:text-sky-text hover:underline"
               data-filter-type="voicebank_filter"
               data-filter-value="{{ voicebank.strip() }}"
@@ -274,7 +274,7 @@
     <td
       data-label="{{ _('Published') }}"
       class="block border-b border-border p-3 text-left last:border-b-0 md:table-cell md:w-1 md:min-w-0 md:border md:px-3 md:py-2 md:text-left md:whitespace-nowrap"
-      title="{{ track.published_date.strftime('%Y-%m-%d') }}"
+      title="{{ track.published_date.strftime('%Y-%m-%d') if track.published_date else '' }}"
     >
       {{ track.published_date | time_ago }}
       <span class="inline-block w-24 font-bold text-header md:hidden"

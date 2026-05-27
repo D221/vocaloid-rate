@@ -1795,15 +1795,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const filterLink = e.target.closest("a.filter-link");
     if (filterLink) {
-      e.preventDefault();
       const filterType = filterLink.dataset.filterType;
       const filterValue = filterLink.dataset.filterValue;
       const inputField = document.getElementById(filterType);
       if (inputField) {
-        inputField.value = filterValue;
-        inputField.dispatchEvent(new Event("input", { bubbles: true }));
+        if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button !== 1) {
+          e.preventDefault();
+          inputField.value = filterValue;
+          inputField.dispatchEvent(new Event("input", { bubbles: true }));
+          return;
+        }
       }
-      return;
     }
 
     const clearBtn = e.target.closest("[data-clear-rating-filter]");

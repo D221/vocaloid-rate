@@ -119,7 +119,12 @@ def build_tracks_partial_response(
     )
 
 
-def time_ago_filter(date: datetime) -> str:
+def time_ago_filter(date: Optional[datetime]) -> str:
+    if not date:
+        return ""
+    if not isinstance(date, datetime):
+        return str(date)
+
     now = datetime.now(timezone.utc)
     if date.tzinfo is None:
         date = date.replace(tzinfo=timezone.utc)

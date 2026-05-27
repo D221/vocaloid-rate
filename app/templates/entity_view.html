@@ -8,8 +8,27 @@
 
 {% block og_description %}{{ meta_description }}{% endblock %}
 
+{% block head_extra %}
+  <script type="application/ld-json">
+  {
+    "@context": "https://schema.org",
+    "@type": "MusicGroup",
+    "name": "{{ entity.name }}",
+    "genre": "Vocaloid",
+    "track": [
+      {% for track in tracks[:10] %}
+      {
+        "@type": "MusicRecording",
+        "name": "{{ track.title }}",
+        "url": "{{ track.link }}"
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]
+  }
+  </script>
+{% endblock %}
+
 {% block content %}
-  <link rel="canonical" href="{{ canonical_url }}" />
   {% include "partials/header.html" %}
 
   <div class="mx-auto my-8 max-w-4xl p-4">
@@ -44,22 +63,58 @@
                 </span>
               {% endif %}
             </a>
-            <a
-              href="{{ track.link }}"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="truncate font-bold text-cyan-text hover:underline"
-            >
-              {{ track.title }}
-            </a>
+            <div class="flex flex-col min-w-0">
+              <div class="flex items-center gap-2">
+                {% if track.rank %}
+                  <span
+                    class="rounded border border-cyan-text bg-cyan-hover px-1.5 py-0.5 text-xs font-bold text-white"
+                    title="{{ _('Rank') }}"
+                  >
+                    #{{ track.rank }}
+                  </span>
+                {% endif %}
+                <a
+                  href="{{ track.link }}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="truncate font-bold text-cyan-text hover:underline"
+                >
+                  {{ track.title }}
+                </a>
+              </div>
+
+              {% if track.title_jp and track.title_jp != track.title %}
+                <span class="truncate text-xs italic text-gray-text"
+                  >{{ track.title_jp }}</span
+                >
+              {% endif %}
+
+              <span class="mt-1 text-xs text-gray-text">
+                {% if type == 'producer' %}
+                  {{ _('Voicebank:') }}
+                  <a
+                    href="/voicebank/{{ track.voicebank | urlencode }}"
+                    class="text-cyan-text hover:underline"
+                    >{{ track.voicebank }}</a
+                  >
+                {% else %}
+                  {{ _('Producer:') }}
+                  <a
+                    href="/producer/{{ track.producer | urlencode }}"
+                    class="text-cyan-text hover:underline"
+                    >{{ track.producer }}</a
+                  >
+                {% endif %}
+              </span>
+            </div>
           </div>
-          <span class="text-sm text-gray-text"
-            >{{ track.published_date.strftime('%Y-%m-%d') if track.published_date else '' }}</span
+          <span class="text-xs text-gray-text whitespace-nowrap"
+            >{{ track.published_date | time_ago }}</span
           >
         </div>
       {% else %}
         <p class="text-gray-text">
-          {{ _('No tracks found for this %(type)s.', type=type) }}
+          {{ _('No tracks found for this %(type)s.') % {'type': type} }}
         </p>
       {% endfor %}
     </div>
