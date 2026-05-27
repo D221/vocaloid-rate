@@ -38,13 +38,13 @@ class Track(Base):
     title: Mapped[str] = mapped_column(String, index=True)
     producer: Mapped[str] = mapped_column(String, index=True)
     voicebank: Mapped[str] = mapped_column(String, index=True)
-    published_date: Mapped[datetime.datetime] = mapped_column(DateTime)
+    published_date: Mapped[datetime.datetime] = mapped_column(DateTime, index=True)
     link: Mapped[str] = mapped_column(String, unique=True)
     title_jp: Mapped[str | None] = mapped_column(String, nullable=True)
     producer_jp: Mapped[str | None] = mapped_column(String, nullable=True)
     voicebank_jp: Mapped[str | None] = mapped_column(String, nullable=True)
     image_url: Mapped[str | None] = mapped_column(String, nullable=True)
-    rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    rank: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
 
     ratings: Mapped[list["Rating"]] = relationship("Rating", back_populates="track")
     lyrics: Mapped[list["Lyric"]] = relationship(
@@ -142,6 +142,8 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)  # New admin flag
+    username: Mapped[str | None] = mapped_column(String, unique=True, index=True, nullable=True)
+    is_profile_public: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
 
 
 class Lyric(Base):

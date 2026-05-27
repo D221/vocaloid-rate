@@ -54,11 +54,21 @@ def generate_sitemap(db: Session = Depends(get_db)):
         (_url(base_url), None),
         (_url(base_url, "recently_added"), None),
         (_url(base_url, "playlists"), None),
-        (_url(base_url, "options"), None),
         (_url(base_url, "about"), None),
         (_url(base_url, "producers"), None),
         (_url(base_url, "voicebanks"), None),
     ]
+
+    # Add public profiles
+    public_users = (
+        db.query(models.User)
+        .filter(models.User.is_profile_public)
+        .filter(models.User.username.is_not(None))
+        .all()
+    )
+    for u in public_users:
+        if u.username:
+            entries.append((_url(base_url, "user", u.username), None))
 
     # Add public playlists
     public_playlists = db.query(models.Playlist).filter(models.Playlist.is_public).all()

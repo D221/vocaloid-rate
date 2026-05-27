@@ -1258,17 +1258,58 @@ def get_user_by_email(db: Session, email: str) -> Optional[models.User]:
 
 
 def create_user(db: Session, user: schemas.UserCreate) -> models.User:
+    import re
+
     hashed_password = get_password_hash(user.password)
-    db_user = models.User(email=user.email, hashed_password=hashed_password)
+
+    base_username = user.email.split("@")[0]
+    cleaned_username = re.sub(r"[^a-zA-Z0-9_\-]", "", base_username)
+    if not cleaned_username or len(cleaned_username) < 3:
+        cleaned_username = "user"
+
+    username = cleaned_username
+    counter = 1
+    while (
+        db.query(models.User).filter(models.User.username.ilike(username)).first()
+        is not None
+    ):
+        username = f"{cleaned_username}{counter}"
+        counter += 1
+
+    db_user = models.User(
+        email=user.email,
+        hashed_password=hashed_password,
+        username=username,
+        is_profile_public=False,
+    )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
 
 
+def get_user_by_username(db: Session, username: str) -> Optional[models.User]:
+    return db.query(models.User).filter(models.User.username.ilike(username)).first()
+
+
+def update_user_profile(
+    db: Session, user: models.User, username: str, is_profile_public: bool
+) -> models.User:
+    db_user = db.merge(user)
+    db_user.username = username
+    db_user.is_profile_public = is_profile_public
+    db.commit()
+    return db_user
+
+
 def get_users(db: Session) -> list[models.User]:
     """Gets a list of all users."""
     return db.query(models.User).all()
+
+
+def get_public_users(db: Session) -> list[models.User]:
+    """Gets a list of users whose profiles are public."""
+    return db.query(models.User).filter(models.User.is_profile_public).all()
 
 
 def delete_user(db: Session, user_id: int) -> bool:

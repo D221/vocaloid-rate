@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}{{ meta_title or title }} - {{ _('Vocaloid Rate') }}{% endblock %}
+
+{% block meta_description %}{{ meta_description }}{% endblock %}
+
+{% block og_title %}{{ meta_title or title }} - {{ _('Vocaloid Rate') }}{% endblock %}
+
+{% block og_description %}{{ meta_description }}{% endblock %}
+
+{% block content %}
+  {% include "partials/header.html" %}
+
+  <div class="mx-auto my-8 max-w-4xl p-4">
+    <h1 class="text-3xl font-bold text-header">{{ title }}</h1>
+    <p class="mt-2 text-gray-text">{{ subtitle }}</p>
+
+    <div class="mt-6 mb-6">
+      <input
+        type="text"
+        id="profileSearch"
+        placeholder="{{ _('Search profiles...') }}"
+        class="w-full rounded border border-border bg-card-bg p-3 text-white focus:border-cyan-hover focus:outline-none"
+      />
+    </div>
+
+    <div class="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4" id="profilesGrid">
+      {% for entity in entities %}
+        <a
+          href="/{{ type }}/{{ entity.username }}"
+          class="profile-card rounded border border-border bg-card-bg p-4 shadow-md transition-colors hover:bg-cyan-hover flex items-center justify-center text-center"
+          data-username="{{ entity.username | lower }}"
+        >
+          <h2 class="font-bold text-cyan-text text-lg">@{{ entity.username }}</h2>
+        </a>
+      {% else %}
+        <p class="text-gray-text col-span-full">{{ _('No public profiles found yet. Be the first to share yours!') }}</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const searchInput = document.getElementById("profileSearch");
+      const profilesGrid = document.getElementById("profilesGrid");
+      const cards = profilesGrid.querySelectorAll(".profile-card");
+
+      searchInput.addEventListener("input", (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        cards.forEach((card) => {
+          const username = card.dataset.username;
+          if (username.includes(query)) {
+            card.style.display = "";
+          } else {
+            card.style.display = "none";
+          }
+        });
+      });
+    });
+  </script>
+{% endblock %}

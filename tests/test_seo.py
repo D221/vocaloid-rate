@@ -84,3 +84,65 @@ def test_about_link_is_available_sitewide(client_factory):
 
     assert response.status_code == 200
     assert 'href="/about"' in response.text
+
+
+def test_sitemap_includes_public_user_profiles(client_factory, db_session, monkeypatch):
+    from app import models
+    from app.routers import sitemap
+
+    # Clear sitemap cache to ensure it reflects the new user
+    monkeypatch.setattr(sitemap, "_sitemap_cache", None)
+
+    # Create a public user
+    user = models.User(
+        email="public@example.com",
+        hashed_password="hashed",
+        username="miku_fan",
+        is_profile_public=True,
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    client = client_factory()
+    response = client.get("/sitemap.xml")
+
+    assert response.status_code == 200
+    assert "https://vocaloid-rate.vercel.app/user/miku_fan" in response.text
+
+
+def test_user_profile_page_renders_for_public_profile(client_factory, db_session):
+    from app import models
+
+    user = models.User(
+        email="public2@example.com",
+        hashed_password="hashed",
+        username="miku_fan2",
+        is_profile_public=True,
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    client = client_factory()
+    response = client.get("/user/miku_fan2")
+
+    assert response.status_code == 200
+    assert "miku_fan2" in response.text
+    assert "Rating Distribution" in response.text
+
+
+def test_user_profile_page_returns_403_for_private_profile(client_factory, db_session):
+    from app import models
+
+    user = models.User(
+        email="private@example.com",
+        hashed_password="hashed",
+        username="secret_user",
+        is_profile_public=False,
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    client = client_factory()
+    response = client.get("/user/secret_user")
+
+    assert response.status_code == 403

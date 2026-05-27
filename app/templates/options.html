@@ -137,11 +137,73 @@
         >
           <input type="checkbox" id="slim-mode-toggle" class="peer sr-only" />
           <div
-            class="h-6 w-11 rounded-full bg-border peer-checked:bg-cyan-text peer-focus:ring-4 peer-focus:ring-cyan-hover peer-focus:outline-none after:absolute after:start-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white"
+            class="h-6 w-11 rounded-full bg-border peer-checked:bg-cyan-text peer-focus:ring-4 peer-focus:ring-cyan-hover peer-focus:outline-none after:absolute after:inset-s-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white"
           ></div>
         </label>
       </div>
     </div>
+
+    {% if current_user and not is_local_env %}
+      <div class="mt-8 border-t border-border pt-6">
+        <h3 class="text-xl font-semibold text-header">
+          {{ _('Profile Settings') }}
+        </h3>
+        <div class="m-4 rounded border border-border bg-card-bg p-4 shadow-md">
+          <form id="profile-form" class="space-y-4">
+            <div>
+              <label for="profile-username" class="mb-1 block font-semibold">
+                {{ _('Username') }}
+              </label>
+              <input
+                type="text"
+                id="profile-username"
+                name="username"
+                value="{{ current_user.username or '' }}"
+                placeholder="{{ _('Choose a username') }}"
+                class="w-full rounded border border-border bg-background p-2 text-foreground"
+                pattern="^[a-zA-Z0-9_\-]+$"
+                title="Only letters, numbers, underscores, and hyphens are allowed."
+                required
+              />
+            </div>
+            <div class="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="profile-public"
+                name="is_profile_public"
+                class="form-checkbox h-4 w-4 text-cyan-text"
+                {% if current_user.is_profile_public %}checked{% endif %}
+              />
+              <label for="profile-public" class="text-foreground">
+                {{ _('Make my profile public (anyone can view my ratings & playlists)') }}
+              </label>
+            </div>
+            {% if current_user.is_profile_public and current_user.username %}
+              <div class="mt-1 text-sm text-gray-text">
+                {{ _('Your public profile URL:') }}
+                <a
+                  href="/user/{{ current_user.username }}"
+                  class="font-semibold text-cyan-text underline"
+                  target="_blank"
+                >
+                  /user/{{ current_user.username }}
+                </a>
+              </div>
+            {% endif %}
+            <div class="pt-2">
+              <button
+                type="submit"
+                id="save-profile-button"
+                class="cursor-pointer rounded border border-sky-text p-2 font-bold text-sky-text shadow-md ease-in-out hover:bg-sky-hover hover:transition-colors hover:duration-200"
+              >
+                {{ _('Save Profile Settings') }}
+              </button>
+            </div>
+            <p id="profile-status" class="mt-2 font-bold"></p>
+          </form>
+        </div>
+      </div>
+    {% endif %}
   </div>
 
   <script src="{{ url_for('static', path='js/options.min.js') }}"></script>

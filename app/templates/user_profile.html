@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - {{ _('Vocaloid Rate') }}{% endblock %}
+
+{% block head_extra %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+  {% set header_title = _("%(username)s's Profile") % {"username": profile_user.username} %}
+
+  <header
+    class="mb-8 flex flex-col items-center justify-between border-b border-border pb-4 md:flex-row"
+  >
+    <div>
+      <h1 class="text-3xl font-bold text-header">{{ header_title }}</h1>
+      <p class="mt-1 text-gray-text">
+        {{ _('Public Vocaloid Ratings & Playlists') }}
+      </p>
+    </div>
+    {% if current_user and current_user.id == profile_user.id %}
+      <div class="mt-4 md:mt-0">
+        <a
+          href="/options"
+          class="rounded border border-cyan-text px-4 py-2 font-bold text-cyan-text shadow-md ease-in-out hover:bg-cyan-hover hover:transition-colors hover:duration-200"
+        >
+          {{ _('Edit Profile Settings') }}
+        </a>
+      </div>
+    {% endif %}
+  </header>
+
+  <!-- Statistics Grid -->
+  <div class="mb-8 grid grid-cols-1 gap-6 md:grid-cols-4">
+    <!-- Overall Stats -->
+    <div
+      class="rounded border border-border bg-card-bg p-6 shadow-md md:col-span-2"
+    >
+      <h2
+        class="mt-0 border-b border-border pb-2 text-xl font-semibold text-header"
+      >
+        {{ _('Overall Statistics') }}
+      </h2>
+      <div class="mt-4 grid grid-cols-3 gap-4 text-center">
+        <div>
+          <div class="text-3xl font-bold text-cyan-text">
+            {{ stats.total_ratings }}
+          </div>
+          <div class="mt-1 text-sm text-gray-text">
+            {{ _('Total Ratings') }}
+          </div>
+        </div>
+        <div>
+          <div class="text-3xl font-bold text-cyan-text">
+            {% if stats.total_ratings > 0 %}{{ "%g"|format(stats.average_rating) }} ★{% else %}—{% endif %}
+          </div>
+          <div class="mt-1 text-sm text-gray-text">{{ _('Average') }}</div>
+        </div>
+        <div>
+          <div class="text-3xl font-bold text-cyan-text">
+            {% if stats.total_ratings > 0 %}{{ "%g"|format(stats.median_rating) }} ★{% else %}—{% endif %}
+          </div>
+          <div class="mt-1 text-sm text-gray-text">{{ _('Median') }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rating Distribution Chart -->
+    {% if stats.total_ratings > 0 %}
+      <div
+        class="rounded border border-border bg-card-bg p-6 shadow-md md:col-span-2"
+      >
+        <h2
+          class="mt-0 border-b border-border pb-2 text-xl font-semibold text-header"
+        >
+          {{ _('Rating Distribution') }}
+        </h2>
+        <div class="relative mt-2 h-32">
+          <canvas
+            id="profileRatingChart"
+            data-ratings="{{ stats.rating_distribution | tojson | forceescape }}"
+          ></canvas>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Favorites Row -->
+  <div class="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+    <!-- Top Producers -->
+    <div class="rounded border border-border bg-card-bg p-6 shadow-md">
+      <h2
+        class="mt-0 border-b border-border pb-2 text-xl font-semibold text-header"
+      >
+        {{ _('Favorite Producers') }}
+      </h2>
+      {% if stats.top_producers %}
+        <ul class="divide-y divide-border">
+          {% for producer in stats.top_producers %}
+            <li class="flex justify-between py-2.5">
+              <a
+                href="/producer/{{ producer.name | urlencode }}"
+                class="font-semibold text-cyan-text hover:underline"
+              >
+                {{ producer.name }}
+              </a>
+              <span class="font-medium text-header"
+                >{{ "%g"|format(producer.avg_rating) }} ★</span
+              >
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="mt-4 py-2 text-gray-text">
+          {{ _('Not enough rated tracks to determine favorite producers.') }}
+        </p>
+      {% endif %}
+    </div>
+
+    <!-- Top Voicebanks -->
+    <div class="rounded border border-border bg-card-bg p-6 shadow-md">
+      <h2
+        class="mt-0 border-b border-border pb-2 text-xl font-semibold text-header"
+      >
+        {{ _('Favorite Voicebanks') }}
+      </h2>
+      {% if stats.top_voicebanks %}
+        <ul class="divide-y divide-border">
+          {% for voicebank in stats.top_voicebanks %}
+            <li class="flex justify-between py-2.5">
+              <a
+                href="/voicebank/{{ voicebank.name | urlencode }}"
+                class="font-semibold text-cyan-text hover:underline"
+              >
+                {{ voicebank.name }}
+              </a>
+              <span class="font-medium text-header"
+                >{{ "%g"|format(voicebank.avg_rating) }} ★</span
+              >
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="mt-4 py-2 text-gray-text">
+          {{ _('Not enough rated tracks to determine favorite voicebanks.') }}
+        </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Playlists and Favorite Songs Grid -->
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <!-- Public Playlists (1/3 column) -->
+    <div
+      class="rounded border border-border bg-card-bg p-6 shadow-md lg:col-span-1"
+    >
+      <h2
+        class="mt-0 border-b border-border pb-2 text-xl font-semibold text-header"
+      >
+        {{ _('Public Playlists') }}
+      </h2>
+      {% if playlists %}
+        <div class="mt-4 flex flex-col gap-4">
+          {% for playlist in playlists %}
+            <div
+              class="rounded border border-border bg-background p-4 shadow-sm transition-shadow hover:shadow-md"
+            >
+              <h3 class="text-lg font-bold text-cyan-text">
+                <a href="/playlist/{{ playlist.id }}" class="hover:underline">
+                  {{ playlist.name }}
+                </a>
+              </h3>
+              {% if playlist.description %}
+                <p class="mt-1 line-clamp-2 text-sm text-gray-text">
+                  {{ playlist.description }}
+                </p>
+              {% endif %}
+              <div
+                class="mt-3 flex items-center justify-between text-xs text-gray-text"
+              >
+                <span>{{ playlist.playlist_tracks | length }} {{ _('tracks') }}</span>
+                <span>{{ playlist.created_at.strftime('%Y-%m-%d') if playlist.created_at else '' }}</span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="mt-4 py-2 text-gray-text">
+          {{ _('No public playlists available.') }}
+        </p>
+      {% endif %}
+    </div>
+
+    <!-- Favorite Tracks (2/3 column) -->
+    <div
+      class="rounded border border-border bg-card-bg p-6 shadow-md lg:col-span-2"
+    >
+      <h2
+        class="mt-0 border-b border-border pb-2 text-xl font-semibold text-header"
+      >
+        {{ _('Highly Rated Tracks') }}
+      </h2>
+      {% if tracks %}
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full border-collapse text-left">
+            <thead>
+              <tr
+                class="border-b border-border text-sm font-semibold text-gray-text"
+              >
+                <th class="py-2.5">{{ _('Title') }}</th>
+                <th class="py-2.5">{{ _('Rating') }}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+              {% for track in tracks %}
+                <tr>
+                  <td class="py-3 pr-4">
+                    <div class="font-semibold text-foreground">
+                      <a
+                        href="{{ track.link }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-cyan-text hover:underline"
+                      >
+                        {{ track.title }}
+                      </a>
+                    </div>
+                    <div class="mt-0.5 text-xs text-gray-text">
+                      {{ track.producer }}
+                      {% if track.voicebank %}| {{ track.voicebank }}{% endif %}
+                    </div>
+                  </td>
+                  <td class="py-3">
+                    <span
+                      class="rounded bg-sky-hover px-2.5 py-1 text-sm font-bold whitespace-nowrap text-sky-text"
+                    >
+                      {% if track.ratings %}{{ "%g"|format(track.ratings[0].rating) }}{% else %}—{% endif %} ★
+                    </span>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="mt-4 py-2 text-gray-text">
+          {{ _('No highly rated tracks to display. (Songs rated 8★ and above will show up here)') }}
+        </p>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if stats.total_ratings > 0 %}
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const chartCanvas = document.getElementById("profileRatingChart");
+        if (!chartCanvas) return;
+        try {
+          const ratingsData = JSON.parse(chartCanvas.dataset.ratings);
+          const labels = Object.keys(ratingsData).sort(
+            (a, b) => parseFloat(a) - parseFloat(b),
+          );
+          const data = labels.map((label) => ratingsData[label]);
+          const isDarkMode =
+            document.documentElement.dataset.theme === "dark" ||
+            document.documentElement.dataset.theme === "night" ||
+            document.documentElement.dataset.theme === "black";
+          const gridColor = isDarkMode
+            ? "rgba(255, 255, 255, 0.1)"
+            : "rgba(0, 0, 0, 0.1)";
+          const ticksColor = isDarkMode ? "#e0e0e0" : "#666";
+
+          new Chart(chartCanvas, {
+            type: "bar",
+            data: {
+              labels: labels.map((l) => {
+                const rating = parseFloat(l);
+                return `${Number.isInteger(rating) ? rating.toFixed(0) : rating} ★`;
+              }),
+              datasets: [
+                {
+                  label: "{{ _('Tracks') }}",
+                  data: data,
+                  backgroundColor: "rgba(0, 188, 212, 0.6)",
+                  borderColor: "rgb(0, 188, 212)",
+                  borderWidth: 1,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+              },
+              scales: {
+                x: {
+                  grid: { color: gridColor },
+                  ticks: { color: ticksColor },
+                },
+                y: {
+                  beginAtZero: true,
+                  grid: { color: gridColor },
+                  ticks: { color: ticksColor, stepSize: 1 },
+                },
+              },
+            },
+          });
+        } catch (e) {
+          console.error("Failed to render profile rating chart:", e);
+        }
+      });
+    </script>
+  {% endif %}
+{% endblock %}

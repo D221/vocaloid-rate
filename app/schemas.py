@@ -72,6 +72,13 @@ class User(UserBase):
 
     id: int
     is_active: bool
+    username: Optional[str] = None
+    is_profile_public: bool = False
+
+
+class UserProfileUpdate(BaseModel):
+    username: str = Field(..., min_length=3, max_length=30, pattern="^[a-zA-Z0-9_\\-]+$")
+    is_profile_public: bool
 
 
 class Token(BaseModel):

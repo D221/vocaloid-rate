@@ -12,22 +12,30 @@
     <div class="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
       <a
         href="/playlists"
-        class="rounded border border-border bg-card-bg p-6 text-center shadow-md transition-colors hover:bg-cyan-hover"
+        class="flex cursor-pointer items-center justify-center rounded border border-sky-text p-2 text-center font-bold text-sky-text shadow-md transition-colors duration-200 ease-in-out hover:bg-sky-hover"
       >
         <h2 class="text-xl font-bold text-cyan-text">{{ _('Playlists') }}</h2>
       </a>
       <a
         href="/producers"
-        class="rounded border border-border bg-card-bg p-6 text-center shadow-md transition-colors hover:bg-cyan-hover"
+        class="flex cursor-pointer items-center justify-center rounded border border-sky-text p-2 text-center font-bold text-sky-text shadow-md transition-colors duration-200 ease-in-out hover:bg-sky-hover"
       >
         <h2 class="text-xl font-bold text-cyan-text">{{ _('Producers') }}</h2>
       </a>
       <a
         href="/voicebanks"
-        class="rounded border border-border bg-card-bg p-6 text-center shadow-md transition-colors hover:bg-cyan-hover"
+        class="flex cursor-pointer items-center justify-center rounded border border-sky-text p-2 text-center font-bold text-sky-text shadow-md transition-colors duration-200 ease-in-out hover:bg-sky-hover"
       >
         <h2 class="text-xl font-bold text-cyan-text">{{ _('Voicebanks') }}</h2>
       </a>
+      {% if not is_local_auth_mode %}
+      <a
+        href="/profiles"
+        class="flex cursor-pointer items-center justify-center rounded border border-sky-text p-2 text-center font-bold text-sky-text shadow-md transition-colors duration-200 ease-in-out hover:bg-sky-hover"
+      >
+        <h2 class="text-xl font-bold text-cyan-text">{{ _('Public Profiles') }}</h2>
+      </a>
+      {% endif %}
     </div>
   </div>
 {% endblock %}

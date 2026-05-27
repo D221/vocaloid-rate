@@ -7,7 +7,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
-from app.auth import create_access_token, get_optional_current_user
+from app.auth import create_access_token, get_optional_current_user, get_current_user
 from app.dependencies import get_db, get_translations, templates
 from app.security import ACCESS_TOKEN_EXPIRE_MINUTES
 
@@ -132,3 +132,36 @@ async def logout(response: Response) -> Response:
         secure=main.should_use_secure_cookies(),
     )
     return response
+
+
+@router.put("/api/users/me/profile", status_code=204)
+def update_profile(
+    profile_data: schemas.UserProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+) -> Response:
+    main = _main_module()
+    if main.is_local_auth_mode():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profile settings are not available in local mode",
+        )
+
+    # Check if username is already taken by another user
+    existing_user = db.query(models.User).filter(
+        models.User.username.ilike(profile_data.username),
+        models.User.id != current_user.id
+    ).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username is already taken"
+        )
+
+    crud.update_user_profile(
+        db,
+        user=current_user,
+        username=profile_data.username,
+        is_profile_public=profile_data.is_profile_public,
+    )
+    return Response(status_code=204)

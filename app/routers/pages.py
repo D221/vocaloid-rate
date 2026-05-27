@@ -587,6 +587,33 @@ async def view_explore_page(
     return await _render_page("explore.html", request, translations, context)
 
 
+@router.get("/profiles")
+async def view_profiles_index(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    translations: Translations = Depends(get_translations),
+):
+    main = _main_module()
+    if main.is_local_auth_mode():
+        return RedirectResponse(url="/explore")
+    
+    _ = translations.gettext
+    users = crud.get_public_users(db)
+    context = {
+        "request": request,
+        "current_user": current_user,
+        "title": _("Public Profiles"),
+        "subtitle": _("Discover public user profiles and their favorite tracks."),
+        "type": "user",
+        "entities": users,
+        "meta_title": _("Public Profiles"),
+        "meta_description": _("Browse public user profiles."),
+        "_": _,
+    }
+    return await _render_page("profiles_index.html", request, translations, context)
+
+
 @router.get("/producers")
 async def view_producers_index(
     request: Request,
@@ -704,10 +731,69 @@ async def view_voicebank_page(
         "title": _("%(name)s Vocaloid Songs") % {"name": voicebank.name},
         "subtitle": _("Newest Vocaloid tracks featuring %(name)s.")
         % {"name": voicebank.name},
-        "meta_title": _("%(name)s Vocaloid Songs") % {"name": voicebank.name},
         "meta_description": _(
             "Browse %(name)s Vocaloid songs on Vocaloid Rate, sorted by newest uploads."
         )
         % {"name": voicebank.name},
     }
     return await _render_page("entity_view.html", request, translations, context)
+
+
+@router.get("/user/{username}")
+async def view_user_profile(
+    username: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    translations: Translations = Depends(get_translations),
+):
+    _ = translations.gettext
+    locale = _get_locale(translations)
+
+    user = db.query(models.User).filter(models.User.username.ilike(username)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not user.is_profile_public:
+        # If user profile is private, allow access ONLY if the logged-in user is the owner
+        if current_user is None or current_user.id != user.id:
+            raise HTTPException(status_code=403, detail="This profile is private")
+
+    # Get stats
+    stats = crud.get_rating_statistics(db, user_id=user.id, locale=locale)
+
+    # Get public playlists
+    playlists = (
+        db.query(models.Playlist)
+        .filter(models.Playlist.user_id == user.id, models.Playlist.is_public)
+        .all()
+    )
+
+    # Get top rated tracks (rating >= 8)
+    top_tracks = (
+        db.query(models.Track)
+        .join(models.Rating)
+        .filter(models.Rating.user_id == user.id, models.Rating.rating >= 8)
+        .order_by(models.Rating.rating.desc(), models.Rating.updated_at.desc())
+        .limit(20)
+        .all()
+    )
+
+    context = {
+        "request": request,
+        "current_user": current_user,
+        "_": _,
+        "profile_user": user,
+        "stats": stats,
+        "playlists": playlists,
+        "tracks": top_tracks,
+        "title": _("%(username)s's Vocaloid Profile") % {"username": user.username},
+        "meta_title": _("%(username)s's Vocaloid Profile - Vocaloid Rate")
+        % {"username": user.username},
+        "meta_description": _(
+            "Explore %(username)s's favorite Vocaloid producers, voicebanks, ratings, and public playlists on Vocaloid Rate."
+        )
+        % {"username": user.username},
+    }
+
+    return await _render_page("user_profile.html", request, translations, context)

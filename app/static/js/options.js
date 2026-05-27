@@ -151,4 +151,64 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+  // Profile settings functionality
+  const profileForm = document.getElementById("profile-form");
+  const profileStatus = document.getElementById("profile-status");
+  const saveProfileButton = document.getElementById("save-profile-button");
+
+  if (profileForm) {
+    profileForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const usernameInput = document.getElementById("profile-username");
+      const publicCheckbox = document.getElementById("profile-public");
+
+      const username = usernameInput.value.trim();
+      const is_profile_public = publicCheckbox.checked;
+
+      saveProfileButton.disabled = true;
+      profileStatus.textContent = "Saving...";
+      profileStatus.className = "mt-2 font-bold text-gray-text";
+
+      try {
+        const response = await fetch("/api/users/me/profile", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username: username,
+            is_profile_public: is_profile_public,
+          }),
+        });
+
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(
+            errData.detail || "Failed to update profile settings.",
+          );
+        }
+
+        profileStatus.textContent =
+          "Profile updated successfully! Reloading to apply...";
+        profileStatus.className = "mt-2 font-bold text-green-600";
+        if (typeof window.showToast === "function") {
+          window.showToast("Profile settings saved.", "success");
+        }
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } catch (error) {
+        console.error("Profile update failed:", error);
+        profileStatus.textContent = `Error: ${error.message}`;
+        profileStatus.className = "mt-2 font-bold text-red-600";
+        if (typeof window.showToast === "function") {
+          window.showToast(error.message, "error");
+        }
+        saveProfileButton.disabled = false;
+      }
+    });
+  }
 });
