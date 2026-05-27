@@ -54,16 +54,18 @@ def get_password_hash(password: str) -> str:
 
 
 def authenticate_user(
-    db: Session, email: str, password: str
+    db: Session, identifier: str, password: str
 ) -> Optional[crud.models.User]:
-    user = crud.get_user_by_email(db, email=email)
+    user = crud.get_user_by_email(db, email=identifier)
+    if not user:
+        user = crud.get_user_by_username(db, username=identifier)
 
     if not user:
-        logging.warning(f"Auth failed: User with email {email} not found")
+        logging.warning("Auth failed: User %s not found", identifier)
         return None
 
     if not verify_password(password, user.hashed_password):
-        logging.warning(f"Auth failed: Incorrect password for user {email}")
+        logging.warning("Auth failed: Incorrect password for user %s", identifier)
         return None
 
     return user
