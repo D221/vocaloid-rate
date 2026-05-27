@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -660,13 +661,29 @@ async def view_producer_page(
     if not producer:
         raise HTTPException(status_code=404, detail="Producer not found")
 
+    tracks = _tracks_by_newest(producer.tracks)
+    entity_json_ld = {
+        "@context": "https://schema.org",
+        "@type": "MusicGroup",
+        "name": producer.name,
+        "genre": "Vocaloid",
+        "track": [
+            {
+                "@type": "MusicRecording",
+                "name": track.title,
+                "url": track.link,
+            }
+            for track in tracks[:10]
+        ],
+    }
     context = {
         "request": request,
         "current_user": current_user,
         "_": _,
         "entity": producer,
         "type": "producer",
-        "tracks": _tracks_by_newest(producer.tracks),
+        "tracks": tracks,
+        "entity_json_ld": json.dumps(entity_json_ld),
         "title": _("%(name)s Vocaloid Songs") % {"name": producer.name},
         "subtitle": _("Newest Vocaloid tracks by %(name)s.") % {"name": producer.name},
         "meta_title": _("%(name)s Vocaloid Songs") % {"name": producer.name},
@@ -721,13 +738,29 @@ async def view_voicebank_page(
     if not voicebank:
         raise HTTPException(status_code=404, detail="Voicebank not found")
 
+    tracks = _tracks_by_newest(voicebank.tracks)
+    entity_json_ld = {
+        "@context": "https://schema.org",
+        "@type": "MusicGroup",
+        "name": voicebank.name,
+        "genre": "Vocaloid",
+        "track": [
+            {
+                "@type": "MusicRecording",
+                "name": track.title,
+                "url": track.link,
+            }
+            for track in tracks[:10]
+        ],
+    }
     context = {
         "request": request,
         "current_user": current_user,
         "_": _,
         "entity": voicebank,
         "type": "voicebank",
-        "tracks": _tracks_by_newest(voicebank.tracks),
+        "tracks": tracks,
+        "entity_json_ld": json.dumps(entity_json_ld),
         "title": _("%(name)s Vocaloid Songs") % {"name": voicebank.name},
         "subtitle": _("Newest Vocaloid tracks featuring %(name)s.")
         % {"name": voicebank.name},

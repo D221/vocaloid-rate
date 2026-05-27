@@ -11,7 +11,9 @@
   <div class="mb-6 rounded border border-border bg-card-bg p-4 shadow-md">
     <label class="flex items-center justify-between gap-4">
       <span>
-        <span class="block font-semibold text-header">{{ _('Playlist Visibility') }}</span>
+        <span class="block font-semibold text-header"
+          >{{ _('Playlist Visibility') }}</span
+        >
         <span class="text-sm text-gray-text">
           {{ _('Public playlists appear on your profile and can be viewed by anyone.') }}
         </span>
@@ -21,6 +23,9 @@
           type="checkbox"
           id="playlist-public-input"
           class="h-4 w-4 accent-cyan-text"
+          data-playlist-id="{{ playlist.id }}"
+          data-playlist-name="{{ playlist.name }}"
+          data-playlist-description="{{ playlist.description or '' }}"
           {% if playlist.is_public %}checked{% endif %}
         />
         {{ _('Public') }}
@@ -169,21 +174,24 @@
         const name =
           titleInput?.value.trim() ||
           document.querySelector("h1 .view-mode")?.textContent.trim() ||
-          {{ playlist.name | tojson }};
+          visibilityInput.dataset.playlistName;
         const description = descriptionInput
           ? descriptionInput.value.trim()
-          : {{ (playlist.description or "") | tojson }};
+          : visibilityInput.dataset.playlistDescription;
 
         try {
-          const response = await fetch("/api/playlists/{{ playlist.id }}", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name,
-              description,
-              is_public: visibilityInput.checked,
-            }),
-          });
+          const response = await fetch(
+            `/api/playlists/${visibilityInput.dataset.playlistId}`,
+            {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                name,
+                description,
+                is_public: visibilityInput.checked,
+              }),
+            },
+          );
           if (!response.ok) throw new Error("Failed to save visibility.");
           if (typeof window.showToast === "function") {
             window.showToast("Playlist visibility saved.");

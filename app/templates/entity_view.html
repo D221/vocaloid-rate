@@ -9,22 +9,20 @@
 {% block og_description %}{{ meta_description }}{% endblock %}
 
 {% block head_extra %}
-  <script type="application/ld-json">
-  {
-    "@context": "https://schema.org",
-    "@type": "MusicGroup",
-    "name": "{{ entity.name }}",
-    "genre": "Vocaloid",
-    "track": [
-      {% for track in tracks[:10] %}
-      {
-        "@type": "MusicRecording",
-        "name": "{{ track.title }}",
-        "url": "{{ track.link }}"
-      }{% if not loop.last %},{% endif %}
-      {% endfor %}
-    ]
-  }
+  <script
+    id="entity-json-ld-data"
+    type="application/json"
+    data-json="{{ entity_json_ld | forceescape }}"
+  ></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const source = document.getElementById("entity-json-ld-data");
+      if (!source?.dataset.json) return;
+      const script = document.createElement("script");
+      script.type = "application/ld+json";
+      script.textContent = source.dataset.json;
+      document.head.appendChild(script);
+    });
   </script>
 {% endblock %}
 
@@ -63,7 +61,7 @@
                 </span>
               {% endif %}
             </a>
-            <div class="flex flex-col min-w-0">
+            <div class="flex min-w-0 flex-col">
               <div class="flex items-center gap-2">
                 {% if track.rank %}
                   <span
@@ -84,7 +82,7 @@
               </div>
 
               {% if track.title_jp and track.title_jp != track.title %}
-                <span class="truncate text-xs italic text-gray-text"
+                <span class="truncate text-xs text-gray-text italic"
                   >{{ track.title_jp }}</span
                 >
               {% endif %}
@@ -108,7 +106,7 @@
               </span>
             </div>
           </div>
-          <span class="text-xs text-gray-text whitespace-nowrap"
+          <span class="text-xs whitespace-nowrap text-gray-text"
             >{{ track.published_date | time_ago }}</span
           >
         </div>

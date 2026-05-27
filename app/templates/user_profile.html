@@ -52,13 +52,23 @@
         </div>
         <div>
           <div class="text-3xl font-bold text-cyan-text">
-            {% if stats.total_ratings > 0 %}{{ "%g"|format(stats.average_rating) }} ★{% else %}—{% endif %}
+            {% if stats.total_ratings > 0 %}
+              {{ "%g"|format(stats.average_rating) }}
+              ★
+            {% else %}
+              —
+            {% endif %}
           </div>
           <div class="mt-1 text-sm text-gray-text">{{ _('Average') }}</div>
         </div>
         <div>
           <div class="text-3xl font-bold text-cyan-text">
-            {% if stats.total_ratings > 0 %}{{ "%g"|format(stats.median_rating) }} ★{% else %}—{% endif %}
+            {% if stats.total_ratings > 0 %}
+              {{ "%g"|format(stats.median_rating) }}
+              ★
+            {% else %}
+              —
+            {% endif %}
           </div>
           <div class="mt-1 text-sm text-gray-text">{{ _('Median') }}</div>
         </div>
@@ -178,8 +188,13 @@
               <div
                 class="mt-3 flex items-center justify-between text-xs text-gray-text"
               >
-                <span>{{ playlist.playlist_tracks | length }} {{ _('tracks') }}</span>
-                <span>{{ playlist.created_at.strftime('%Y-%m-%d') if playlist.created_at else '' }}</span>
+                <span
+                  >{{ playlist.playlist_tracks | length }}
+                  {{ _('tracks') }}</span
+                >
+                <span
+                  >{{ playlist.created_at.strftime('%Y-%m-%d') if playlist.created_at else '' }}</span
+                >
               </div>
             </div>
           {% endfor %}
@@ -234,7 +249,8 @@
                     <span
                       class="rounded bg-sky-hover px-2.5 py-1 text-sm font-bold whitespace-nowrap text-sky-text"
                     >
-                      {% if track.ratings %}{{ "%g"|format(track.ratings[0].rating) }}{% else %}—{% endif %} ★
+                      {% if track.ratings %}{{ "%g"|format(track.ratings[0].rating) }}{% else %}—{% endif %}
+                      ★
                     </span>
                   </td>
                 </tr>

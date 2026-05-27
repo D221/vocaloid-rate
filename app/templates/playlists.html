@@ -80,7 +80,9 @@
               <p class="text-gray-text">
                 {{ playlist.description or _("No description.") }}
               </p>
-              <span class="mt-2 inline-flex rounded border border-border px-2 py-0.5 text-xs font-semibold text-gray-text">
+              <span
+                class="mt-2 inline-flex rounded border border-border px-2 py-0.5 text-xs font-semibold text-gray-text"
+              >
                 {% if playlist.is_public %}{{ _('Public') }}{% else %}{{ _('Private') }}{% endif %}
               </span>
             </div>

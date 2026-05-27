@@ -1,3 +1,5 @@
+import re
+
 from app import auth, main, models
 
 
@@ -88,5 +90,5 @@ def test_profile_formats_whole_number_track_ratings_without_decimal(
     response = client.get("/user/rating_display")
 
     assert response.status_code == 200
-    assert "10 ★" in response.text
+    assert re.search(r"10\s+★", response.text)
     assert "10.0 ★" not in response.text

@@ -24,17 +24,24 @@
       />
     </div>
 
-    <div class="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4" id="profilesGrid">
+    <div
+      class="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4"
+      id="profilesGrid"
+    >
       {% for entity in entities %}
         <a
           href="/{{ type }}/{{ entity.username }}"
-          class="profile-card rounded border border-border bg-card-bg p-4 shadow-md transition-colors hover:bg-cyan-hover flex items-center justify-center text-center"
+          class="profile-card flex items-center justify-center rounded border border-border bg-card-bg p-4 text-center shadow-md transition-colors hover:bg-cyan-hover"
           data-username="{{ entity.username | lower }}"
         >
-          <h2 class="font-bold text-cyan-text text-lg">@{{ entity.username }}</h2>
+          <h2 class="text-lg font-bold text-cyan-text">
+            @{{ entity.username }}
+          </h2>
         </a>
       {% else %}
-        <p class="text-gray-text col-span-full">{{ _('No public profiles found yet. Be the first to share yours!') }}</p>
+        <p class="col-span-full text-gray-text">
+          {{ _('No public profiles found yet. Be the first to share yours!') }}
+        </p>
       {% endfor %}
     </div>
   </div>
