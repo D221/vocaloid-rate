@@ -34,6 +34,7 @@ class Track(BaseModel):
 class PlaylistBase(BaseModel):
     name: str
     description: Optional[str] = None
+    is_public: bool = True
 
 
 class PlaylistCreate(PlaylistBase):

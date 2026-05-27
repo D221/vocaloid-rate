@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const allTracksList = document.getElementById("all-tracks-list");
   const playlistTracksList = document.getElementById("playlist-tracks-list");
   const trackSearch = document.getElementById("track-search");
+  const playlistPublicInput = document.getElementById("playlist-public-input");
 
   // --- HELPER FUNCTIONS ---
 
@@ -153,7 +154,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await fetch(`/api/playlists/${playlistId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName, description: newDescription }),
+        body: JSON.stringify({
+          name: newName,
+          description: newDescription,
+          is_public: playlistPublicInput ? playlistPublicInput.checked : true,
+        }),
       });
       if (!response.ok) throw new Error("Failed to save details.");
 
@@ -189,6 +194,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   });
+
+  if (playlistPublicInput) {
+    playlistPublicInput.addEventListener("change", saveDetailsChanges);
+  }
 
   // --- SORTABLEJS INITIALIZATION ---
 

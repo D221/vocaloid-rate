@@ -17,6 +17,7 @@ router = APIRouter(tags=["Playlists"])
 class PlaylistUpdate(BaseModel):
     name: str
     description: Optional[str] = None
+    is_public: bool = True
 
 
 @router.get("/api/playlists", response_model=list[schemas.PlaylistSimple])
@@ -91,6 +92,7 @@ def update_playlist_details(
         user_id=current_user.id,
         name=playlist_update.name,
         description=playlist_update.description,
+        is_public=playlist_update.is_public,
     )
     if not db_playlist:
         raise HTTPException(

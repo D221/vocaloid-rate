@@ -8,6 +8,26 @@
   {% set subtitle = playlist.description or _("No description.") %}
   {% include "partials/header.html" %}
 
+  <div class="mb-6 rounded border border-border bg-card-bg p-4 shadow-md">
+    <label class="flex items-center justify-between gap-4">
+      <span>
+        <span class="block font-semibold text-header">{{ _('Playlist Visibility') }}</span>
+        <span class="text-sm text-gray-text">
+          {{ _('Public playlists appear on your profile and can be viewed by anyone.') }}
+        </span>
+      </span>
+      <span class="flex items-center gap-2 font-semibold text-foreground">
+        <input
+          type="checkbox"
+          id="playlist-public-input"
+          class="h-4 w-4 accent-cyan-text"
+          {% if playlist.is_public %}checked{% endif %}
+        />
+        {{ _('Public') }}
+      </span>
+    </label>
+  </div>
+
   <!-- Main Editor Layout -->
   <div
     class="grid grid-cols-1 gap-8 md:grid-cols-2"
@@ -138,4 +158,43 @@
 
   <script src="{{ url_for('static', path='js/main.min.js') }}"></script>
   <script src="{{ url_for('static', path='js/playlist_editor.min.js') }}"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const visibilityInput = document.getElementById("playlist-public-input");
+      if (!visibilityInput) return;
+
+      visibilityInput.addEventListener("change", async () => {
+        const titleInput = document.querySelector("h1 .edit-mode");
+        const descriptionInput = document.querySelector("p .edit-mode");
+        const name =
+          titleInput?.value.trim() ||
+          document.querySelector("h1 .view-mode")?.textContent.trim() ||
+          {{ playlist.name | tojson }};
+        const description = descriptionInput
+          ? descriptionInput.value.trim()
+          : {{ (playlist.description or "") | tojson }};
+
+        try {
+          const response = await fetch("/api/playlists/{{ playlist.id }}", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name,
+              description,
+              is_public: visibilityInput.checked,
+            }),
+          });
+          if (!response.ok) throw new Error("Failed to save visibility.");
+          if (typeof window.showToast === "function") {
+            window.showToast("Playlist visibility saved.");
+          }
+        } catch (error) {
+          visibilityInput.checked = !visibilityInput.checked;
+          if (typeof window.showToast === "function") {
+            window.showToast(error.message, "error");
+          }
+        }
+      });
+    });
+  </script>
 {% endblock %}

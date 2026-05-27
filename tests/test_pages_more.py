@@ -26,6 +26,24 @@ def test_playlist_edit_page_renders_for_owner(client_factory, user, playlist):
     assert "Favorites" in response.text
 
 
+def test_playlist_edit_page_reflects_private_visibility(
+    client_factory, db_session, user, playlist
+):
+    playlist.is_public = False
+    db_session.commit()
+    client = client_factory(optional_user=user)
+
+    response = client.get(f"/playlist/edit/{playlist.id}")
+
+    assert response.status_code == 200
+    assert 'id="playlist-public-input"' in response.text
+    checkbox_fragment = response.text.split('id="playlist-public-input"', 1)[1].split(
+        "/>",
+        1,
+    )[0]
+    assert "checked" not in checkbox_fragment
+
+
 def test_options_page_renders(client_factory):
     client = client_factory()
 

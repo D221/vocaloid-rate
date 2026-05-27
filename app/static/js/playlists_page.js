@@ -2,6 +2,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const createBtn = document.getElementById("create-new-playlist-btn");
   const createPanel = document.getElementById("create-playlist-panel");
   const createInput = document.getElementById("new-playlist-name-input");
+  const createPublicInput = document.getElementById(
+    "new-playlist-public-input",
+  );
   const createSaveBtn = document.getElementById("save-new-playlist-btn");
   const createStatus = document.getElementById("create-playlist-status");
   const playlistsContainer = document.getElementById("playlists-list");
@@ -32,14 +35,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const safeDescription = escapeHtml(
       playlist.description || window._("No description."),
     );
+    const isPublic = playlist.is_public !== false;
+    const visibilityLabel = isPublic ? window._("Public") : window._("Private");
     return `
       <div class="flex items-center justify-between rounded border border-border bg-card-bg p-4 shadow-md"
         data-playlist-id="${playlist.id}"
         data-playlist-name="${safeName}"
-        data-playlist-description="${safeDescription}">
+        data-playlist-description="${safeDescription}"
+        data-playlist-public="${isPublic ? "true" : "false"}">
         <div>
           <h2 class="text-xl font-bold text-header">${safeName}</h2>
           <p class="text-gray-text">${safeDescription}</p>
+          <span class="mt-2 inline-flex rounded border border-border px-2 py-0.5 text-xs font-semibold text-gray-text">${visibilityLabel}</span>
         </div>
         <div class="flex shrink-0 gap-2">
           <a href="/playlist/${playlist.id}" class="cursor-pointer rounded border border-gray-text p-2 font-bold text-gray-text shadow-md ease-in-out hover:bg-gray-hover hover:transition-colors hover:duration-200" title="${window._("View")}">${window._("View")}</a>
@@ -106,7 +113,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await fetch("/api/playlists", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({
+          name,
+          is_public: createPublicInput ? createPublicInput.checked : true,
+        }),
       });
       if (!response.ok) {
         throw new Error(window._("Failed to create playlist."));
@@ -117,8 +127,10 @@ document.addEventListener("DOMContentLoaded", () => {
         id: playlist.id,
         name: playlist.name,
         description: playlist.description || "",
+        is_public: playlist.is_public,
       });
       createInput.value = "";
+      if (createPublicInput) createPublicInput.checked = true;
       createStatus.textContent = window._("Playlist created.");
       showMessage(window._("Playlist created."));
       setCreatePanelVisibility(false);
