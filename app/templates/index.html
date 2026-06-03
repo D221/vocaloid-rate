@@ -39,7 +39,7 @@
 
   {% set pagination_spacing_class = "mt-8" %}
   {% include "partials/pagination_controls.html" %}
-
+  <!-- prettier-ignore-start -->
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -66,6 +66,7 @@
       ]
     }
   </script>
+  <!-- prettier-ignore-end -->
 
   <script src="{{ url_for('static', path='js/main.min.js') }}"></script>
 {% endblock %}
