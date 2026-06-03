@@ -64,6 +64,7 @@ def cron_bot_bsky(request: Request, background_tasks: BackgroundTasks):
     # Define the task to run the bot script
     def run_bot_task():
         import subprocess
+
         subprocess.run(["uv", "run", "scripts/bot_daily_top.py", "--bsky"])
 
     background_tasks.add_task(run_bot_task)
