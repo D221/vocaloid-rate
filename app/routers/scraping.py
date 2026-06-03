@@ -47,6 +47,29 @@ def cron_scrape(request: Request, background_tasks: BackgroundTasks):
     return {"message": "Scraping task has been queued."}
 
 
+@router.get("/api/cron/bot-bsky")
+def cron_bot_bsky(request: Request, background_tasks: BackgroundTasks):
+    auth_header = request.headers.get("Authorization")
+    cron_secret = os.environ.get("CRON_SECRET")
+
+    if not cron_secret:
+        raise HTTPException(
+            status_code=503,
+            detail="CRON_SECRET is not configured for scheduled tasks.",
+        )
+
+    if auth_header != f"Bearer {cron_secret}":
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # Define the task to run the bot script
+    def run_bot_task():
+        import subprocess
+        subprocess.run(["uv", "run", "scripts/bot_daily_top.py", "--bsky"])
+
+    background_tasks.add_task(run_bot_task)
+    return {"message": "Bluesky bot task has been queued."}
+
+
 @router.get("/api/scrape-status")
 def get_scrape_status():
     return {"status": read_scrape_status()}
