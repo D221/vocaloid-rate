@@ -37,7 +37,8 @@ def test_scrape_starts_for_admin_and_resets_status(
     assert seen["called"] is True
 
 
-def test_cron_scrape_requires_secret(client_factory):
+def test_cron_scrape_requires_secret(client_factory, monkeypatch):
+    monkeypatch.delenv("CRON_SECRET", raising=False)
     client = client_factory()
 
     response = client.get("/api/cron/scrape")

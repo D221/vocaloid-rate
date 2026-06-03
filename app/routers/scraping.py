@@ -1,11 +1,15 @@
 import os
+import sys
+from dotenv import load_dotenv
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 
-from app import models
-from app.auth import get_current_user
-from app.config import is_local_mode
-from app.services.scraping import (
+load_dotenv()
+
+from app import models  # noqa: E402
+from app.auth import get_current_user  # noqa: E402
+from app.config import is_local_mode  # noqa: E402
+from app.services.scraping import (  # noqa: E402
     read_scrape_status,
     scrape_and_populate_task,
     write_scrape_status,
@@ -64,8 +68,25 @@ def cron_bot_bsky(request: Request, background_tasks: BackgroundTasks):
     # Define the task to run the bot script
     def run_bot_task():
         import subprocess
+        import logging
 
-        subprocess.run(["uv", "run", "scripts/bot_daily_top.py", "--bsky"])
+        logger = logging.getLogger("bot-task")
+        logger.info("Starting Bluesky bot background task...")
+
+        try:
+            # Capture output to see errors
+            result = subprocess.run(
+                [sys.executable, "-m", "scripts.bot_daily_top", "--bsky"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            logger.info(f"Bot task output: {result.stdout}")
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Bot task failed with exit code {e.returncode}")
+            logger.error(f"Bot task error output: {e.stderr}")
+        except Exception as e:
+            logger.error(f"Unexpected error in bot task: {e}")
 
     background_tasks.add_task(run_bot_task)
     return {"message": "Bluesky bot task has been queued."}
