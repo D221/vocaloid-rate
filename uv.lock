@@ -1060,6 +1060,7 @@ dependencies = [
     { name = "bcrypt" },
     { name = "beautifulsoup4" },
     { name = "fastapi" },
+    { name = "httpx2" },
     { name = "jinja2" },
     { name = "mako" },
     { name = "passlib" },
@@ -1075,7 +1076,6 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "httpx2" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
@@ -1090,6 +1090,7 @@ requires-dist = [
     { name = "bcrypt", specifier = "==3.2.0" },
     { name = "beautifulsoup4", specifier = ">=4" },
     { name = "fastapi", specifier = ">=0.100.0" },
+    { name = "httpx2", specifier = ">=2.3.0" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "mako", specifier = ">=1.3.10" },
     { name = "passlib", specifier = "==1.7.4" },
@@ -1105,7 +1106,6 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "httpx2", specifier = ">=2.3.0" },
     { name = "pytest", specifier = ">=9.0.0" },
     { name = "pytest-cov", specifier = ">=7.0.0" },
     { name = "ruff", specifier = ">=0.15.14" },
