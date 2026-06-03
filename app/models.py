@@ -104,6 +104,21 @@ class UpdateLog(Base):
     )
 
 
+class RankHistory(Base):
+    __tablename__ = "rank_history"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    track_id: Mapped[int] = mapped_column(ForeignKey("tracks.id"), index=True)
+    rank: Mapped[int] = mapped_column(Integer, index=True)
+    recorded_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime,
+        default=datetime.datetime.now(datetime.timezone.utc),
+        index=True,
+    )
+
+    track: Mapped["Track"] = relationship("Track")
+
+
 class PlaylistTrack(Base):
     __tablename__ = "playlist_track_association"
 

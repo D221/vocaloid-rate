@@ -26,6 +26,25 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="{{ request.url }}" />
     <meta
+      property="og:image"
+      content="{% block og_image %}{{ request.base_url }}static/android-chrome-512x512.png{% endblock %}"
+    />
+
+    <!-- Twitter Card Metadata -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="{% block twitter_title %}Vocaloid Rate{% endblock %}"
+    />
+    <meta
+      name="twitter:description"
+      content="{% block twitter_description %}Manage and rate your favorite Vocaloid tracks.{% endblock %}"
+    />
+    <meta
+      name="twitter:image"
+      content="{% block twitter_image %}{{ request.base_url }}static/android-chrome-512x512.png{% endblock %}"
+    />
+    <meta
       name="google-site-verification"
       content="YxEecplX57ws0_P4EnpQsiY7qUmV20bMaQpWX2R8B70"
     />

@@ -118,6 +118,14 @@ def scrape_and_populate_task() -> None:
             return
 
         logging.info("Smart Scrape: Changes detected! Proceeding with full scrape.")
+        
+        # Take a snapshot of current ranks before updating
+        logging.info("Taking rank snapshot...")
+        current_top_tracks = db.query(models.Track).filter(models.Track.rank.isnot(None)).all()
+        for track in current_top_tracks:
+            db.add(models.RankHistory(track_id=track.id, rank=track.rank))
+        db.commit()
+
         write_scrape_status("in_progress:1/6")
 
         final_status = "completed"

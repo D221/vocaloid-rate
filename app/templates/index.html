@@ -40,5 +40,32 @@
   {% set pagination_spacing_class = "mt-8" %}
   {% include "partials/pagination_controls.html" %}
 
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "name": "{{ _('Vocaloid Rate - Top Tracks') }}",
+      "description": "{{ _('A ranked list of Vocaloid music tracks.') }}",
+      "itemListElement": [
+        {% for track in tracks %}
+        {
+          "@type": "ListItem",
+          "position": {{ loop.index + ((pagination.page - 1) * (pagination.limit if pagination.limit|int else 10000)) }},
+          "item": {
+            "@type": "MusicRecording",
+            "name": "{{ track.title }}",
+            "url": "{{ track.link }}",
+            "image": "{{ track.image_url }}",
+            "byArtist": {
+              "@type": "MusicGroup",
+              "name": "{{ track.producer }}"
+            }
+          }
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+      ]
+    }
+  </script>
+
   <script src="{{ url_for('static', path='js/main.min.js') }}"></script>
 {% endblock %}

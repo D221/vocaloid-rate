@@ -666,12 +666,14 @@ async def view_producer_page(
         "@context": "https://schema.org",
         "@type": "MusicGroup",
         "name": producer.name,
+        "description": _("Vocaloid producer %(name)s on Vocaloid Rate.") % {"name": producer.name},
         "genre": "Vocaloid",
         "track": [
             {
                 "@type": "MusicRecording",
                 "name": track.title,
                 "url": track.link,
+                "image": track.image_url,
             }
             for track in tracks[:10]
         ],
@@ -743,12 +745,14 @@ async def view_voicebank_page(
         "@context": "https://schema.org",
         "@type": "MusicGroup",
         "name": voicebank.name,
+        "description": _("Vocaloid voicebank %(name)s tracks on Vocaloid Rate.") % {"name": voicebank.name},
         "genre": "Vocaloid",
         "track": [
             {
                 "@type": "MusicRecording",
                 "name": track.title,
                 "url": track.link,
+                "image": track.image_url,
             }
             for track in tracks[:10]
         ],

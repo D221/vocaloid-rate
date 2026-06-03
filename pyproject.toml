@@ -21,6 +21,7 @@ dependencies = [
     "requests>=2",
     "sqlalchemy>=2",
     "uvicorn>=0.40.0",
+    "atproto>=0.0.67",
 ]
 
 [dependency-groups]

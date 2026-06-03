@@ -358,7 +358,7 @@ function togglePlayPause() {
     } else {
       playerState.embeddedPlayers[currentTrackId].playVideo();
     }
-  } else if (ytPlayer) {
+  } else if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
     // Control the hidden audio player
     if (playerState.isPlaying) {
       ytPlayer.pauseVideo();
@@ -1973,7 +1973,7 @@ document.addEventListener("DOMContentLoaded", async () => {
               }
 
               // Get the video ID of the hidden player, if it exists and has a video
-              const hiddenPlayerVideoId = ytPlayer
+              const hiddenPlayerVideoId = (ytPlayer && typeof ytPlayer.getVideoUrl === 'function')
                 ? getYouTubeVideoId(ytPlayer.getVideoUrl())
                 : null;
 
@@ -2053,9 +2053,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
           } else {
             // Player exists, ensure it's synced before use.
-            const currentHiddenPlayerVideoId = getYouTubeVideoId(
-              ytPlayer.getVideoUrl(),
-            );
+            const currentHiddenPlayerVideoId = (ytPlayer && typeof ytPlayer.getVideoUrl === 'function')
+              ? getYouTubeVideoId(ytPlayer.getVideoUrl())
+              : null;
 
             // Always sync volume and mute state from our global state back to the hidden player.
             ytPlayer.setVolume(playerState.volume);
@@ -2641,4 +2641,34 @@ document.addEventListener("DOMContentLoaded", async () => {
       playerState.playlist = newPlaylist;
     },
   };
+
+  // --- DEEP LINKING ---
+  const hash = window.location.hash;
+  if (hash && hash.startsWith("#track-")) {
+    const trackId = hash.replace("#track-", "");
+    const trackRow = document.querySelector(`tr[data-track-id="${trackId}"]`);
+
+    if (trackRow) {
+      // 1. Scroll to track
+      trackRow.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      // 2. Trigger Play
+      const playBtn = trackRow.querySelector("button[data-play-button]");
+      if (playBtn) {
+        // Need to ensure the playlist is loaded first
+        loadPlaylistFromTemplate();
+
+        // Timeout ensures UI state has settled
+        setTimeout(() => {
+          playBtn.click();
+
+          // 3. Trigger Embed
+          const embedBtn = trackRow.querySelector("button[data-embed-button]");
+          if (embedBtn) {
+            embedBtn.click();
+          }
+        }, 500);
+      }
+    }
+  }
 });
