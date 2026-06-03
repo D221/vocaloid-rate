@@ -358,7 +358,7 @@ function togglePlayPause() {
     } else {
       playerState.embeddedPlayers[currentTrackId].playVideo();
     }
-  } else if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
+  } else if (ytPlayer && typeof ytPlayer.playVideo === "function") {
     // Control the hidden audio player
     if (playerState.isPlaying) {
       ytPlayer.pauseVideo();
@@ -1973,9 +1973,10 @@ document.addEventListener("DOMContentLoaded", async () => {
               }
 
               // Get the video ID of the hidden player, if it exists and has a video
-              const hiddenPlayerVideoId = (ytPlayer && typeof ytPlayer.getVideoUrl === 'function')
-                ? getYouTubeVideoId(ytPlayer.getVideoUrl())
-                : null;
+              const hiddenPlayerVideoId =
+                ytPlayer && typeof ytPlayer.getVideoUrl === "function"
+                  ? getYouTubeVideoId(ytPlayer.getVideoUrl())
+                  : null;
 
               // Only sync time if this new embed is for the EXACT same video
               // that is currently paused in the hidden audio player.
@@ -2053,9 +2054,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
           } else {
             // Player exists, ensure it's synced before use.
-            const currentHiddenPlayerVideoId = (ytPlayer && typeof ytPlayer.getVideoUrl === 'function')
-              ? getYouTubeVideoId(ytPlayer.getVideoUrl())
-              : null;
+            const currentHiddenPlayerVideoId =
+              ytPlayer && typeof ytPlayer.getVideoUrl === "function"
+                ? getYouTubeVideoId(ytPlayer.getVideoUrl())
+                : null;
 
             // Always sync volume and mute state from our global state back to the hidden player.
             ytPlayer.setVolume(playerState.volume);
