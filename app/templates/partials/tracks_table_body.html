@@ -32,7 +32,23 @@
       data-label="{{ _('Rank') }}"
       class="block border-b border-border p-3 text-center last:border-b-0 md:table-cell md:w-1 md:min-w-0 md:border md:px-3 md:py-2 md:text-left md:whitespace-nowrap"
     >
-      {{ track.rank if track.rank is not none else '—' }}
+      <div class="flex flex-col items-center gap-1 md:items-start">
+        <span class="font-bold text-header">
+          {{ track.rank if track.rank is not none else '—' }}
+        </span>
+        {% if track.rank_change and track.rank_change != 0 %}
+          <span
+            class="{% if track.rank_change > 0 %}text-green-text{% else %}text-red-text{% endif %} text-xs font-semibold"
+          >
+            ({{ '%+d'|format(track.rank_change) }})
+            {% if track.rank_change > 0 %}
+              ↑
+            {% else %}
+              ↓
+            {% endif %}
+          </span>
+        {% endif %}
+      </div>
     </td>
 
     <!-- Title -->

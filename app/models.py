@@ -70,6 +70,8 @@ class Track(Base):
             "producer_jp": self.producer_jp,
             "voicebank_jp": self.voicebank_jp,
             "imageUrl": self.image_url,
+            "rank": self.rank,
+            "rank_change": getattr(self, "rank_change", 0),
         }
 
 

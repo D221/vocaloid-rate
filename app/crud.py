@@ -114,6 +114,20 @@ def get_tracks(
         playlist_exists.label("is_in_playlist"),
     )
 
+    # Subquery for previous rank
+    # We want the most recent RankHistory record that isn't the current rank update
+    # During a scrape, we take a snapshot BEFORE updating.
+    # So the latest record in RankHistory IS the previous rank.
+    sub_rank = (
+        db.query(models.RankHistory.rank)
+        .filter(models.RankHistory.track_id == models.Track.id)
+        .order_by(models.RankHistory.recorded_at.desc())
+        .limit(1)
+        .correlate(models.Track)
+        .scalar_subquery()
+    )
+    query = query.add_columns(sub_rank.label("previous_rank"))
+
     if rank_filter == "ranked":
         query = query.filter(models.Track.rank.isnot(None))
     elif rank_filter == "unranked":
@@ -188,12 +202,23 @@ def get_tracks(
 
     results = query.offset(skip).limit(limit).all()
 
-    tracks_with_flag = []
-    for track, is_in_playlist in results:
+    final_tracks = []
+    for track, is_in_playlist, previous_rank in results:
         track.is_in_playlist = is_in_playlist
-        tracks_with_flag.append(track)
+        track.previous_rank = previous_rank
 
-    return tracks_with_flag
+        # Calculate rank change
+        # rank 1 is better than rank 3.
+        # change = previous - current.
+        # Example: was 5, now 3. Change is 5 - 3 = +2 (Up)
+        # Example: was 3, now 5. Change is 3 - 5 = -2 (Down)
+        track.rank_change = 0
+        if track.rank is not None and track.previous_rank is not None:
+            track.rank_change = track.previous_rank - track.rank
+
+        final_tracks.append(track)
+
+    return final_tracks
 
 
 def get_tracks_count(
