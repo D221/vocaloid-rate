@@ -1,327 +1,577 @@
 # Project Structure
 
-This document explains the current backend structure after the `app/main.py` refactor.
+This document describes the current Vocaloid Rate code layout after the
+FastAPI refactor and module split. It is the architecture reference for where
+new code should live.
 
-## High-Level Layout
+## Top-Level Layout
 
 ```text
-app/
-  main.py
-  constants.py
-  dependencies.py
-  config.py
-  database.py
-  auth.py
-  security.py
-  crud.py
-  models.py
-  schemas.py
-  scraper.py
-  vocadb.py
-  routers/
-  services/
-  utils/
-  templates/
-  static/
-tests/
+app/                 FastAPI application package
+  main.py            App factory/wiring, lifespan, middleware, static mounting
+  config.py          Environment/runtime mode helpers
+  constants.py       Shared constants and runtime resource paths
+  database.py        SQLAlchemy engine, session factory, Base
+  dependencies.py    FastAPI dependencies, templates, locale/i18n helpers
+  models.py          SQLAlchemy ORM models
+  schemas.py         Pydantic request/response models
+  crud.py            Database query and mutation layer
+  auth.py            Auth/user resolution/password/JWT helpers
+  security.py        Security constants
+  scraper.py         Vocaloard scraping integration
+  vocadb.py          VocaDB API integration
+  routers/           HTTP routes grouped by feature
+  services/          Reusable workflows/background orchestration
+  utils/             Small shared helpers
+  templates/         Jinja pages, partials, and macros
+  static/            Source JS, source CSS, icons, manifests, service worker
+alembic/             Database migrations
+api/index.py         Vercel ASGI entrypoint
+scripts/             Maintenance, docs, i18n, user admin, bot jobs
+tests/               Pytest suite
+docs/                Docusaurus documentation site
 ```
 
-## Core Rule
+## Core Boundary
 
-`app/main.py` should stay small.
+`app/main.py` wires the app together. It should not become a feature module.
 
-It is only responsible for:
-
-- creating the FastAPI app
-- lifespan startup/shutdown logic
-- middleware
-- static file mounting
-- shared Jinja filter registration
-- router registration
-
-Business logic and route handlers should not grow back into `main.py`.
-
-## Backend Responsibilities
-
-### `app/main.py`
-
-Entry point and app wiring.
-
-Keep here:
+Keep in `app/main.py`:
 
 - `FastAPI(...)`
+- lifespan startup/shutdown
+- startup migration trigger
+- empty-database initial scrape scheduling
 - middleware
-- startup/lifespan behavior
+- `/static/sw.js` special serving
+- static file mounting
+- shared Jinja filter registration
 - `app.include_router(...)`
-- static/service worker setup
 
-Avoid adding:
+Do not add to `app/main.py`:
 
 - page handlers
 - API handlers
-- database queries
-- scraping logic
+- database query logic
+- scrape/VocaDB implementation details
+- playlist/rating/profile business rules
+
+`main.py` re-exports a few names for compatibility and tests. New production
+code should import directly from the owner module.
+
+## Application Modules
+
+### `app/config.py`
+
+Centralizes environment and runtime mode decisions:
+
+- frozen/PyInstaller detection
+- Vercel detection
+- `DATABASE_URL`, `DATA_DIR`, `PUBLIC_BASE_URL`, `SECRET_KEY`
+- local mode vs cloud mode
+- local auth mode
+- secure-cookie decision
+- startup migration default
+
+Use this when behavior depends on environment variables or packaging mode.
 
 ### `app/constants.py`
 
-Shared constants and filesystem/resource paths.
+Stores shared constants and filesystem/resource paths:
 
-Examples:
+- `BASE_DIR`, `STATIC_DIR`
+- supported/default locales
+- upload and pagination constants
+- scrape status file path
+- runtime resource base path for normal and frozen builds
 
-- `BASE_DIR`
-- `STATIC_DIR`
-- `SCRAPE_STATUS_FILE`
-- upload and pagination defaults
+Use this for reused values that are not request-specific.
 
-Use this when a value is reused across modules and is not request-specific.
+### `app/database.py`
+
+Creates the SQLAlchemy engine, `SessionLocal`, and declarative `Base`.
+
+Behavior:
+
+- loads `.env` early
+- uses `DATABASE_URL` when set
+- falls back to SQLite at `DATA_DIR/tracks.db`
+- applies SQLite-specific `connect_args`
+
+Do not put model definitions or query helpers here.
 
 ### `app/dependencies.py`
 
-Shared FastAPI dependencies and template/i18n helpers.
+Shared FastAPI dependency and template helpers:
 
-Examples:
+- `get_db()`
+- `get_locale()`
+- `get_translations()`
+- `get_slim_mode()`
+- `locale_template_response()`
+- shared `Jinja2Templates` instance
 
-- `get_db`
-- `get_locale`
-- `get_translations`
-- `get_slim_mode`
-- `locale_template_response`
-
-Use this for dependency-injected helpers that are shared across routers.
-
-### `app/routers/`
-
-FastAPI route modules. Each file should primarily translate HTTP requests into calls to CRUD/services/helpers.
-
-Current split:
-
-- `auth.py`: login, register, logout, user status fragment
-- `scraping.py`: scrape trigger, cron scrape, scrape status
-- `vocadb.py`: lyrics and VocaDB lookups
-- `playlists.py`: playlist CRUD and playlist import/export
-- `tracks.py`: ratings, partial track data, snapshots, rating backup/restore
-- `pages.py`: HTML-rendering routes
-
-Rule:
-
-- routers should coordinate
-- routers should validate request-level behavior
-- routers should not contain heavy domain logic when that logic can live in services/helpers
-
-### `app/services/`
-
-Business logic and background-task orchestration.
-
-Current:
-
-- `scraping.py`
-
-Use services when logic:
-
-- is not HTTP-specific
-- may be reused by multiple routes/startup tasks
-- performs a workflow with multiple steps
-
-### `app/utils/`
-
-Small shared helpers that do not belong to a router or service.
-
-Current:
-
-- `uploads.py`: upload-size handling
-- `view_helpers.py`: shared pagination/rendering/view helpers
-
-Use utils for pure or near-pure helper logic with low coupling.
-
-### `app/crud.py`
-
-Database query and mutation layer.
-
-This module should hold:
-
-- track queries
-- playlist queries
-- rating queries
-- recommendation/statistics queries
-- user CRUD
-
-Rule:
-
-- if the logic is mainly “how to query/update the database”, it belongs here
-- if the logic is mainly “how to handle an HTTP request”, it belongs in a router
-- if the logic is mainly “how to orchestrate a workflow”, it belongs in a service
+Rendered pages should usually go through `locale_template_response()` so
+language cookies, current-user injection, local-env flags, and canonical URLs
+stay consistent.
 
 ### `app/models.py`
 
-SQLAlchemy ORM models.
+Owns ORM schema and relationships only.
 
-Keep schema/relationship definitions here only. Avoid adding request logic or formatting logic beyond small model-local helpers like `to_dict()`.
+Current domain objects:
+
+- `Track`
+- `Rating`
+- `UpdateLog`
+- `RankHistory`
+- `Playlist`
+- `PlaylistTrack`
+- `User`
+- `Lyric`
+- `Producer`
+- `Voicebank`
+- `track_producers` and `track_voicebanks` junction tables
+
+Small serialization helpers like `Track.to_dict()` are acceptable. Request,
+rendering, and workflow logic should live elsewhere.
 
 ### `app/schemas.py`
 
-Pydantic request/response models.
+Pydantic models for API validation and response typing:
 
-Use this for API payload validation and response typing.
+- ratings
+- tracks
+- playlists
+- users/profile updates
+- tokens
+
+Use this when an HTTP payload or response shape needs validation.
+
+### `app/crud.py`
+
+Database access layer. This file owns "how to query or mutate persistent data".
+
+Current responsibility groups:
+
+- track create/update/filter/count
+- producer/voicebank relationship sync
+- ratings and rating statistics
+- update logs
+- playlists, playlist tracks, import/export, reorder
+- playlist and recently-added snapshots
+- recommendations
+- users and profile/admin status
+
+Keep user-owned queries scoped by `user_id`. If a route checks ownership, the
+database operation should usually enforce the same constraint.
 
 ### `app/auth.py` and `app/security.py`
 
-Authentication primitives.
+Auth primitives:
 
-Keep here:
+- password hashing and verification
+- user lookup by email or username
+- JWT creation
+- current-user and optional-current-user dependencies
+- local auth auto-user behavior
+- token/security constants
 
-- token creation
-- current-user resolution
-- password hashing/verification
-- auth-specific helpers
+Routers should call these helpers instead of duplicating auth behavior.
 
-### `app/scraper.py` and `app/vocadb.py`
+### `app/scraper.py`
 
-External integration modules.
+Vocaloard integration:
 
-These talk to outside data sources. They should stay focused on integration details, not route behavior.
+- fetches English and Japanese ranking pages
+- parses ranking rows
+- returns normalized track dictionaries
 
-## Frontend-Related Directories
+This module talks to the external site. It should not know about FastAPI route
+responses or template rendering.
+
+### `app/vocadb.py`
+
+VocaDB integration:
+
+- artist search
+- song search with Japanese-title fallback
+- lyric fetch and normalization
+
+This module owns VocaDB request details. Caching/persistence belongs in CRUD or
+route/service coordination.
+
+## Routers
+
+Routers translate HTTP requests into dependency resolution, CRUD/service calls,
+and HTTP responses. They should coordinate, validate request-level behavior, and
+delegate heavier work.
+
+### `app/routers/auth.py`
+
+Authentication and profile endpoints:
+
+- `POST /token`
+- `POST /users/`
+- `GET /users/me/`
+- `POST /logout`
+- `PUT /api/users/me/profile`
+
+Uses `auth.py`, `crud.py`, and shared dependencies.
+
+### `app/routers/pages.py`
+
+Server-rendered HTML pages:
+
+- main chart
+- rated tracks
+- recently added
+- recommendations
+- playlists and playlist edit/view pages
+- options/login/register/about/explore
+- profiles index and public profile pages
+- producer and voicebank index/detail pages
+- `robots.txt`
+
+This router is allowed to prepare template context, but reusable formatting,
+pagination, and filtering helpers should move to `app/utils/` or `app/crud.py`.
+
+### `app/routers/tracks.py`
+
+Track/rating/data endpoints used by the frontend:
+
+- partial track table HTML JSON responses
+- playlist track partials
+- recently-added partials
+- rating backup/restore
+- JS translations endpoint
+- create/delete rating
+- playlist membership status
+- snapshot endpoints for pagination/player state
+
+This router is the bridge between `app/static/js/main.js` and the database.
+
+### `app/routers/playlists.py`
+
+Playlist API:
+
+- list/create/update/delete playlists
+- add/remove/reorder tracks
+- bulk playlist import/export
+- single playlist import/export
+
+Ownership checks should remain centered on `current_user.id`.
+
+### `app/routers/scraping.py`
+
+Scraping and scheduled task endpoints:
+
+- manual scrape trigger
+- Vercel cron scrape
+- Vercel cron bot task
+- scrape status
+
+The route starts or schedules work. `app/services/scraping.py` owns the scrape
+workflow.
+
+### `app/routers/vocadb.py`
+
+Lyrics and VocaDB lookup endpoints:
+
+- cached/local lyrics response
+- VocaDB artist search
+- VocaDB song search
+- direct VocaDB lyric fetch
+
+The external request logic belongs in `app/vocadb.py`; this router coordinates
+cache lookup and persistence.
+
+### `app/routers/sitemap.py`
+
+SEO sitemap endpoint:
+
+- builds `/sitemap.xml`
+- includes public pages, public profiles, public playlists, producers, and
+  voicebanks
+- caches the XML briefly in-process
+
+Uses `PUBLIC_BASE_URL` from `app/config.py`.
+
+## Services
+
+### `app/services/scraping.py`
+
+Background scrape orchestration:
+
+- in-process initial scrape status flag
+- scrape status file read/write
+- empty-database initial scrape
+- smart scrape/update flow
+- rank history snapshotting
+- database updates through CRUD
+
+Use services when logic is not HTTP-specific, is reusable from startup and
+routes, or coordinates several steps.
+
+## Utilities
+
+### `app/utils/view_helpers.py`
+
+Shared view/rendering helpers:
+
+- track serialization for templates
+- producer/voicebank option collection
+- page limit/offset calculation
+- partial track table rendering
+- `time_ago` Jinja filter
+
+### `app/utils/uploads.py`
+
+Upload helpers:
+
+- chunked upload reads
+- max-size enforcement
+
+Use this for import/restore endpoints instead of reading uploaded files directly.
+
+## Templates And Static Assets
 
 ### `app/templates/`
 
-Jinja templates for server-rendered pages and partials.
+Jinja templates for server-rendered UI.
 
-Suggested convention:
+Conventions:
 
-- full pages in the top-level template directory
-- reusable fragments in `partials/`
-- macro-only templates in `macros/`
+- full pages live at the template root
+- reusable fragments live in `partials/`
+- macros live in `macros/`
+- templates expose frontend state mainly through `data-*` attributes
+
+Preserve `data-*` contracts when changing templates; the vanilla JS depends on
+them heavily.
 
 ### `app/static/`
 
-Frontend assets:
+Source frontend assets:
 
-- JS
-- CSS
-- icons
-- service worker
+- `js/global.js`
+- `js/main.js`
+- `js/options.js`
+- `js/playlist_editor.js`
+- `js/playlists_page.js`
+- `js/idb-helper.js`
+- `css/input.css`
+- icons, manifests, service worker
 
-## Request Flow
+Templates load generated files such as `js/*.min.js` and `css/app.css`. Those
+build outputs are ignored by git. Edit source files, then run the relevant build
+script when local rendering needs the generated assets.
 
-Most routes should follow this pattern:
+## Internationalization
+
+- Supported locales are `en` and `ja`.
+- Locale resolution lives in `app/dependencies.py`.
+- Python and Jinja strings are extracted through `babel.cfg`.
+- JavaScript strings are collected into `locales/js_translations.json` by
+  `scripts/extract_js_messages.py`.
+- Compiled `.mo` files are generated artifacts.
+
+Use `locale_template_response()` for rendered pages so locale, current user, and
+canonical URL behavior stay consistent.
+
+## Request Flows
+
+### HTML Page
 
 ```text
-Request
-  -> router
-  -> dependency resolution
-  -> crud/service/helper calls
-  -> template or JSON response
-```
-
-Typical examples:
-
-### HTML page
-
-```text
-browser request
+browser
   -> app/routers/pages.py
-  -> app/dependencies.py for locale/user/template helpers
-  -> app/crud.py for data
-  -> Jinja template response
+  -> dependencies for db/current user/locale/translations
+  -> crud/view helper calls
+  -> locale_template_response()
+  -> Jinja template
 ```
 
-### JSON API
+### Track Table Partial
 
 ```text
 frontend fetch
-  -> app/routers/tracks.py or playlists.py
-  -> app/crud.py
+  -> app/routers/tracks.py
+  -> crud.get_tracks_count() / crud.get_tracks()
+  -> app/utils/view_helpers.py
+  -> JSON containing rendered table HTML and pagination metadata
+```
+
+### Rating Or Playlist Mutation
+
+```text
+frontend form/fetch
+  -> auth dependency resolves current user
+  -> tracks/playlists router validates request
+  -> crud mutation scoped by user_id
+  -> JSON or status response
+```
+
+### Lyrics Lookup
+
+```text
+frontend fetch
+  -> app/routers/vocadb.py
+  -> local DB lyric cache check
+  -> app/vocadb.py external lookup if needed
+  -> optional DB persistence
   -> JSON response
 ```
 
-### Background scrape
+### Scraping
 
 ```text
-startup or /scrape route
+startup or scrape route
   -> app/services/scraping.py
-  -> app/scraper.py
+  -> app/scraper.py external fetch/parse
   -> app/crud.py / ORM session
-  -> status file updates
+  -> status file and update log
 ```
+
+### Vercel
+
+```text
+Vercel request
+  -> api/index.py
+  -> app.main:app
+  -> normal FastAPI routing
+```
+
+## Docs, Scripts, And Packaging
+
+### `scripts/`
+
+- `update_docs.py`: starts FastAPI, fetches OpenAPI, regenerates API/db/README
+  docs
+- `generate_db_docs.py`: writes DB schema docs from SQLAlchemy models
+- `generate_readme_docs.py`: extracts Docusaurus docs from README sections
+- `extract_js_messages.py`: updates JS translation keys
+- `manage_users.py`: CLI user/admin maintenance
+- `bot_daily_top.py`: ranking analysis and Discord/Bluesky posting
+
+### `docs/`
+
+Docusaurus site. It is a separate Node project and consumes generated docs under
+`docs/docs/` plus `docs/static/openapi.json`.
+
+### Deployment And Packaging
+
+- Docker builds translations and static assets in a builder stage.
+- Vercel uses `api/index.py` and `vercel.json` rewrites/crons.
+- PyInstaller packaging is configured by `vocaloid-rate.spec`.
+- `entrypoint.sh` adjusts mounted `data/` ownership before starting Docker.
 
 ## Where New Code Should Go
 
-### Add a new HTML page
+### New HTML Page
 
 Usually:
 
 - route in `app/routers/pages.py`
 - template in `app/templates/`
-- helper logic in `app/utils/view_helpers.py` or `app/crud.py`
+- data queries in `app/crud.py`
+- reusable context/rendering helpers in `app/utils/view_helpers.py`
 
-### Add a new JSON/API endpoint
+If `pages.py` becomes unwieldy for the feature area, create a new page router
+instead of moving logic into `main.py`.
+
+### New JSON/API Endpoint
 
 Usually:
 
-- route in the matching file under `app/routers/`
+- route in the matching `app/routers/` module
+- request/response schemas in `app/schemas.py`
 - database logic in `app/crud.py`
-- workflow logic in `app/services/` if it is multi-step
+- multi-step workflow in `app/services/`
 
-### Add a new external integration
+### New Database Entity
 
 Usually:
 
-- integration module like `app/<integration>.py`
-- service wrapper if the flow is larger than a simple fetch
-- router endpoints only if the app exposes that integration directly
+- ORM model in `app/models.py`
+- Pydantic shape in `app/schemas.py`
+- CRUD functions in `app/crud.py`
+- Alembic migration in `alembic/versions/`
+- route/service tests near the changed layer
 
-### Add a new cross-router dependency
+Migrations must work with SQLite and Postgres.
+
+### New External Integration
+
+Usually:
+
+- focused integration module in `app/<integration>.py`
+- service wrapper if the workflow has multiple steps
+- router only if the app exposes HTTP endpoints for it
+- tests with mocked network calls
+
+### New Shared Dependency
 
 Put it in:
 
-- `app/dependencies.py` if it is request/dependency related
-- `app/constants.py` if it is just shared configuration
-- `app/utils/` if it is a general helper
-
-## Current Architectural Boundaries
-
-These are intentional:
-
-- `main.py` wires the app, but does not own route logic
-- routers own HTTP behavior, but not heavy workflows
-- services own workflows, but not rendering
-- CRUD owns database access patterns
-- templates own markup
-
-If a change crosses those boundaries, it is usually a sign the code should be split before it grows.
+- `app/dependencies.py` for FastAPI/request/template/i18n dependencies
+- `app/config.py` for environment-derived behavior
+- `app/constants.py` for shared constants/paths
+- `app/utils/` for small reusable helpers
 
 ## Testing Map
 
-Current test organization:
+Important test behavior:
 
-- `tests/test_app_behavior.py`: compatibility/regression checks
-- `tests/test_pages.py`: page-route behavior
-- `tests/test_playlists_api.py`: playlist API behavior
-- `tests/test_tracks_api.py`: track/rating/snapshot behavior
-- `tests/test_scraping.py`: scrape-route behavior
-- `tests/test_dependencies.py`: dependency/helper behavior
-- `tests/test_services_scraping.py`: scraping service behavior
+- tests use in-memory SQLite
+- `tests/conftest.py` sets `DATABASE_URL` and `SECRET_KEY`
+- `client_factory` disables lifespan so route tests avoid startup migrations and
+  background scrape work
+- network integrations are monkeypatched, not called live
 
-When adding new features, add tests near the layer being exercised:
+Current test areas:
 
-- route behavior: route/API test
-- helper behavior: helper/dependency test
-- workflow behavior: service test
+- `test_main*.py`: app wiring and lifespan
+- `test_app_behavior.py`: compatibility/regression behavior
+- `test_auth*.py`: auth routes and auth helpers
+- `test_config_and_module_setup.py`: environment/module setup branches
+- `test_dependencies*.py`: locale/template/db dependencies
+- `test_crud*.py`: query/mutation behavior
+- `test_pages*.py`: rendered pages
+- `test_tracks_api*.py`: track/rating/snapshot APIs
+- `test_playlists_api*.py`: playlist APIs
+- `test_scraping.py` and `test_services_scraping.py`: scrape routes/workflows
+- `test_vocadb*.py`: VocaDB integration and router behavior
+- `test_profile.py`: profile/visibility behavior
+- `test_seo.py`: robots, canonical URLs, sitemap, public pages
 
-## Practical Guidance
+Add tests at the layer where behavior lives. Prefer focused tests over broad
+end-to-end coverage unless the change crosses module boundaries.
 
-Before adding code, ask:
+## Architectural Checklist
 
-1. Is this HTTP-specific?
-   Then it probably belongs in a router.
+Before adding or moving code, ask:
 
-2. Is this mostly database querying/updating?
-   Then it probably belongs in `crud.py`.
+1. Is it HTTP-specific?
+   Put it in a router.
 
-3. Is this a multi-step workflow or background task?
-   Then it probably belongs in `services/`.
+2. Is it mostly querying or mutating the database?
+   Put it in `crud.py`.
 
-4. Is this reused glue or formatting logic?
-   Then it probably belongs in `utils/` or `dependencies.py`.
+3. Is it a multi-step workflow or background task?
+   Put it in `services/`.
 
-Following those rules should keep the project from collapsing back into a single oversized module.
+4. Is it an external API/scrape detail?
+   Put it in an integration module.
+
+5. Is it request dependency, locale, or template glue?
+   Put it in `dependencies.py`.
+
+6. Is it a reusable pure or near-pure helper?
+   Put it in `utils/`.
+
+7. Is it app startup, middleware, or router registration?
+   Keep it in `main.py`.
+
+Following these boundaries keeps the app split readable and prevents the old
+single-module shape from returning.
