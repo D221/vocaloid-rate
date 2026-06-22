@@ -1,0 +1,28 @@
+{
+  "skills": {
+    "vocaloid-backend": {
+      "name": "vocaloid-backend",
+      "description": "FastAPI backend development, SQLAlchemy models, and CRUD logic. Use when adding routes, changing database models, or updating query logic in app/crud.py."
+    },
+    "vocaloid-db": {
+      "name": "vocaloid-db",
+      "description": "Database migrations using Alembic and schema management. Use when creating new tables or altering columns."
+    },
+    "vocaloid-frontend": {
+      "name": "vocaloid-frontend",
+      "description": "Frontend UI development with Jinja2, Tailwind CSS, and vanilla JS. Use when changing templates, editing CSS/JS assets, or improving UI."
+    },
+    "vocaloid-git": {
+      "name": "vocaloid-git",
+      "description": "Source control workflows, committing changes, and managing pre-commit hooks. Use when preparing a commit or pushing changes."
+    },
+    "vocaloid-i18n": {
+      "name": "vocaloid-i18n",
+      "description": "Internationalization using Babel and JS translation extraction. Use when adding translatable strings or updating locales."
+    },
+    "vocaloid-qa": {
+      "name": "vocaloid-qa",
+      "description": "Testing and quality assurance with Pytest and linting. Use when running tests, fixing bugs, or verifying CI readiness."
+    }
+  }
+}
