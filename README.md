@@ -7,7 +7,7 @@
 > - **User Accounts:** You can create an account and log in. Passwords are securely hashed and encrypted.
 > - **Privacy:** Emails are only used as usernames; we do not send any emails (including password resets). You can use a dummy email address if you prefer.
 
-![Vocaloid Rate Screenshot](assets/main.png)
+![Vocaloid Rate Screenshot](assets/hero_main_night.png)
 
 Vocaloid Rate is a personal, self-hosted web application for tracking, rating, and exploring Vocaloid music rankings. It scrapes data from [Vocaloard](https://vocaloard.injpok.tokyo/en/), providing a clean and feature-rich interface to manage your personal collection of rated tracks and playlists.
 
@@ -41,36 +41,48 @@ For the current backend/module layout after the FastAPI refactor, see [STRUCTURE
   - Light and Dark mode with automatic system preference detection.
   - Fully responsive design that adapts from desktop to a mobile-friendly card layout.
 
+### Discovery
+
+![Recommendations](assets/recommendations_light.png)
+
+The discovery page helps you find new music with bias controls to tailor suggestions to your taste.
+
+### Personalization
+
+![Profile Stats](assets/profile_stats_night.png)
+
+Your profile page shows detailed statistics including average ratings, top producers and voicebanks, and an interactive rating distribution chart.
+
 <details>
 <summary><strong>Click to see more screenshots</strong></summary>
 
-### Embed Playback (main feature)
+### Guest Experience
+
+![Guest View](assets/hero_guest_light.png)
+
+### Entity Pages
+
+![Entity View](assets/entity_view_light.png)
+
+### Rated Tracks Dashboard
+
+![Rated Tracks](assets/rated.png)
+
+### Embed Playback
 
 ![Embed View](assets/embeds.png)
 
-### Filtering and Sorting
+### Lyrics
 
-![Filter View](assets/filter.png)
+![Lyrics](assets/lyrics.png)
 
-### Ratings Page
+### Slim Mode
 
-![Ratings View](assets/ratings.png)
-
-### Options Mode
-
-![Options Mode](assets/options.png)
-
-### Playlists
-
-![Playlist List View](assets/playlists.png)
-
-### Playlist Editor
-
-![Playlist Edit View](assets/playlist-edit.png)
+![Slim Mode](assets/slim_mode_light.png)
 
 ### Mobile UI
 
-![Mobile View](assets/mobile.png)
+![Mobile UI](assets/mobile_ui_night.png)
 
 </details>
 
