@@ -87,5 +87,6 @@
       "uv run ruff format",
       "uv run ty check"
     ]
-  }
+  },
+  "version": "1.4.0"
 }
