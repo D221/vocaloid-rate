@@ -106,3 +106,14 @@ def generate_sitemap(db: Session = Depends(get_db)):
         media_type="application/xml",
         headers={"Cache-Control": "public, max-age=900"},
     )
+
+
+@router.head("/sitemap.xml")
+def generate_sitemap_head():
+    # HEAD doesn't need to pay for a full DB rebuild,
+    # just report empty body with appropriate cache headers.
+    return Response(
+        content=b"",
+        media_type="application/xml",
+        headers={"Cache-Control": "public, max-age=900"},
+    )

@@ -146,3 +146,14 @@ def test_user_profile_page_returns_403_for_private_profile(client_factory, db_se
     response = client.get("/user/secret_user")
 
     assert response.status_code == 403
+
+
+def test_sitemap_head_request_succeeds(client_factory, sample_tracks):
+    client = client_factory()
+
+    response = client.head("/sitemap.xml")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/xml")
+    assert response.headers["cache-control"] == "public, max-age=900"
+    assert response.text == ""
