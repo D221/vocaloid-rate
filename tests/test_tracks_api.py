@@ -194,3 +194,49 @@ def test_restore_ratings_rejects_invalid_extension(client_factory, user):
     )
 
     assert response.status_code == 400
+
+
+def test_track_rank_history_returns_ordered_data(
+    client_factory, db_session, sample_tracks
+):
+    """Rank history endpoint returns history sorted oldest-first."""
+    from datetime import datetime, timezone, timedelta
+
+    track = sample_tracks[0]
+    now = datetime.now(timezone.utc)
+    for i, rank in enumerate([3, 1, 2], start=1):
+        db_session.add(
+            models.RankHistory(
+                track_id=track.id,
+                rank=rank,
+                recorded_at=now - timedelta(days=4 - i),
+            )
+        )
+    db_session.commit()
+
+    client = client_factory()
+    response = client.get(f"/api/tracks/{track.id}/rank-history")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["track_id"] == track.id
+    assert len(payload["history"]) == 3
+    assert payload["current_rank"] == 1
+    # Oldest first
+    assert payload["history"][0]["rank"] == 3
+    assert payload["history"][1]["rank"] == 1
+    assert payload["history"][2]["rank"] == 2
+
+
+def test_track_rank_history_404_for_missing_track(client_factory):
+    client = client_factory()
+    response = client.get("/api/tracks/99999/rank-history")
+    assert response.status_code == 404
+
+
+def test_track_rank_history_empty_when_no_data(client_factory, sample_tracks):
+    """A ranked track with no RankHistory entries returns empty history list."""
+    client = client_factory()
+    response = client.get(f"/api/tracks/{sample_tracks[0].id}/rank-history")
+    assert response.status_code == 200
+    assert response.json()["history"] == []

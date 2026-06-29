@@ -70,7 +70,16 @@
     "Select a rating": "Select a rating",
     "This cannot be undone.": "This cannot be undone.",
     "View": "View",
-    "You haven't created any playlists yet.": "You haven't created any playlists yet."
+    "You haven't created any playlists yet.": "You haven't created any playlists yet.",
+    "Rank History": "Rank History",
+    "Rank": "Rank",
+    "Chart Position": "Chart Position",
+    "Date": "Date",
+    "View rank history chart": "View rank history chart",
+    "No rank history available for this track.": "No rank history available for this track.",
+    "Failed to load rank history.": "Failed to load rank history.",
+    "Track": "Track",
+    "All": "All"
   },
   "ja": {
     "Add Note": "メモを追加",
@@ -143,6 +152,15 @@
     "Select a rating": "Select a rating",
     "This cannot be undone.": "This cannot be undone.",
     "View": "View",
-    "You haven't created any playlists yet.": "You haven't created any playlists yet."
+    "You haven't created any playlists yet.": "まだプレイリストを作成していません。",
+    "Rank History": "ランキング履歴",
+    "Rank": "順位",
+    "Chart Position": "チャート順位",
+    "Date": "日付",
+    "View rank history chart": "順位推移グラフを表示",
+    "No rank history available for this track.": "このトラックの順位履歴はありません。",
+    "Failed to load rank history.": "順位履歴の読み込みに失敗しました。",
+    "Track": "トラック",
+    "All": "すべて"
   }
 }

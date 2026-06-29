@@ -701,6 +701,10 @@ msgstr "サムネイル"
 msgid "Rank"
 msgstr "順位"
 
+#: app/templates/partials/tracks_table_body.html:39
+msgid "new"
+msgstr "新規"
+
 #: app/templates/partials/tracks_table_body.html:40
 #: app/templates/partials/tracks_table_head.html:28
 #: app/templates/partials/tracks_table_head.html:31

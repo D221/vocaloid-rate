@@ -352,6 +352,25 @@ def rate_track(
     return Response(status_code=204)
 
 
+@router.get("/api/tracks/{track_id}/rank-history", tags=["Data"])
+def get_track_rank_history(
+    track_id: int,
+    db: Session = Depends(get_db),
+):
+    """Return rank history for a track as JSON for chart rendering."""
+    history = crud.get_track_rank_history(db, track_id)
+    track = db.query(models.Track).filter(models.Track.id == track_id).first()
+    if not track:
+        raise HTTPException(status_code=404, detail="Track not found")
+    return {
+        "track_id": track.id,
+        "track_title": track.title,
+        "track_title_jp": track.title_jp,
+        "history": history,
+        "current_rank": track.rank,
+    }
+
+
 @router.get("/api/tracks/{track_id}/playlist-status", tags=["Data"])
 def get_track_playlist_status(
     track_id: int,

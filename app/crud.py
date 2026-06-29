@@ -212,9 +212,20 @@ def get_tracks(
         # change = previous - current.
         # Example: was 5, now 3. Change is 5 - 3 = +2 (Up)
         # Example: was 3, now 5. Change is 3 - 5 = -2 (Down)
+        # rank_change_label: "up", "down", "same", "new", or "" (unranked)
         track.rank_change = 0
-        if track.rank is not None and track.previous_rank is not None:
-            track.rank_change = track.previous_rank - track.rank
+        track.rank_change_label = ""
+        if track.rank is not None:
+            if track.previous_rank is None:
+                track.rank_change_label = "new"
+            else:
+                track.rank_change = track.previous_rank - track.rank
+                if track.rank_change > 0:
+                    track.rank_change_label = "up"
+                elif track.rank_change < 0:
+                    track.rank_change_label = "down"
+                else:
+                    track.rank_change_label = "same"
 
         final_tracks.append(track)
 
@@ -341,6 +352,17 @@ def get_recently_added_tracks(
     query = query.order_by(models.Track.published_date.desc())
 
     return query.offset(skip).limit(limit).all()
+
+
+def get_track_rank_history(db: Session, track_id: int) -> list[dict]:
+    """Return rank history for a track as a list of {date, rank} dicts, oldest first."""
+    rows = (
+        db.query(models.RankHistory)
+        .filter(models.RankHistory.track_id == track_id)
+        .order_by(models.RankHistory.recorded_at.asc())
+        .all()
+    )
+    return [{"date": r.recorded_at.strftime("%Y-%m-%d"), "rank": r.rank} for r in rows]
 
 
 def create_rating(

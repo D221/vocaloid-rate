@@ -1495,6 +1495,286 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
+  // ── Rank history chart ────────────────────────────────────────────────
+  let rankHistoryChart = null;
+  let rankHistoryFullData = null;
+  let rankHistoryCurrentRange = "30d";
+  let rankHistoryCanvas = null;
+  let chartJsPromise = null;
+
+  const RANK_RANGES = [
+    { key: "7d", label: "7d", days: 7 },
+    { key: "30d", label: "30d", days: 30 },
+    { key: "90d", label: "90d", days: 90 },
+    { key: "all", label: window._("All"), days: Infinity },
+  ];
+
+  /** Dynamically load Chart.js from CDN if not already present. */
+  const ensureChartJs = () => {
+    if (window.Chart) return Promise.resolve();
+    if (chartJsPromise) return chartJsPromise;
+    chartJsPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/chart.js";
+      script.onload = resolve;
+      script.onerror = () => {
+        chartJsPromise = null;
+        reject(new Error("Failed to load Chart.js"));
+      };
+      document.head.appendChild(script);
+    });
+    return chartJsPromise;
+  };
+
+  /** Filter full history down to the given range. */
+  const filterHistoryByRange = (history, rangeKey) => {
+    const range = RANK_RANGES.find((r) => r.key === rangeKey);
+    if (!range || range.days === Infinity) return history;
+    const cutoff = Date.now() - range.days * 24 * 60 * 60 * 1000;
+    return history.filter((h) => {
+      const t = new Date(h.date).getTime();
+      return t >= cutoff;
+    });
+  };
+
+  const openRankHistoryModal = (trackId, trackTitle) => {
+    closeRankHistoryModal();
+    rankHistoryCurrentRange = "30d";
+
+    const overlay = document.createElement("div");
+    overlay.className =
+      "fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4";
+    overlay.id = "rank-history-overlay";
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) closeRankHistoryModal();
+    });
+
+    const modal = document.createElement("div");
+    modal.className =
+      "relative flex max-h-[85vh] w-full max-w-2xl flex-col rounded-lg border border-border bg-card-bg p-6 shadow-2xl";
+
+    // Close button
+    const closeBtn = document.createElement("button");
+    closeBtn.className =
+      "absolute top-3 right-3 cursor-pointer rounded px-2 py-1 text-xl leading-none text-gray-text hover:bg-gray-hover";
+    closeBtn.textContent = "×";
+    closeBtn.addEventListener("click", closeRankHistoryModal);
+    modal.appendChild(closeBtn);
+
+    // Title
+    const title = document.createElement("h2");
+    title.className = "mb-1 text-lg font-bold text-header";
+    title.textContent = trackTitle + " — " + window._("Rank History");
+    modal.appendChild(title);
+
+    // Range buttons
+    const rangeBar = document.createElement("div");
+    rangeBar.className = "mb-3 flex gap-1.5";
+
+    RANK_RANGES.forEach((r) => {
+      const btn = document.createElement("button");
+      btn.className =
+        "range-btn cursor-pointer rounded border px-2.5 py-1 text-xs font-semibold transition-colors duration-150 " +
+        (r.key === rankHistoryCurrentRange
+          ? "border-sky-text bg-sky-text/15 text-sky-text"
+          : "border-border text-gray-text hover:bg-gray-hover");
+      btn.dataset.range = r.key;
+      btn.textContent = r.label;
+      btn.addEventListener("click", () => {
+        rankHistoryCurrentRange = r.key;
+        rangeBar.querySelectorAll(".range-btn").forEach((b) => {
+          b.className =
+            "range-btn cursor-pointer rounded border px-2.5 py-1 text-xs font-semibold transition-colors duration-150 " +
+            (b.dataset.range === rankHistoryCurrentRange
+              ? "border-sky-text bg-sky-text/15 text-sky-text"
+              : "border-border text-gray-text hover:bg-gray-hover");
+        });
+        if (rankHistoryFullData) {
+          reRenderChart();
+        }
+      });
+      rangeBar.appendChild(btn);
+    });
+
+    modal.appendChild(rangeBar);
+
+    // Chart container
+    const chartWrapper = document.createElement("div");
+    chartWrapper.className = "relative min-h-[300px] flex-1 sm:min-h-[400px]";
+    rankHistoryCanvas = document.createElement("canvas");
+    rankHistoryCanvas.id = "rank-history-chart-canvas";
+    chartWrapper.appendChild(rankHistoryCanvas);
+
+    // Loading indicator
+    const loading = document.createElement("div");
+    loading.id = "rank-history-loading";
+    loading.className =
+      "absolute inset-0 flex items-center justify-center text-gray-text";
+    loading.textContent = window._("Loading...");
+    chartWrapper.appendChild(loading);
+
+    modal.appendChild(chartWrapper);
+
+    // No-data message (hidden initially)
+    const noData = document.createElement("div");
+    noData.id = "rank-history-no-data";
+    noData.className = "hidden py-12 text-center text-gray-text";
+    noData.textContent = window._("No rank history available for this track.");
+    modal.appendChild(noData);
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // Ensure Chart.js is loaded, then fetch and render
+    ensureChartJs()
+      .then(() => fetch(`/api/tracks/${trackId}/rank-history`))
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to fetch rank history");
+        return r.json();
+      })
+      .then((data) => {
+        loading.classList.add("hidden");
+        rankHistoryFullData = data;
+        if (!data.history || data.history.length < 2) {
+          noData.classList.remove("hidden");
+          return;
+        }
+        reRenderChart();
+      })
+      .catch((err) => {
+        loading.classList.add("hidden");
+        noData.classList.remove("hidden");
+        noData.textContent = window._("Failed to load rank history.");
+        console.error("Rank history error:", err);
+      });
+  };
+
+  const closeRankHistoryModal = () => {
+    const existing = document.getElementById("rank-history-overlay");
+    if (existing) existing.remove();
+    if (rankHistoryChart) {
+      rankHistoryChart.destroy();
+      rankHistoryChart = null;
+    }
+    rankHistoryFullData = null;
+    rankHistoryCanvas = null;
+  };
+
+  const reRenderChart = () => {
+    if (!rankHistoryFullData || !rankHistoryCanvas) return;
+    if (rankHistoryChart) {
+      rankHistoryChart.destroy();
+      rankHistoryChart = null;
+    }
+    const filtered = filterHistoryByRange(
+      rankHistoryFullData.history,
+      rankHistoryCurrentRange,
+    );
+    if (filtered.length < 2) {
+      const noData = document.getElementById("rank-history-no-data");
+      if (noData) noData.classList.remove("hidden");
+      return;
+    }
+    const noData = document.getElementById("rank-history-no-data");
+    if (noData) noData.classList.add("hidden");
+    renderRankHistoryLineChart(rankHistoryCanvas, filtered);
+  };
+
+  const renderRankHistoryLineChart = (canvas, history) => {
+    const dates = history.map((h) => h.date);
+    const ranks = history.map((h) => h.rank);
+    const minRank = Math.min(...ranks);
+    const maxRank = Math.max(...ranks);
+    const padding = Math.max(1, Math.ceil((maxRank - minRank) * 0.15));
+
+    const isDarkMode =
+      document.documentElement.dataset.theme === "dark" ||
+      document.documentElement.dataset.theme === "night" ||
+      document.documentElement.dataset.theme === "black";
+    const gridColor = isDarkMode
+      ? "rgba(255, 255, 255, 0.1)"
+      : "rgba(0, 0, 0, 0.1)";
+    const ticksColor = isDarkMode ? "#e0e0e0" : "#666";
+    const lineColor = isDarkMode
+      ? "rgba(144, 186, 255, 0.8)"
+      : "rgba(0, 123, 255, 0.8)";
+    const fillColor = isDarkMode
+      ? "rgba(144, 186, 255, 0.2)"
+      : "rgba(0, 123, 255, 0.15)";
+
+    rankHistoryChart = new Chart(canvas, {
+      type: "line",
+      data: {
+        labels: dates,
+        datasets: [
+          {
+            label: window._("Rank"),
+            data: ranks,
+            borderColor: lineColor,
+            backgroundColor: fillColor,
+            borderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: lineColor,
+            fill: false,
+            tension: 0.15,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) =>
+                `${window._("Rank")}: #${ctx.parsed.y}  (${ctx.parsed.x})`,
+            },
+          },
+        },
+        scales: {
+          y: {
+            reverse: true,
+            min: Math.max(1, minRank - padding),
+            max: maxRank + padding,
+            ticks: {
+              stepSize: 1,
+              color: ticksColor,
+              callback: (value) => `#${value}`,
+            },
+            grid: { color: gridColor },
+            title: {
+              display: true,
+              text: window._("Chart Position"),
+              color: ticksColor,
+            },
+          },
+          x: {
+            ticks: { color: ticksColor, maxRotation: 45 },
+            grid: { display: false },
+            title: {
+              display: true,
+              text: window._("Date"),
+              color: ticksColor,
+            },
+          },
+        },
+      },
+    });
+  };
+
+  // ── Click delegation for rank history button ──────────────────────────
+  document.body.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-rank-history-button]");
+    if (!btn) return;
+    const trackId = btn.dataset.trackId;
+    const tr = btn.closest("tr");
+    const trackTitle =
+      tr?.querySelector("a[target]")?.textContent?.trim() || window._("Track");
+    openRankHistoryModal(trackId, trackTitle);
+  });
+
   updateSortIndicators();
   updateActiveFilterDisplay();
   upgradeThumbnails();
