@@ -1635,7 +1635,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       .then((data) => {
         loading.classList.add("hidden");
         rankHistoryFullData = data;
-        if (!data.history || data.history.length < 2) {
+        if (!data.history || data.history.length === 0) {
           noData.classList.remove("hidden");
           return;
         }
