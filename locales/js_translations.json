@@ -79,7 +79,8 @@
     "No rank history available for this track.": "No rank history available for this track.",
     "Failed to load rank history.": "Failed to load rank history.",
     "Track": "Track",
-    "All": "All"
+    "All": "All",
+    "Unranked": "Unranked"
   },
   "ja": {
     "Add Note": "メモを追加",
@@ -161,6 +162,7 @@
     "No rank history available for this track.": "このトラックの順位履歴はありません。",
     "Failed to load rank history.": "順位履歴の読み込みに失敗しました。",
     "Track": "トラック",
-    "All": "すべて"
+    "All": "すべて",
+    "Unranked": "ランク外"
   }
 }

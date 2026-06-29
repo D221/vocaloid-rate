@@ -1662,29 +1662,41 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const reRenderChart = () => {
     if (!rankHistoryFullData || !rankHistoryCanvas) return;
-    if (rankHistoryChart) {
-      rankHistoryChart.destroy();
-      rankHistoryChart = null;
-    }
     const filtered = filterHistoryByRange(
       rankHistoryFullData.history,
       rankHistoryCurrentRange,
     );
-    if (filtered.length < 2) {
+    const nonNullRanks = filtered.filter((h) => h.rank !== null);
+    if (nonNullRanks.length < 2) {
       const noData = document.getElementById("rank-history-no-data");
       if (noData) noData.classList.remove("hidden");
       return;
     }
     const noData = document.getElementById("rank-history-no-data");
     if (noData) noData.classList.add("hidden");
-    renderRankHistoryLineChart(rankHistoryCanvas, filtered);
+
+    if (rankHistoryChart) {
+      // Animate: update data in-place instead of destroy+create
+      rankHistoryChart.data.labels = filtered.map((h) => h.date);
+      rankHistoryChart.data.datasets[0].data = filtered.map((h) => h.rank);
+      const ranks = nonNullRanks.map((h) => h.rank);
+      const minRank = Math.min(...ranks);
+      const maxRank = Math.max(...ranks);
+      const padding = Math.max(1, Math.ceil((maxRank - minRank) * 0.15));
+      rankHistoryChart.options.scales.y.min = Math.max(1, minRank - padding);
+      rankHistoryChart.options.scales.y.max = maxRank + padding;
+      rankHistoryChart.update("default"); // animated by default
+    } else {
+      renderRankHistoryLineChart(rankHistoryCanvas, filtered);
+    }
   };
 
   const renderRankHistoryLineChart = (canvas, history) => {
     const dates = history.map((h) => h.date);
     const ranks = history.map((h) => h.rank);
-    const minRank = Math.min(...ranks);
-    const maxRank = Math.max(...ranks);
+    const nonNullRanks = ranks.filter((r) => r !== null);
+    const minRank = Math.min(...nonNullRanks);
+    const maxRank = Math.max(...nonNullRanks);
     const padding = Math.max(1, Math.ceil((maxRank - minRank) * 0.15));
 
     const isDarkMode =
@@ -1713,11 +1725,20 @@ document.addEventListener("DOMContentLoaded", async () => {
             borderColor: lineColor,
             backgroundColor: fillColor,
             borderWidth: 2,
-            pointRadius: 4,
             pointHoverRadius: 6,
-            pointBackgroundColor: lineColor,
             fill: false,
             tension: 0.15,
+            spanGaps: false,
+            pointBackgroundColor: (ctx) => {
+              const rank = ctx.parsed?.y;
+              return rank === null || rank === undefined
+                ? "transparent"
+                : lineColor;
+            },
+            pointRadius: (ctx) => {
+              const rank = ctx.parsed?.y;
+              return rank === null || rank === undefined ? 0 : 4;
+            },
           },
         ],
       },
@@ -1727,9 +1748,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         plugins: {
           legend: { display: false },
           tooltip: {
+            filter: (item) => item.parsed.y !== null,
             callbacks: {
+              title: (items) => {
+                const item = items[0];
+                const entry = history.find((h) => h.date === item.label);
+                if (!entry) return item.label;
+                return entry.rank !== null ? item.label : window._("Unranked");
+              },
               label: (ctx) =>
-                `${window._("Rank")}: #${ctx.parsed.y}  (${ctx.parsed.x})`,
+                ctx.parsed.y !== null
+                  ? `${window._("Rank")}: #${ctx.parsed.y}`
+                  : "",
             },
           },
         },
@@ -2003,6 +2033,23 @@ document.addEventListener("DOMContentLoaded", async () => {
       showSkeleton();
       updateTracks(); // This re-uses your existing logic and preserves player state
       return; // Stop processing other click handlers
+    }
+
+    const biggestMoversBtn = e.target.closest("#biggest-movers-btn");
+    if (biggestMoversBtn) {
+      e.preventDefault();
+      const params = new URLSearchParams(window.location.search);
+      params.set("sort_by", "rank_change");
+      params.set("sort_dir", "desc");
+      window.history.pushState(
+        {},
+        "",
+        `${window.location.pathname}?${params.toString()}`,
+      );
+      currentPage = 1;
+      showSkeleton();
+      updateTracks();
+      return;
     }
 
     const ratingContainer = e.target.closest("div[data-star-rating]");

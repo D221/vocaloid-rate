@@ -229,6 +229,13 @@ def get_tracks(
 
         final_tracks.append(track)
 
+    if sort_by == "rank_change":
+        # Sort by absolute rank change — biggest movers first
+        final_tracks.sort(
+            key=lambda t: abs(getattr(t, "rank_change", 0)),
+            reverse=(sort_dir != "asc"),
+        )
+
     return final_tracks
 
 
@@ -355,14 +362,39 @@ def get_recently_added_tracks(
 
 
 def get_track_rank_history(db: Session, track_id: int) -> list[dict]:
-    """Return rank history for a track as a list of {date, rank} dicts, oldest first."""
+    """Return rank history for a track as a list of {date, rank} dicts, oldest first.
+
+    Includes all scrape dates — rank is ``None`` on dates the track was not on the chart,
+    so the frontend can render unranked periods as gaps in the line.
+    """
+    # All scrape dates across every track (the global timeline)
+    scrape_dates = [
+        r[0]
+        for r in db.query(models.RankHistory.recorded_at)
+        .distinct()
+        .order_by(models.RankHistory.recorded_at.asc())
+        .all()
+    ]
+    if not scrape_dates:
+        return []
+
+    # This track's rank entries keyed by date
     rows = (
         db.query(models.RankHistory)
         .filter(models.RankHistory.track_id == track_id)
-        .order_by(models.RankHistory.recorded_at.asc())
         .all()
     )
-    return [{"date": r.recorded_at.strftime("%Y-%m-%d"), "rank": r.rank} for r in rows]
+    rank_by_date: dict[str, int] = {}
+    for r in rows:
+        rank_by_date[r.recorded_at.strftime("%Y-%m-%d")] = r.rank
+
+    return [
+        {
+            "date": d.strftime("%Y-%m-%d"),
+            "rank": rank_by_date.get(d.strftime("%Y-%m-%d")),
+        }
+        for d in scrape_dates
+    ]
 
 
 def create_rating(

@@ -141,6 +141,62 @@
           ></div>
         </label>
       </div>
+
+      <div class="m-4 rounded border border-border bg-card-bg p-4 shadow-md">
+        <h3 class="text-1xl mt-0 border-b border-border pb-1 font-semibold">
+          {{ _('Column Visibility') }}
+        </h3>
+        <p class="mb-2 block">
+          {{ _('Choose which columns to show in the track table.') }}
+        </p>
+        <div id="column-visibility-controls" class="flex flex-wrap gap-4">
+          <label class="inline-flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              data-col-toggle="image"
+              checked
+              class="h-4 w-4 text-cyan-text"
+            />
+            <span class="text-foreground">{{ _('Image') }}</span>
+          </label>
+          <label class="inline-flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              data-col-toggle="producer"
+              checked
+              class="h-4 w-4 text-cyan-text"
+            />
+            <span class="text-foreground">{{ _('Producer') }}</span>
+          </label>
+          <label class="inline-flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              data-col-toggle="voicebank"
+              checked
+              class="h-4 w-4 text-cyan-text"
+            />
+            <span class="text-foreground">{{ _('Voicebank') }}</span>
+          </label>
+          <label class="inline-flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              data-col-toggle="published_date"
+              checked
+              class="h-4 w-4 text-cyan-text"
+            />
+            <span class="text-foreground">{{ _('Published') }}</span>
+          </label>
+          <label class="inline-flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              data-col-toggle="rating"
+              checked
+              class="h-4 w-4 text-cyan-text"
+            />
+            <span class="text-foreground">{{ _('My Rating') }}</span>
+          </label>
+        </div>
+      </div>
     </div>
 
     {% if current_user and not is_local_env %}

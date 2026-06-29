@@ -149,4 +149,62 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
   }
+
+  // ── Column Visibility ──────────────────────────────────────────────
+  const COLUMN_ATTRS = {
+    image: { label: "Image" },
+    producer: { label: "Producer" },
+    voicebank: { label: "Voicebank" },
+    published_date: { label: "Published" },
+    rating: { label: "My Rating" },
+  };
+
+  window.applyColumnVisibility = () => {
+    let prefs;
+    try {
+      prefs = JSON.parse(localStorage.getItem("columnVisibility") || "{}");
+    } catch {
+      prefs = {};
+    }
+
+    // Remove old style block
+    const oldStyle = document.getElementById("col-vis-style");
+    if (oldStyle) oldStyle.remove();
+
+    const hiddenCols = Object.entries(prefs)
+      .filter(([, v]) => v)
+      .map(([k]) => k);
+
+    if (hiddenCols.length === 0) return;
+
+    const rules = hiddenCols
+      .map((col) => {
+        const info = COLUMN_ATTRS[col];
+        if (!info) return "";
+        const escapedLabel = info.label.replace(/"/g, '\\"');
+        return `td[data-label="${escapedLabel}"] { display: none !important; }
+th[data-column="${col}"] { display: none !important; }`;
+      })
+      .join("\n");
+
+    const style = document.createElement("style");
+    style.id = "col-vis-style";
+    style.textContent = rules;
+    document.head.appendChild(style);
+  };
+
+  window.toggleColumn = (column, hidden) => {
+    let prefs;
+    try {
+      prefs = JSON.parse(localStorage.getItem("columnVisibility") || "{}");
+    } catch {
+      prefs = {};
+    }
+    prefs[column] = hidden;
+    localStorage.setItem("columnVisibility", JSON.stringify(prefs));
+    window.applyColumnVisibility();
+  };
+
+  // Apply on every page load
+  window.applyColumnVisibility();
 });

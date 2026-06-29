@@ -607,6 +607,10 @@ msgstr "表示件数:"
 msgid "Play Random"
 msgstr "シャッフル再生"
 
+#: app/templates/partials/filter_form.html:180
+msgid "Biggest Movers"
+msgstr "変動の大きい曲"
+
 #: app/templates/partials/filter_form.html:172
 msgid "Clear"
 msgstr "クリア"

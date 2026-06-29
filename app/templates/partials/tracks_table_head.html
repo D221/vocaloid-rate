@@ -4,6 +4,7 @@
 >
   <tr>
     <th
+      data-column="image"
       class="slim-hideable-image w-1 min-w-52 border border-border px-3 py-2 text-left whitespace-nowrap"
     >
       {{ _('Image') }}
@@ -32,6 +33,7 @@
       {% endif %}
     </th>
     <th
+      data-column="producer"
       class="max-w-64 overflow-hidden border border-border px-3 py-2 text-left text-ellipsis"
     >
       {% if not is_recently_added_page %}
@@ -43,6 +45,7 @@
       {% endif %}
     </th>
     <th
+      data-column="voicebank"
       class="max-w-64 overflow-hidden border border-border px-3 py-2 text-left text-ellipsis"
     >
       {% if not is_recently_added_page %}
@@ -53,7 +56,10 @@
         {{ _('Voicebank') }}
       {% endif %}
     </th>
-    <th class="w-1 min-w-0 border border-border px-3 py-2 text-left">
+    <th
+      data-column="published_date"
+      class="w-1 min-w-0 border border-border px-3 py-2 text-left"
+    >
       {% if not is_recently_added_page %}
         <a
           href="{{ request.url.path }}?sort_by=published_date"
@@ -65,7 +71,10 @@
       {% endif %}
     </th>
     {% if current_user %}
-      <th class="w-1 min-w-0 border border-border px-3 py-2 text-left">
+      <th
+        data-column="rating"
+        class="w-1 min-w-0 border border-border px-3 py-2 text-left"
+      >
         {% if not is_recently_added_page %}
           <a href="{{ request.url.path }}?sort_by=rating" data-sort="rating"
             >{{ _('My Rating') }}</a

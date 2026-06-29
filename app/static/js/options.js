@@ -211,4 +211,30 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+  // ── Column Visibility ──────────────────────────────────────────────
+  const colToggleContainer = document.getElementById(
+    "column-visibility-controls",
+  );
+  if (colToggleContainer) {
+    let prefs;
+    try {
+      prefs = JSON.parse(localStorage.getItem("columnVisibility") || "{}");
+    } catch {
+      prefs = {};
+    }
+    colToggleContainer.querySelectorAll("[data-col-toggle]").forEach((cb) => {
+      const col = cb.dataset.colToggle;
+      if (prefs[col] !== undefined) {
+        cb.checked = !prefs[col];
+      }
+    });
+
+    colToggleContainer.addEventListener("change", (e) => {
+      const cb = e.target.closest("[data-col-toggle]");
+      if (!cb) return;
+      const col = cb.dataset.colToggle;
+      window.toggleColumn(col, !cb.checked);
+    });
+  }
 });

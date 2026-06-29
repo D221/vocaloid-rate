@@ -593,6 +593,10 @@ msgstr ""
 msgid "Play Random"
 msgstr ""
 
+#: app/templates/partials/filter_form.html:180
+msgid "Biggest Movers"
+msgstr ""
+
 #: app/templates/partials/filter_form.html:172
 msgid "Clear"
 msgstr ""
