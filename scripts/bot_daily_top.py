@@ -307,6 +307,11 @@ def run_rank_analysis(args):
         db.close()
 
 
+def run_bsky_bot():
+    """Entry point for the cron endpoint — posts to Bluesky only."""
+    run_rank_analysis(argparse.Namespace(all=False, discord=False, bsky=True))
+
+
 def main():
     parser = argparse.ArgumentParser(description="Vocaloid Rate Daily Bot")
 

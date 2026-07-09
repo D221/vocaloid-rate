@@ -1,5 +1,4 @@
 import os
-import sys
 from dotenv import load_dotenv
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
@@ -14,6 +13,7 @@ from app.services.scraping import (  # noqa: E402
     scrape_and_populate_task,
     write_scrape_status,
 )
+from scripts.bot_daily_top import run_bsky_bot  # noqa: E402
 
 router = APIRouter(tags=["Scraping"])
 
@@ -65,30 +65,7 @@ def cron_bot_bsky(request: Request, background_tasks: BackgroundTasks):
     if auth_header != f"Bearer {cron_secret}":
         raise HTTPException(status_code=401, detail="Unauthorized")
 
-    # Define the task to run the bot script
-    def run_bot_task():
-        import subprocess
-        import logging
-
-        logger = logging.getLogger("bot-task")
-        logger.info("Starting Bluesky bot background task...")
-
-        try:
-            # Capture output to see errors
-            result = subprocess.run(
-                [sys.executable, "-m", "scripts.bot_daily_top", "--bsky"],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-            logger.info(f"Bot task output: {result.stdout}")
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Bot task failed with exit code {e.returncode}")
-            logger.error(f"Bot task error output: {e.stderr}")
-        except Exception as e:
-            logger.error(f"Unexpected error in bot task: {e}")
-
-    background_tasks.add_task(run_bot_task)
+    background_tasks.add_task(run_bsky_bot)
     return {"message": "Bluesky bot task has been queued."}
 
 
