@@ -2,7 +2,7 @@ import argparse
 import os
 from datetime import datetime, timedelta, timezone
 
-import httpx2
+import httpx
 from atproto import Client, client_utils
 from atproto import models as at_models
 from dotenv import load_dotenv
@@ -131,7 +131,7 @@ def send_to_discord(rich_top_10):
         "avatar_url": f"{BASE_URL}/static/android-chrome-512x512.png",
     }
 
-    with httpx2.Client() as client:
+    with httpx.Client() as client:
         response = client.post(WEBHOOK_URL, json=payload)
         response.raise_for_status()
 
@@ -152,7 +152,7 @@ def post_to_bsky(rich_top_10):
         # --- 1. Prepare images for Top 3 ---
         images = []
 
-        with httpx2.Client() as http:
+        with httpx.Client() as http:
             for i in range(min(3, len(rich_top_10))):
                 track = rich_top_10[i]
 

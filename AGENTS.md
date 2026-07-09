@@ -50,7 +50,7 @@ The program MUST function correctly across all supported deployment modes:
 - JS lint: `bun run lint:js`
 - Full lint: `bun run lint`
 - Format: `bun run format`
-- Tests: `bun run test` or `uv run --with pytest --with httpx2 pytest`
+- Tests: `bun run test` or `uv run --with pytest pytest`
 - Coverage gate: `bun run test:cov`
 - Docker smoke build: `docker build . --file Dockerfile`
 - Docs generation: `python scripts/update_docs.py`, then `npm run build` in
