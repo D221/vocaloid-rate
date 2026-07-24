@@ -121,7 +121,12 @@ def get_tracks_partial(
                 else asc(models.Track.title)
             )
         else:
-            tracks_query = tracks_query.order_by(models.Track.rank)
+            # Default to rank sorting with direction support
+            tracks_query = tracks_query.order_by(
+                desc(models.Track.rank)
+                if sort_dir == "desc"
+                else asc(models.Track.rank)
+            )
         tracks = tracks_query.all()
     return build_tracks_partial_response(
         request=request,
