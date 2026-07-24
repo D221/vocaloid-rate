@@ -1,6 +1,7 @@
 import datetime
 import logging
 from concurrent.futures import ThreadPoolExecutor
+from typing import Optional
 
 import requests
 from bs4 import BeautifulSoup
@@ -20,11 +21,24 @@ def _fetch_page(url: str) -> requests.Response:
 
 
 # This is the new helper function that scrapes just ONE page.
-def _scrape_single_page(page_num: int) -> list[dict]:
-    """Scrapes a single page of the ranking and returns a list of track dictionaries."""
+def _scrape_single_page(page_num: int, date: Optional[str] = None) -> list[dict]:
+    """Scrapes a single page of the ranking and returns a list of track dictionaries.
+
+    Args:
+        page_num: Page number to scrape
+        date: Optional date string (YYYY-MM-DD) to fetch historical data
+    """
     tracks_on_page = []
-    url_en = f"{BASE_URL_EN}?g={page_num}"
-    url_jp = f"{BASE_URL_JP}?g={page_num}"
+
+    # Build URL with optional date parameter
+    if date:
+        # Historical data URL format - use &g= for page number
+        url_en = f"{BASE_URL_EN}?d={date}&g={page_num}"
+        url_jp = f"{BASE_URL_JP}?d={date}&g={page_num}"
+    else:
+        # Current ranking URL format
+        url_en = f"{BASE_URL_EN}?g={page_num}"
+        url_jp = f"{BASE_URL_JP}?g={page_num}"
 
     logger.info(f"Fetching page {page_num} in parallel.")
     try:
