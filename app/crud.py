@@ -1408,3 +1408,64 @@ def update_user_admin_status(
         db.commit()
         db.refresh(db_user)
     return db_user
+
+
+def get_tracks_as_of(db: Session, target_date: datetime) -> list[models.Track]:
+    """Get track rankings as of a specific date from rank_history.
+
+    Args:
+        db: Database session
+        target_date: The date to view rankings for
+
+    Returns:
+        List of tracks with their historical ranks
+    """
+    from sqlalchemy import func, and_
+
+    # Get the latest rank entry for each track before or on target_date
+    subquery = (
+        db.query(
+            models.RankHistory.track_id,
+            func.max(models.RankHistory.recorded_at).label("latest_date"),
+        )
+        .filter(models.RankHistory.recorded_at <= target_date)
+        .group_by(models.RankHistory.track_id)
+        .subquery()
+    )
+
+    # Join with rank_history to get the actual rank values
+    tracks_with_ranks = (
+        db.query(models.Track, models.RankHistory.rank)
+        .join(subquery, models.Track.id == subquery.c.track_id)
+        .join(
+            models.RankHistory,
+            and_(
+                models.RankHistory.track_id == subquery.c.track_id,
+                models.RankHistory.recorded_at == subquery.c.latest_date,
+            ),
+        )
+        .filter(models.RankHistory.recorded_at <= target_date)
+        .order_by(models.RankHistory.rank)
+        .all()
+    )
+
+    # Return tracks with historical rank set
+    result = []
+    for track, historical_rank in tracks_with_ranks:
+        track.rank = historical_rank  # Temporarily set rank for display
+        result.append(track)
+
+    return result
+
+
+def get_available_dates(db: Session) -> list[datetime]:
+    """Get list of dates that have historical ranking data."""
+    from sqlalchemy import func
+
+    dates = (
+        db.query(func.date(models.RankHistory.recorded_at).label("date"))
+        .distinct()
+        .order_by(func.date(models.RankHistory.recorded_at).desc())
+        .all()
+    )
+    return [d[0] for d in dates]
