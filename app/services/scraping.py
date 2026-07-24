@@ -130,6 +130,17 @@ def scrape_and_populate_task() -> None:
                 write_scrape_status(f"in_progress:{page}/6")
                 remaining_pages_tracks.extend(scraper._scrape_single_page(page))
             all_scraped_tracks = scraped_page_1 + remaining_pages_tracks
+
+            # VALIDATION: Only update DB if we got all 300 tracks (6 pages)
+            if len(all_scraped_tracks) < 300:
+                logging.error(
+                    "Scrape validation failed: Only got %s tracks (expected 300). "
+                    "Not updating database to avoid partial data.",
+                    len(all_scraped_tracks),
+                )
+                write_scrape_status("error:incomplete_data")
+                return
+
             logging.info(
                 "Full scrape finished. Found %s tracks. Processing database...",
                 len(all_scraped_tracks),
