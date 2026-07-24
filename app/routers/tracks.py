@@ -15,7 +15,7 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import JSONResponse
-from sqlalchemy import and_
+from sqlalchemy import and_, desc, asc
 from sqlalchemy.orm import Session, contains_eager
 
 from app import crud, models
@@ -89,7 +89,7 @@ def get_tracks_partial(
     # Re-fetch tracks with joined ratings if the user is authenticated to ensure template consistency
     if current_user:
         track_ids = [track.id for track in tracks]
-        tracks = (
+        tracks_query = (
             db.query(models.Track)
             .filter(models.Track.id.in_(track_ids))
             .outerjoin(
@@ -100,9 +100,29 @@ def get_tracks_partial(
                 ),
             )
             .options(contains_eager(models.Track.ratings))
-            .order_by(models.Track.rank)
-            .all()
         )
+        # Preserve the original sort order
+        if sort_by == "rating":
+            tracks_query = tracks_query.order_by(
+                desc(models.Rating.rating)
+                if sort_dir == "desc"
+                else asc(models.Rating.rating)
+            )
+        elif sort_by == "published_date":
+            tracks_query = tracks_query.order_by(
+                desc(models.Track.published_date)
+                if sort_dir == "desc"
+                else asc(models.Track.published_date)
+            )
+        elif sort_by == "title":
+            tracks_query = tracks_query.order_by(
+                desc(models.Track.title)
+                if sort_dir == "desc"
+                else asc(models.Track.title)
+            )
+        else:
+            tracks_query = tracks_query.order_by(models.Track.rank)
+        tracks = tracks_query.all()
     return build_tracks_partial_response(
         request=request,
         translations=translations,
