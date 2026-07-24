@@ -1018,7 +1018,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  const updateTracks = async () => {
+  const updateTracks = async (overrideParams = null) => {
     const tableBody = document.getElementById("tracks-table-body");
     const filterForm = document.getElementById("filter-form");
     const baseUrl = tableBody.dataset.updateUrl;
@@ -1028,7 +1028,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (filterForm) {
       // Start with the current URL's params to preserve sorting state.
-      const paramsForFetch = new URLSearchParams(window.location.search);
+      const paramsForFetch = overrideParams
+        ? new URLSearchParams(overrideParams)
+        : new URLSearchParams(window.location.search);
 
       const formData = new FormData(filterForm);
 
@@ -2122,7 +2124,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const newSort = sortLink.dataset.sort;
       const currentSort = params.get("sort_by");
       const currentDir = params.get("sort_dir");
-      let newDir = ["published_date", "rating", "rank"].includes(newSort)
+      let newDir = ["published_date", "rating"].includes(newSort)
         ? "desc"
         : "asc";
       if (newSort === currentSort)
@@ -2136,7 +2138,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         `${window.location.pathname}?${params.toString()}`,
       );
       showSkeleton();
-      updateTracks();
+      updateTracks(params);
       return;
     }
 
