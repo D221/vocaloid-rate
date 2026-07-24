@@ -1,8 +1,8 @@
 import logging
 import os
+from datetime import datetime
 
 from sqlalchemy.orm import Session
-
 from app import crud, models, scraper
 from app.constants import SCRAPE_STATUS_FILE
 from app.database import SessionLocal
@@ -37,7 +37,6 @@ def write_scrape_status(status_text: str) -> None:
 def read_scrape_status() -> str:
     if not os.path.exists(SCRAPE_STATUS_FILE):
         return "idle"
-
     try:
         with open(SCRAPE_STATUS_FILE, "r", encoding="utf-8") as file_handle:
             return file_handle.read().strip()
@@ -65,27 +64,22 @@ def initial_scrape_task() -> None:
                 "Full scrape finished. Found %s tracks. Adding to database...",
                 len(all_scraped_tracks),
             )
-
             for track_data in all_scraped_tracks:
                 existing_track = crud.get_track_by_link(db, track_data["link"])
                 if existing_track:
-                    # Update existing track to sync relationships if needed
                     crud.update_track(db, existing_track, track_data)
                 else:
                     crud.create_track(db, track_data)
                     new_tracks_count += 1
-
             logging.info("Processed all tracks. Added %s new tracks.", new_tracks_count)
             crud.create_update_log(db)
             logging.info("Update time logged.")
-
         except Exception as exc:
             final_status = "error"
             logging.error(
                 "An error occurred in the initial scrape task: %s", exc, exc_info=True
             )
             db.rollback()
-
         finally:
             write_scrape_status(final_status)
             set_initial_scrape_in_progress(False)
@@ -118,7 +112,6 @@ def scrape_and_populate_task() -> None:
             return
 
         logging.info("Smart Scrape: Changes detected! Proceeding with full scrape.")
-
         # Take a snapshot of current ranks before updating
         logging.info("Taking rank snapshot...")
         current_top_tracks = (
@@ -136,7 +129,6 @@ def scrape_and_populate_task() -> None:
             for page in range(2, 7):
                 write_scrape_status(f"in_progress:{page}/6")
                 remaining_pages_tracks.extend(scraper._scrape_single_page(page))
-
             all_scraped_tracks = scraped_page_1 + remaining_pages_tracks
             logging.info(
                 "Full scrape finished. Found %s tracks. Processing database...",
@@ -145,7 +137,6 @@ def scrape_and_populate_task() -> None:
 
             logging.info("Resetting all track ranks to NULL...")
             db.query(models.Track).update({"rank": None})
-
             scraped_links = [track["link"] for track in all_scraped_tracks]
             existing_tracks_map = {
                 track.link: track
@@ -173,15 +164,62 @@ def scrape_and_populate_task() -> None:
 
             crud.create_update_log(db)
             logging.info("Update time logged.")
-
         except Exception as exc:
             final_status = "error"
             logging.error(
                 "An error occurred in the scrape task: %s", exc, exc_info=True
             )
             db.rollback()
-
         finally:
             write_scrape_status(final_status)
+    finally:
+        db.close()
+
+
+def historical_scrape_task(date: str) -> None:
+    """Scrape historical ranking data for a specific date.
+
+    Args:
+        date: Date string in YYYY-MM-DD format (e.g., "2026-07-23")
+    """
+    db = _get_db_session()
+    try:
+        logging.info(f"Historical Scrape: Starting scrape for date {date}.")
+        all_scraped_tracks = []
+
+        # Scrape all 6 pages for the historical date
+        for page in range(1, 7):
+            logging.info(f"Fetching historical page {page} for date {date}...")
+            page_tracks = scraper._scrape_single_page(page, date=date)
+            all_scraped_tracks.extend(page_tracks)
+
+        logging.info(
+            f"Historical scrape for {date} finished. Found %s tracks.",
+            len(all_scraped_tracks),
+        )
+
+        # Store historical ranks in RankHistory
+        for track_data in all_scraped_tracks:
+            existing_track = crud.get_track_by_link(db, track_data["link"])
+            if existing_track:
+                # Add to rank history with historical date
+                historical_date = datetime.strptime(date, "%Y-%m-%d")
+                db.add(
+                    models.RankHistory(
+                        track_id=existing_track.id,
+                        rank=track_data["rank"],
+                        recorded_at=historical_date,
+                    )
+                )
+
+        db.commit()
+        logging.info(f"Historical data for {date} saved to RankHistory.")
+    except Exception as exc:
+        logging.error(
+            f"An error occurred in the historical scrape task for {date}: %s",
+            exc,
+            exc_info=True,
+        )
+        db.rollback()
     finally:
         db.close()
