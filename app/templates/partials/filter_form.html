@@ -180,6 +180,26 @@
       {{ _('Clear') }}
     </button>
 
+    {% if context.show_history_picker %}
+      <div class="w-full md:flex md:w-fit md:items-center md:gap-2">
+        <label
+          for="history-date"
+          class="mb-1 block font-bold md:mb-0 md:whitespace-nowrap"
+          >{{ _('Historical View:') }}</label
+        >
+        <select
+          id="history-date"
+          class="w-full rounded border border-border bg-background px-3 py-2 leading-normal text-foreground shadow-md md:w-auto"
+          onchange="if(this.value) window.location.href='/history/' + this.value"
+        >
+          <option value="">{{ _('Current Rankings') }}</option>
+          {% for date in context.available_dates %}
+            <option value="{{ date }}">{{ date }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    {% endif %}
+
     {% if current_user and (current_user.is_admin or is_local_env) %}
       <button
         type="button"
