@@ -443,6 +443,7 @@ async def read_root(
     # Filter user ID 1 or current user for options
     filter_user_id = user_id if user_id else 1
     all_producers, all_voicebanks = get_user_filter_options(db, filter_user_id, locale)
+    available_dates = crud.get_available_dates(db)
 
     last_update = crud.get_last_update_time(db)
     update_age_days = None
@@ -465,6 +466,7 @@ async def read_root(
         "tracks_json": serialize_tracks(tracks),
         "all_producers": all_producers,
         "all_voicebanks": all_voicebanks,
+        "available_dates": available_dates,
         "last_update": last_update,
         "is_db_outdated": is_db_outdated,
         "update_age_days": update_age_days,
@@ -836,3 +838,43 @@ async def view_user_profile(
     }
 
     return await _render_page("user_profile.html", request, translations, context)
+
+
+@router.get("/history/{date}")
+async def view_historical_ranking(
+    date: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    translations: Translations = Depends(get_translations),
+):
+    """View historical ranking for a specific date."""
+    from datetime import datetime
+
+    _ = translations.gettext
+
+    try:
+        target_date = datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(
+            status_code=400, detail="Invalid date format. Use YYYY-MM-DD."
+        )
+
+    # Get tracks as of that date
+    tracks = crud.get_tracks_as_of(db, target_date)
+
+    # Get available dates for the date picker
+    available_dates = crud.get_available_dates(db)
+
+    context = {
+        "request": request,
+        "current_user": current_user,
+        "_": _,
+        "tracks": tracks,
+        "target_date": date,
+        "available_dates": available_dates,
+        "title": _("Historical Ranking: ") + date,
+        "is_historical": True,
+    }
+
+    return await _render_page("historical.html", request, translations, context)

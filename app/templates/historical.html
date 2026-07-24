@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Historical Ranking: ') + target_date }}{% endblock %}
+
+{% block content %}
+  {% set title = _('Historical Ranking: ') + target_date %}
+  {% include "partials/header.html" %}
+
+  <div class="mb-4 rounded bg-amber-100 p-4 text-amber-800">
+    <strong>{{ _('Historical View') }}:</strong>
+    {{ _('Viewing rankings as of') }} {{ target_date }}
+    <a href="/" class="ml-2 text-blue-600 hover:underline"
+      >{{ _('Back to current rankings') }}</a
+    >
+  </div>
+
+  <div class="mb-8 rounded-md bg-card-bg p-5 shadow-md">
+    <form id="filter-form" class="flex flex-wrap items-center gap-4">
+      <div class="w-full md:flex md:w-fit md:items-center md:gap-2">
+        <label
+          for="history-date"
+          class="mb-1 block font-bold md:mb-0 md:whitespace-nowrap"
+          >{{ _('Select Date:') }}</label
+        >
+        <select
+          id="history-date"
+          class="w-full rounded border border-border bg-background px-3 py-2 leading-normal text-foreground shadow-md md:w-auto"
+          onchange="if(this.value) window.location.href='/history/' + this.value"
+        >
+          {% for date in available_dates %}
+            <option
+              value="{{ date }}"
+              {% if date == target_date %}selected{% endif %}
+            >
+              {{ date }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+    </form>
+  </div>
+
+  <div
+    class="overflow-x-visible rounded border border-none border-border bg-card-bg shadow-md md:overflow-x-auto"
+  >
+    <table class="w-full border-collapse">
+      <thead class="bg-muted">
+        <tr>
+          <th
+            class="border-border px-4 py-3 text-left text-sm font-bold text-foreground"
+          >
+            #
+          </th>
+          <th
+            class="border-border px-4 py-3 text-left text-sm font-bold text-foreground"
+          >
+            {{ _('Track') }}
+          </th>
+          <th
+            class="border-border px-4 py-3 text-left text-sm font-bold text-foreground"
+          >
+            {{ _('Producer') }}
+          </th>
+          <th
+            class="border-border px-4 py-3 text-left text-sm font-bold text-foreground"
+          >
+            {{ _('Voicebank') }}
+          </th>
+        </tr>
+      </thead>
+      <tbody class="bg-background">
+        {% for track in tracks %}
+          <tr class="hover:bg-muted border-t border-border">
+            <td class="border-border px-4 py-3 text-sm text-foreground">
+              {{ track.rank }}
+            </td>
+            <td class="border-border px-4 py-3 text-sm text-foreground">
+              <a
+                href="{{ track.link }}"
+                target="_blank"
+                class="text-blue-600 hover:underline"
+              >
+                {{ track.title }}
+              </a>
+            </td>
+            <td class="border-border px-4 py-3 text-sm text-foreground">
+              {{ track.producer }}
+            </td>
+            <td class="border-border px-4 py-3 text-sm text-foreground">
+              {{ track.voicebank }}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <script src="{{ url_for('static', path='js/main.min.js') }}"></script>
+{% endblock %}
