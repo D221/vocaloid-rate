@@ -147,37 +147,64 @@ def test_scrape_and_populate_task_updates_and_adds_tracks(monkeypatch, session_f
     monkeypatch.setattr(scraping_service, "_get_db_session", session_factory)
 
     def fake_scrape(page: int):
-        if page == 1:
-            return [
-                {
-                    "title": "Updated Name",
-                    "producer": "Producer A",
-                    "voicebank": "Miku",
-                    "published_date": datetime(2026, 1, 1, tzinfo=timezone.utc),
-                    "link": "https://example.com/existing",
-                    "title_jp": "",
-                    "producer_jp": "",
-                    "voicebank_jp": "",
-                    "image_url": None,
-                    "rank": 1,
-                }
-            ]
-        if page == 2:
-            return [
-                {
-                    "title": "Brand New",
-                    "producer": "Producer C",
-                    "voicebank": "Len",
-                    "published_date": datetime(2026, 1, 3, tzinfo=timezone.utc),
-                    "link": "https://example.com/new",
-                    "title_jp": "",
-                    "producer_jp": "",
-                    "voicebank_jp": "",
-                    "image_url": None,
-                    "rank": 2,
-                }
-            ]
-        return []
+        # Mock 300 tracks across 6 pages to pass validation
+        tracks_per_page = 50
+        start_rank = (page - 1) * tracks_per_page + 1
+        end_rank = min(page * tracks_per_page, 300)
+
+        if page > 6:  # Only 6 pages
+            return []
+
+        tracks = []
+        for i in range(start_rank, end_rank + 1):
+            # Track 1 is the existing track being updated
+            if i == 1:
+                tracks.append(
+                    {
+                        "title": "Updated Name",
+                        "producer": "Producer A",
+                        "voicebank": "Miku",
+                        "published_date": datetime(2026, 1, 1, tzinfo=timezone.utc),
+                        "link": "https://example.com/existing",
+                        "title_jp": "",
+                        "producer_jp": "",
+                        "voicebank_jp": "",
+                        "image_url": None,
+                        "rank": 1,
+                    }
+                )
+            # Track 2 is a new track being added
+            elif i == 2:
+                tracks.append(
+                    {
+                        "title": "Brand New",
+                        "producer": "Producer C",
+                        "voicebank": "Len",
+                        "published_date": datetime(2026, 1, 3, tzinfo=timezone.utc),
+                        "link": "https://example.com/new",
+                        "title_jp": "",
+                        "producer_jp": "",
+                        "voicebank_jp": "",
+                        "image_url": None,
+                        "rank": 2,
+                    }
+                )
+            else:
+                tracks.append(
+                    {
+                        "title": f"Track {i}",
+                        "producer": "Producer A",
+                        "voicebank": "Miku",
+                        "published_date": datetime(2026, 1, 1, tzinfo=timezone.utc),
+                        "link": f"https://example.com/track{i}",
+                        "title_jp": "",
+                        "producer_jp": "",
+                        "voicebank_jp": "",
+                        "image_url": None,
+                        "rank": i,
+                    }
+                )
+        return tracks
 
     monkeypatch.setattr(scraping_service.scraper, "_scrape_single_page", fake_scrape)
     monkeypatch.setattr(
