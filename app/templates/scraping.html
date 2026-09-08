@@ -41,8 +41,9 @@
                 "{{ _('An error occurred. Please check the server logs and restart the application.') }}";
             } else if (data.status.startsWith("in_progress")) {
               const pageNumber = data.status.split(":")[1];
+              const msgTemplate = "{{ _('Scraping page %s...') }}";
               scrapeStatusText.textContent = pageNumber
-                ? `{{ _('Scraping page %s...') }}`.replace("%s", pageNumber)
+                ? msgTemplate.replace("%s", pageNumber)
                 : "{{ _('Scraping...') }}";
             } else {
               scrapeStatusText.textContent =

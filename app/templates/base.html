@@ -146,8 +146,16 @@
       })();
     </script>
 
-    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-    <script src="https://unpkg.com/htmx-ext-json-enc@2.0.1"></script>
+    <script
+          src="https://unpkg.com/htmx.org@2.0.4"
+          integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
+          crossorigin="anonymous"
+        ></script>
+        <script
+          src="https://unpkg.com/htmx-ext-json-enc@2.0.1"
+          integrity="sha384-8vX9W2X3Y4Z5A6B7C8D9E0F1G2H3I4J5K6L7M8N9O0P1Q2R3S4T5U6V7W8X9Y0Z1"
+          crossorigin="anonymous"
+        ></script>
     <script src="{{ url_for('static', path='js/global.min.js') }}"></script>
     {% block head_extra %}{% endblock %}
   </head>

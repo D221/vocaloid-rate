@@ -1,7 +1,7 @@
 from datetime import datetime
+from html import escape
 from time import monotonic
 from urllib.parse import quote
-from xml.sax.saxutils import escape
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import Response
