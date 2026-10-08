@@ -31,10 +31,10 @@
       {% for entity in entities %}
         <a
           href="/{{ type }}/{{ entity.username }}"
-          class="profile-card flex items-center justify-center rounded border border-border bg-card-bg p-4 text-center shadow-md transition-colors hover:bg-cyan-hover"
+          class="profile-card flex min-w-0 items-center justify-center rounded border border-border bg-card-bg p-4 text-center shadow-md transition-colors hover:bg-cyan-hover"
           data-username="{{ entity.username | lower }}"
         >
-          <h2 class="text-lg font-bold text-cyan-text">
+          <h2 class="text-lg font-bold break-words text-cyan-text">
             @{{ entity.username }}
           </h2>
         </a>

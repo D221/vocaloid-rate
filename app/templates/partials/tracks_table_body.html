@@ -166,6 +166,7 @@
           data-notes-input
           name="notes"
           rows="4"
+          aria-label="{{ _('Note') }}"
           class="w-full rounded border border-border p-2"
         >
 {{ track.ratings[0].notes if track.ratings and track.ratings[0].notes }}</textarea
@@ -180,6 +181,7 @@
         <div data-lyrics-controls class="mb-4 flex items-center gap-2">
           <select
             data-lyrics-select
+            aria-label="{{ _('Lyrics') }}"
             class="rounded border border-border bg-background p-2 text-foreground"
             data-track-id="{{ track.id }}"
           ></select>
@@ -345,6 +347,7 @@
                 name="rating"
                 value="{{ i }}"
                 id="star-{{ track.id }}-{{ i }}"
+                aria-label="{{ _('Rate') }} {{ i }}"
                 {% if current_rating==i %}
                   checked
                 {% endif %}

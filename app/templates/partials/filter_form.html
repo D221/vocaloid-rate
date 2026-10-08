@@ -75,6 +75,7 @@
         id="title_filter"
         autocomplete="off"
         placeholder="{{ _('Search by title...') }}"
+        aria-label="{{ _('Search by title...') }}"
         class="w-full rounded border border-border bg-background px-3 py-2 leading-normal text-foreground shadow-md md:w-auto"
         value="{{ context.filters.title_filter or '' }}"
       />
@@ -88,6 +89,7 @@
         list="producers-list"
         autocomplete="off"
         placeholder="{{ _('Filter by producer...') }}"
+        aria-label="{{ _('Filter by producer...') }}"
         class="w-full rounded border border-border bg-background px-3 py-2 leading-normal text-foreground shadow-md md:w-auto"
         value="{{ context.filters.producer_filter or '' }}"
       />
@@ -106,6 +108,7 @@
         list="voicebanks-list"
         autocomplete="off"
         placeholder="{{ _('Filter by voicebank...') }}"
+        aria-label="{{ _('Filter by voicebank...') }}"
         class="w-full rounded border border-border bg-background px-3 py-2 leading-normal text-foreground shadow-md md:w-auto"
         value="{{ context.filters.voicebank_filter or '' }}"
       />

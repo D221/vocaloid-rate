@@ -19,9 +19,11 @@
       {% for entity in entities %}
         <a
           href="/{{ type }}/{{ entity.name }}"
-          class="rounded border border-border bg-card-bg p-4 shadow-md transition-colors hover:bg-cyan-hover"
+          class="min-w-0 rounded border border-border bg-card-bg p-4 shadow-md transition-colors hover:bg-cyan-hover"
         >
-          <h2 class="font-bold text-cyan-text">{{ entity.name }}</h2>
+          <h2 class="font-bold break-words text-cyan-text">
+            {{ entity.name }}
+          </h2>
         </a>
       {% endfor %}
     </div>
