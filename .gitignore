@@ -30,3 +30,7 @@ coverage.xml
 # Docs
 docs/docs/
 docs/static/openapi.json
+
+# MCP servers (local-only session state: console logs, page snapshots)
+.playwright-mcp/
+.mcp/
