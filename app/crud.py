@@ -310,10 +310,8 @@ def get_tracks_count(
     return int(result or 0)
 
 
-def get_recently_added_tracks(
+def _recently_added_base_query(
     db: Session,
-    skip: int = 0,
-    limit: int = 300,
     title_filter: Optional[str] = None,
     producer_filter: Optional[str] = None,
     voicebank_filter: Optional[str] = None,
@@ -356,9 +354,58 @@ def get_recently_added_tracks(
         else:
             query = query.filter(models.Track.voicebank.ilike(search_term))
 
+    return query
+
+
+def get_recently_added_tracks(
+    db: Session,
+    skip: int = 0,
+    limit: int = 300,
+    title_filter: Optional[str] = None,
+    producer_filter: Optional[str] = None,
+    voicebank_filter: Optional[str] = None,
+    locale: str = "en",
+    user_id: Optional[int] = None,
+):
+    query = _recently_added_base_query(
+        db,
+        title_filter=title_filter,
+        producer_filter=producer_filter,
+        voicebank_filter=voicebank_filter,
+        locale=locale,
+    )
+
+    # Eagerly load the current user's rating with the tracks so template
+    # access to track.ratings does not issue one query per row (N+1).
+    query = query.outerjoin(
+        models.Rating,
+        and_(
+            models.Rating.track_id == models.Track.id,
+            models.Rating.user_id == user_id,
+        ),
+    ).options(contains_eager(models.Track.ratings))
+
     query = query.order_by(models.Track.published_date.desc())
 
     return query.offset(skip).limit(limit).all()
+
+
+def get_recently_added_tracks_count(
+    db: Session,
+    title_filter: Optional[str] = None,
+    producer_filter: Optional[str] = None,
+    voicebank_filter: Optional[str] = None,
+    locale: str = "en",
+) -> int:
+    query = _recently_added_base_query(
+        db,
+        title_filter=title_filter,
+        producer_filter=producer_filter,
+        voicebank_filter=voicebank_filter,
+        locale=locale,
+    )
+
+    return query.count()
 
 
 def get_track_rank_history(db: Session, track_id: int) -> list[dict]:

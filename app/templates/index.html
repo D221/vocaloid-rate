@@ -52,7 +52,7 @@
         {% for track in tracks %}
         {
           "@type": "ListItem",
-          "position": {{ loop.index + ((pagination.page - 1) * (pagination.limit if pagination.limit|int else 10000)) }},
+          "position": {{ loop.index + ((pagination.page - 1) * (pagination.limit|int if pagination.limit|int else 10000)) }},
           "item": {
             "@type": "MusicRecording",
             "name": "{{ track.title }}",

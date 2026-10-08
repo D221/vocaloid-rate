@@ -12,10 +12,13 @@
         "all_producers": all_producers,
         "all_voicebanks": all_voicebanks,
         "pagination": pagination,
-        "show_pagination_limit_filter": false,
+        "show_pagination_limit_filter": true,
     }
   %}
   {% include "partials/filter_form.html" %}
+
+  {% set pagination_spacing_class = "mb-4" %}
+  {% include "partials/pagination_controls.html" %}
 
   <div
     class="overflow-x-visible rounded border border-none border-border bg-card-bg shadow-md md:overflow-x-auto"
@@ -32,6 +35,9 @@
       </tbody>
     </table>
   </div>
+
+  {% set pagination_spacing_class = "mt-8" %}
+  {% include "partials/pagination_controls.html" %}
 
   <script src="{{ url_for('static', path='js/main.min.js') }}"></script>
 {% endblock %}

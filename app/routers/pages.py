@@ -402,7 +402,7 @@ async def read_root(
     cookie_limit = request.cookies.get("default_page_size")
     effective_limit = limit if limit is not None else cookie_limit
     if effective_limit not in VALID_PAGE_LIMITS:
-        effective_limit = "all"
+        effective_limit = "100"
 
     total_tracks = crud.get_tracks_count(
         db,
@@ -487,6 +487,8 @@ async def read_recently_added(
     request: Request,
     db: Session = Depends(get_db),
     current_user: Optional[models.User] = Depends(get_optional_current_user),
+    page: int = 1,
+    limit: Optional[str] = None,
     title_filter: Optional[str] = None,
     producer_filter: Optional[str] = None,
     voicebank_filter: Optional[str] = None,
@@ -500,16 +502,39 @@ async def read_recently_added(
         "voicebank_filter": voicebank_filter,
     }
 
-    tracks = crud.get_recently_added_tracks(
+    cookie_limit = request.cookies.get("default_page_size")
+    effective_limit = limit if limit is not None else cookie_limit
+    if effective_limit not in VALID_PAGE_LIMITS:
+        effective_limit = "100"
+
+    total_tracks = crud.get_recently_added_tracks_count(
         db,
-        skip=0,
-        limit=10000,
         title_filter=title_filter,
         producer_filter=producer_filter,
         voicebank_filter=voicebank_filter,
         locale=locale,
     )
-    total_tracks = len(tracks)
+
+    limit_val = 10000
+    if effective_limit.isdigit():
+        limit_val = int(effective_limit)
+
+    total_pages = 1
+    if limit_val != 10000:
+        total_pages = max(1, (total_tracks + limit_val - 1) // limit_val)
+
+    skip = (page - 1) * limit_val if limit_val != 10000 else 0
+
+    tracks = crud.get_recently_added_tracks(
+        db,
+        skip=skip,
+        limit=limit_val,
+        title_filter=title_filter,
+        producer_filter=producer_filter,
+        voicebank_filter=voicebank_filter,
+        locale=locale,
+        user_id=user_id,
+    )
 
     filter_user_id = user_id if user_id else 1
     all_producers, all_voicebanks = get_user_filter_options(db, filter_user_id, locale)
@@ -524,8 +549,9 @@ async def read_recently_added(
         "all_voicebanks": all_voicebanks,
         "filters": filters,
         "pagination": {
-            "page": 1,
-            "total_pages": 1,
+            "page": page,
+            "limit": effective_limit,
+            "total_pages": total_pages,
             "total_tracks": total_tracks,
         },
         "is_recently_added_page": True,

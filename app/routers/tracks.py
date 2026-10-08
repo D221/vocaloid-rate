@@ -218,22 +218,37 @@ def get_playlist_tracks_partial(
 def get_recently_added_tracks_partial(
     request: Request,
     db: Session = Depends(get_db),
+    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    page: int = 1,
+    limit: str = "all",
     title_filter: Optional[str] = None,
     producer_filter: Optional[str] = None,
     voicebank_filter: Optional[str] = None,
     translations: Translations = Depends(get_translations),
 ):
+    user_id = current_user.id if current_user else None
     locale = translations.info()["language"]
-    tracks = crud.get_recently_added_tracks(
+
+    total_tracks = crud.get_recently_added_tracks_count(
         db,
-        skip=0,
-        limit=10000,
         title_filter=title_filter,
         producer_filter=producer_filter,
         voicebank_filter=voicebank_filter,
         locale=locale,
     )
-    total_tracks = len(tracks)
+
+    limit_val, total_pages, skip = build_limit_offset(limit, total_tracks, page)
+
+    tracks = crud.get_recently_added_tracks(
+        db,
+        skip=skip,
+        limit=limit_val,
+        title_filter=title_filter,
+        producer_filter=producer_filter,
+        voicebank_filter=voicebank_filter,
+        locale=locale,
+        user_id=user_id,
+    )
 
     return build_tracks_partial_response(
         request=request,
@@ -241,12 +256,12 @@ def get_recently_added_tracks_partial(
         tracks=tracks,
         locale=locale,
         pagination={
-            "page": 1,
-            "limit": "all",
-            "total_pages": 1,
+            "page": page,
+            "limit": limit,
+            "total_pages": total_pages,
             "total_tracks": total_tracks,
         },
-        current_user=None,
+        current_user=current_user,
     )
 
 

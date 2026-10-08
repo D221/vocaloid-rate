@@ -1,3 +1,5 @@
+import re
+
 from app import models
 
 
@@ -93,6 +95,20 @@ def test_recently_added_tracks_partial_honors_filter(client_factory, sample_trac
     body = response.json()["table_body_html"]
     assert "Second Track" in body
     assert "First Track" not in body
+
+
+def test_recently_added_tracks_partial_honors_pagination(client_factory, sample_tracks):
+    client = client_factory()
+
+    response = client.get(
+        "/_/get_recently_added_tracks_partial",
+        params={"limit": "1"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(re.findall(r"<tr\s+data-track-id=", payload["table_body_html"])) == 1
+    assert payload["pagination"]["limit"] == "1"
 
 
 def test_playlist_snapshot_reflects_page_boundaries(

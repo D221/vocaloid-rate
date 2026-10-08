@@ -8,7 +8,7 @@ let ratingChart = null;
 let skeletonTimer;
 
 let currentPage = 1;
-let currentLimit = localStorage.getItem("defaultPageSize") || "all";
+let currentLimit = localStorage.getItem("defaultPageSize") || "100";
 let updateRequestId = 0;
 let updateAbortController = null;
 
@@ -1059,7 +1059,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         paramsForBrowser.delete("rank_filter");
       if (paramsForBrowser.get("rated_filter") === "all")
         paramsForBrowser.delete("rated_filter");
-      const defaultPageSize = localStorage.getItem("defaultPageSize") || "all";
+      const defaultPageSize = localStorage.getItem("defaultPageSize") || "100";
       if (paramsForBrowser.get("limit") === defaultPageSize)
         paramsForBrowser.delete("limit");
       if (paramsForBrowser.get("page") === "1") paramsForBrowser.delete("page");

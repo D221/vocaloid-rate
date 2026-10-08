@@ -1,3 +1,5 @@
+import re
+
 from app.services import scraping as scraping_service
 
 
@@ -21,6 +23,24 @@ def test_root_renders_track_listing_for_authenticated_user(
     assert response.status_code == 200
     assert "First Track" in response.text
     assert "Second Track" in response.text
+
+
+def test_root_defaults_to_paginated_limit(client_factory):
+    client = client_factory()
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert 'data-initial-limit="100"' in response.text
+
+
+def test_root_respects_explicit_all_limit(client_factory):
+    client = client_factory()
+
+    response = client.get("/?limit=all")
+
+    assert response.status_code == 200
+    assert 'data-initial-limit="all"' in response.text
 
 
 def test_root_shows_scraping_page_when_initial_scrape_is_running(
@@ -67,6 +87,70 @@ def test_recently_added_excludes_old_tracks(client_factory, user, sample_tracks)
     assert "First Track" in response.text
     assert "Second Track" in response.text
     assert "Old Track" not in response.text
+
+
+def test_recently_added_page_bounds_initial_render(client_factory, db_session):
+    from datetime import datetime, timedelta, timezone
+
+    from app import crud
+
+    now = datetime.now(timezone.utc)
+    for i in range(105):
+        crud.create_track(
+            db_session,
+            {
+                "title": f"Bulk Track {i}",
+                "producer": "Producer A",
+                "voicebank": "Miku",
+                "published_date": now - timedelta(days=1),
+                "link": f"https://example.com/bulk-{i}",
+                "title_jp": "",
+                "producer_jp": "",
+                "voicebank_jp": "",
+                "image_url": None,
+                "rank": None,
+            },
+        )
+
+    client = client_factory()
+    response = client.get("/recently_added")
+
+    assert response.status_code == 200
+    assert len(re.findall(r"<tr\s+data-track-id=", response.text)) == 100
+    assert 'data-initial-limit="100"' in response.text
+    assert 'data-initial-total-pages="2"' in response.text
+
+
+def test_recently_added_page_honors_limit_param(client_factory, db_session):
+    from datetime import datetime, timedelta, timezone
+
+    from app import crud
+
+    now = datetime.now(timezone.utc)
+    for i in range(30):
+        crud.create_track(
+            db_session,
+            {
+                "title": f"Small Track {i}",
+                "producer": "Producer A",
+                "voicebank": "Miku",
+                "published_date": now - timedelta(days=1),
+                "link": f"https://example.com/small-{i}",
+                "title_jp": "",
+                "producer_jp": "",
+                "voicebank_jp": "",
+                "image_url": None,
+                "rank": None,
+            },
+        )
+
+    client = client_factory()
+    response = client.get("/recently_added", params={"limit": "25"})
+
+    assert response.status_code == 200
+    assert len(re.findall(r"<tr\s+data-track-id=", response.text)) == 25
+    assert 'data-initial-limit="25"' in response.text
+    assert 'data-initial-total-pages="2"' in response.text
 
 
 def test_playlist_detail_page_accessible_to_others_if_public(

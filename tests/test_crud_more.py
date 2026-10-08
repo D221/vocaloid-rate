@@ -58,6 +58,49 @@ def test_get_recently_added_tracks_filters_by_title_and_voicebank(
     assert [track.title for track in tracks] == ["Second Track"]
 
 
+def test_get_recently_added_tracks_avoids_n_plus_one_queries(
+    db_session, user, sample_tracks
+):
+    from sqlalchemy import event
+
+    from app import models
+
+    db_session.add(
+        models.Rating(track_id=sample_tracks[0].id, user_id=user.id, rating=9)
+    )
+    db_session.commit()
+
+    queries = []
+    listener = lambda *args: queries.append(1)  # noqa: E731
+    event.listen(db_session.bind, "before_cursor_execute", listener)
+    try:
+        tracks = crud.get_recently_added_tracks(db_session, user_id=user.id)
+        assert len(tracks) == 2
+        for track in tracks:
+            _ = [(rating.rating, rating.notes) for rating in track.ratings]
+    finally:
+        event.remove(db_session.bind, "before_cursor_execute", listener)
+
+    assert len(queries) <= 2
+
+
+def test_get_recently_added_tracks_includes_requesting_user_ratings(
+    db_session, user, sample_tracks
+):
+    from app import models
+
+    db_session.add(
+        models.Rating(track_id=sample_tracks[0].id, user_id=user.id, rating=9)
+    )
+    db_session.commit()
+
+    tracks = crud.get_recently_added_tracks(db_session, user_id=user.id)
+    ratings_by_title = {track.title: track.ratings for track in tracks}
+
+    assert [rating.rating for rating in ratings_by_title["First Track"]] == [9]
+    assert ratings_by_title["Second Track"] == []
+
+
 def test_get_playlist_tracks_filtered_and_count(db_session, user, playlist):
     tracks = crud.get_playlist_tracks_filtered(
         db_session,

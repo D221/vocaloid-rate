@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Load saved page size setting
   if (defaultPageSizeSelect) {
-    const savedPageSize = localStorage.getItem("defaultPageSize") || "all";
+    const savedPageSize = localStorage.getItem("defaultPageSize") || "100";
     defaultPageSizeSelect.value = savedPageSize;
     setDefaultPageSizeCookie(savedPageSize);
 
