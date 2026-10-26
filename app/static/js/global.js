@@ -2,6 +2,38 @@
 const THEME_KEY = "theme";
 const THEMES = ["light", "dark", "night", "black"];
 
+// THUMBNAIL FALLBACK
+// Deleted/private YouTube videos serve 404 thumbnails. Swap any dead
+// track image for an inline placeholder so pages never show broken icons.
+// Capture phase catches resource errors; the flags prevent loops. Images
+// owned by the thumbnail upgrade queue in main.js are skipped here because
+// the queue resolves their fallback chain itself.
+window.THUMBNAIL_FALLBACK =
+  "data:image/svg+xml," +
+  encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' width='320' height='180'>" +
+      "<rect width='100%' height='100%' fill='#2a2a3a'/>" +
+      "<text x='50%' y='56%' font-size='72' text-anchor='middle' " +
+      "fill='#8a8a9a' dominant-baseline='middle'>♪</text></svg>",
+  );
+
+document.addEventListener(
+  "error",
+  (event) => {
+    const target = event.target;
+    if (
+      target instanceof HTMLImageElement &&
+      !target.dataset.fallbackApplied &&
+      target.dataset.upgradeQueued !== "true" &&
+      target.src.includes("i.ytimg.com")
+    ) {
+      target.dataset.fallbackApplied = "true";
+      target.src = window.THUMBNAIL_FALLBACK;
+    }
+  },
+  true,
+);
+
 window.getSystemTheme = function () {
   return window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"

@@ -21,3 +21,12 @@ def test_favicon_ico_stays_small():
         f"favicon.ico is {size} bytes (budget {FAVICON_BUDGET_BYTES}); "
         "regenerate it from a PNG source instead of committing a BMP bundle"
     )
+
+
+def test_dead_thumbnails_fall_back_to_placeholder():
+    global_js = (STATIC_DIR / "js" / "global.js").read_text(encoding="utf-8")
+    main_js = (STATIC_DIR / "js" / "main.js").read_text(encoding="utf-8")
+
+    assert "THUMBNAIL_FALLBACK" in global_js
+    assert "addEventListener(" in global_js and '"error"' in global_js
+    assert "THUMBNAIL_FALLBACK" in main_js

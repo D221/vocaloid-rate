@@ -177,10 +177,23 @@ const runThumbnailUpgradeQueue = () => {
     // Simplified: direct assignment, fewer nested handlers
     img.src = maxResUrl;
 
-    // If the image fails to load, fall back to hqdefault
+    // If the image fails to load, fall back to hqdefault, then to the
+    // local placeholder for dead videos (corrects broken icons).
     img.onerror = () => {
-      img.onerror = null;
-      img.src = hqUrl;
+      if (
+        !img.dataset.hqFallbackAttempted &&
+        window.THUMBNAIL_FALLBACK &&
+        img.src !== window.THUMBNAIL_FALLBACK
+      ) {
+        img.dataset.hqFallbackAttempted = "true";
+        img.src = hqUrl;
+      } else {
+        img.onerror = null;
+        if (window.THUMBNAIL_FALLBACK) {
+          img.dataset.fallbackApplied = "true";
+          img.src = window.THUMBNAIL_FALLBACK;
+        }
+      }
       img.dataset.processed = "true";
       img.dataset.upgradeQueued = "false";
       img.classList.add("object-cover", "aspect-video");
