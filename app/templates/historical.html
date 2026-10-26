@@ -95,5 +95,29 @@
     </table>
   </div>
 
+  {% if pagination.total_pages > 1 %}
+    <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+      {% if pagination.page > 1 %}
+        <a
+          class="rounded border border-gray-text p-2 font-bold text-gray-text shadow-md hover:bg-gray-hover"
+          href="/history/{{ target_date }}?page={{ pagination.page - 1 }}{% if pagination.limit != '100' %}&limit={{ pagination.limit }}{% endif %}"
+        >
+          {{ _('Previous') }}
+        </a>
+      {% endif %}
+      <span class="text-sm text-gray-text">
+        {{ pagination.page }} / {{ pagination.total_pages }}
+      </span>
+      {% if pagination.page < pagination.total_pages %}
+        <a
+          class="rounded border border-gray-text p-2 font-bold text-gray-text shadow-md hover:bg-gray-hover"
+          href="/history/{{ target_date }}?page={{ pagination.page + 1 }}{% if pagination.limit != '100' %}&limit={{ pagination.limit }}{% endif %}"
+        >
+          {{ _('Next') }}
+        </a>
+      {% endif %}
+    </div>
+  {% endif %}
+
   <script src="{{ url_for('static', path='js/main.min.js') }}"></script>
 {% endblock %}

@@ -379,6 +379,7 @@ async def read_root(
 ):
     user_id = current_user.id if current_user else None
     locale = _get_locale(translations)
+    page = max(1, page)
     if is_initial_scrape_in_progress():
         return await _render_page(
             "scraping.html",
@@ -496,6 +497,7 @@ async def read_recently_added(
 ):
     user_id = current_user.id if current_user else None
     locale = _get_locale(translations)
+    page = max(1, page)
     filters = {
         "title_filter": title_filter,
         "producer_filter": producer_filter,
@@ -872,6 +874,8 @@ async def view_historical_ranking(
     request: Request,
     db: Session = Depends(get_db),
     current_user: Optional[models.User] = Depends(get_optional_current_user),
+    page: int = 1,
+    limit: Optional[str] = None,
     translations: Translations = Depends(get_translations),
 ):
     """View historical ranking for a specific date."""
@@ -886,8 +890,26 @@ async def view_historical_ranking(
             status_code=400, detail="Invalid date format. Use YYYY-MM-DD."
         )
 
+    page = max(1, page)
+    cookie_limit = request.cookies.get("default_page_size")
+    effective_limit = limit if limit is not None else cookie_limit
+    if effective_limit not in VALID_PAGE_LIMITS:
+        effective_limit = "100"
+
+    total_tracks = crud.get_tracks_as_of_count(db, target_date)
+
+    limit_val: Optional[int] = None
+    if effective_limit.isdigit():
+        limit_val = int(effective_limit)
+
+    total_pages = 1
+    if limit_val is not None:
+        total_pages = max(1, (total_tracks + limit_val - 1) // limit_val)
+
+    skip = (page - 1) * limit_val if limit_val is not None else 0
+
     # Get tracks as of that date
-    tracks = crud.get_tracks_as_of(db, target_date)
+    tracks = crud.get_tracks_as_of(db, target_date, skip=skip, limit=limit_val)
 
     # Get available dates for the date picker
     available_dates = crud.get_available_dates(db)
@@ -901,6 +923,12 @@ async def view_historical_ranking(
         "available_dates": available_dates,
         "title": _("Historical Ranking: ") + date,
         "is_historical": True,
+        "pagination": {
+            "page": page,
+            "limit": effective_limit,
+            "total_pages": total_pages,
+            "total_tracks": total_tracks,
+        },
     }
 
     return await _render_page("historical.html", request, translations, context)

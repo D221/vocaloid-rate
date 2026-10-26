@@ -71,6 +71,7 @@ def get_user_filter_options(
 def build_limit_offset(
     limit: str, total_tracks: int, page: int
 ) -> tuple[int, int, int]:
+    page = max(1, page)
     limit_val = total_tracks if limit == "all" else int(limit)
     total_pages = (total_tracks + limit_val - 1) // limit_val if limit_val > 0 else 1
     skip = (page - 1) * limit_val

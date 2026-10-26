@@ -111,6 +111,22 @@ def test_recently_added_tracks_partial_honors_pagination(client_factory, sample_
     assert payload["pagination"]["limit"] == "1"
 
 
+def test_tracks_partial_clamps_nonpositive_page(client_factory, sample_tracks):
+    from app.utils.view_helpers import build_limit_offset
+
+    limit_val, total_pages, skip = build_limit_offset("100", 300, 0)
+
+    assert skip == 0
+    assert total_pages == 3
+
+    client = client_factory()
+
+    for bad_page in ("0", "-1"):
+        response = client.get("/_/get_tracks", params={"page": bad_page})
+
+        assert response.status_code == 200
+
+
 def test_playlist_snapshot_reflects_page_boundaries(
     client_factory,
     user,

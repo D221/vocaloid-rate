@@ -1457,12 +1457,19 @@ def update_user_admin_status(
     return db_user
 
 
-def get_tracks_as_of(db: Session, target_date: datetime) -> list[models.Track]:
+def get_tracks_as_of(
+    db: Session,
+    target_date: datetime,
+    skip: int = 0,
+    limit: Optional[int] = None,
+) -> list[models.Track]:
     """Get track rankings as of a specific date from rank_history.
 
     Args:
         db: Database session
         target_date: The date to view rankings for
+        skip: Number of rows to skip (pagination offset)
+        limit: Max rows to return (None means no limit)
 
     Returns:
         List of tracks with their historical ranks
@@ -1493,16 +1500,42 @@ def get_tracks_as_of(db: Session, target_date: datetime) -> list[models.Track]:
         )
         .filter(models.RankHistory.recorded_at <= target_date)
         .order_by(models.RankHistory.rank)
-        .all()
     )
+
+    if skip:
+        tracks_with_ranks = tracks_with_ranks.offset(skip)
+    if limit is not None:
+        tracks_with_ranks = tracks_with_ranks.limit(limit)
 
     # Return tracks with historical rank set
     result = []
-    for track, historical_rank in tracks_with_ranks:
+    for track, historical_rank in tracks_with_ranks.all():
         track.rank = historical_rank  # Temporarily set rank for display
         result.append(track)
 
     return result
+
+
+def get_tracks_as_of_count(db: Session, target_date: datetime) -> int:
+    """Count distinct tracks with a rank entry on or before target_date."""
+    from sqlalchemy import func
+
+    subquery = (
+        db.query(
+            models.RankHistory.track_id,
+            func.max(models.RankHistory.recorded_at).label("latest_date"),
+        )
+        .filter(models.RankHistory.recorded_at <= target_date)
+        .group_by(models.RankHistory.track_id)
+        .subquery()
+    )
+
+    return (
+        db.query(func.count(func.distinct(models.Track.id)))
+        .join(subquery, models.Track.id == subquery.c.track_id)
+        .scalar()
+        or 0
+    )
 
 
 def get_available_dates(db: Session) -> list[datetime]:

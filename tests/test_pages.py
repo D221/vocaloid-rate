@@ -1,4 +1,5 @@
 import re
+from datetime import timedelta
 
 from app.services import scraping as scraping_service
 
@@ -32,6 +33,80 @@ def test_root_defaults_to_paginated_limit(client_factory):
 
     assert response.status_code == 200
     assert 'data-initial-limit="100"' in response.text
+
+
+def test_root_clamps_nonpositive_page(client_factory, sample_tracks):
+    client = client_factory()
+
+    for bad_page in ("0", "-1"):
+        response = client.get("/", params={"page": bad_page})
+
+        assert response.status_code == 200
+        assert 'data-initial-page="1"' in response.text
+
+
+def test_recently_added_clamps_nonpositive_page(client_factory, sample_tracks):
+    client = client_factory()
+
+    for bad_page in ("0", "-1"):
+        response = client.get("/recently_added", params={"page": bad_page})
+
+        assert response.status_code == 200
+        assert 'data-initial-page="1"' in response.text
+
+
+def _make_ranked_tracks(db_session, count, day):
+    from app import crud, models
+
+    tracks = []
+    for i in range(count):
+        track = crud.create_track(
+            db_session,
+            {
+                "title": f"Hist Track {i}",
+                "producer": "Producer A",
+                "voicebank": "Miku",
+                "published_date": day - timedelta(days=60),
+                "link": f"https://example.com/hist-{i}",
+                "title_jp": "",
+                "producer_jp": "",
+                "voicebank_jp": "",
+                "image_url": None,
+                "rank": None,
+            },
+        )
+        db_session.add(
+            models.RankHistory(track_id=track.id, rank=i + 1, recorded_at=day)
+        )
+        tracks.append(track)
+    db_session.commit()
+    return tracks
+
+
+def test_history_page_bounds_rows(client_factory, db_session):
+    from datetime import datetime
+
+    day = datetime(2026, 9, 15)
+    _make_ranked_tracks(db_session, 105, day)
+
+    client = client_factory()
+    response = client.get("/history/2026-09-15")
+
+    assert response.status_code == 200
+    assert response.text.count("<tr") - 1 == 100
+
+
+def test_history_page_second_page_shows_remainder(client_factory, db_session):
+    from datetime import datetime
+
+    day = datetime(2026, 9, 15)
+    _make_ranked_tracks(db_session, 105, day)
+
+    client = client_factory()
+    response = client.get("/history/2026-09-15", params={"page": "2"})
+
+    assert response.status_code == 200
+    assert response.text.count("<tr") - 1 == 5
 
 
 def test_root_respects_explicit_all_limit(client_factory):
