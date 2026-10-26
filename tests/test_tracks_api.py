@@ -25,6 +25,26 @@ def test_rate_and_delete_rating(client_factory, db_session, user, sample_tracks)
     )
 
 
+def test_rate_missing_track_returns_404_without_creating_rating(
+    client_factory, db_session, user
+):
+    client = client_factory(current_user=user)
+
+    response = client.post("/rate/999999", data={"rating": "9"})
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Track not found"
+    assert (
+        db_session.query(models.Rating)
+        .filter(
+            models.Rating.track_id == 999999,
+            models.Rating.user_id == user.id,
+        )
+        .first()
+        is None
+    )
+
+
 def test_get_tracks_partial_returns_rendered_table(client_factory, user, sample_tracks):
     client = client_factory(current_user=user)
 
