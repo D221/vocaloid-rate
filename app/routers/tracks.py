@@ -386,6 +386,9 @@ def rate_track(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
+    track = db.query(models.Track).filter(models.Track.id == track_id).first()
+    if not track:
+        raise HTTPException(status_code=404, detail="Track not found")
     crud.create_rating(
         db, track_id=track_id, user_id=current_user.id, rating=rating, notes=notes
     )
