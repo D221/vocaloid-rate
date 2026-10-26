@@ -109,6 +109,55 @@ def test_history_page_second_page_shows_remainder(client_factory, db_session):
     assert response.text.count("<tr") - 1 == 5
 
 
+def _make_bulk_tracks(db_session, count, prefix):
+    from datetime import datetime, timedelta, timezone
+
+    from app import crud
+
+    now = datetime.now(timezone.utc)
+    for i in range(count):
+        crud.create_track(
+            db_session,
+            {
+                "title": f"{prefix} {i:03d}",
+                "producer": "Producer A",
+                "voicebank": "Miku",
+                "published_date": now - timedelta(days=1),
+                "link": f"https://example.com/{prefix}-{i}",
+                "title_jp": "",
+                "producer_jp": "",
+                "voicebank_jp": "",
+                "image_url": None,
+                "rank": None,
+            },
+        )
+
+
+def test_playlist_edit_bounds_candidate_tracks(
+    client_factory, db_session, user, playlist
+):
+    _make_bulk_tracks(db_session, 150, "Cand")
+
+    client = client_factory(optional_user=user)
+    response = client.get(f"/playlist/edit/{playlist.id}")
+
+    assert response.status_code == 200
+    assert response.text.count("data-add-indicator") == 100
+
+
+def test_playlist_edit_candidate_search_finds_any_track(
+    client_factory, db_session, user, playlist
+):
+    _make_bulk_tracks(db_session, 150, "Cand")
+
+    client = client_factory(optional_user=user)
+    response = client.get(f"/playlist/edit/{playlist.id}", params={"q": "Cand 149"})
+
+    assert response.status_code == 200
+    assert response.text.count("data-add-indicator") == 1
+    assert "Cand 149" in response.text
+
+
 def test_root_respects_explicit_all_limit(client_factory):
     client = client_factory()
 

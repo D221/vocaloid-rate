@@ -287,6 +287,7 @@ async def edit_playlist_page(
     request: Request,
     db: Session = Depends(get_db),
     current_user: Optional[models.User] = Depends(get_optional_current_user),
+    q: Optional[str] = None,
     translations: Translations = Depends(get_translations),
 ):
     user = _require_current_user(current_user)
@@ -299,7 +300,8 @@ async def edit_playlist_page(
             status_code=403, detail="Not authorized to edit this playlist"
         )
 
-    all_tracks = crud.get_tracks(db, limit=10000, sort_by="title", rank_filter="all")
+    search = (q or "").strip() or None
+    all_tracks = crud.get_candidate_tracks(db, search=search, limit=100)
     context = {
         "request": request,
         "current_user": user,
@@ -307,6 +309,7 @@ async def edit_playlist_page(
         "playlist": db_playlist,
         "all_tracks": all_tracks,
         "tracks_json": serialize_tracks(all_tracks),
+        "candidate_query": search or "",
     }
 
     return await _render_page("playlist_edit.html", request, translations, context)

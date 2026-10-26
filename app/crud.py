@@ -1538,6 +1538,28 @@ def get_tracks_as_of_count(db: Session, target_date: datetime) -> int:
     )
 
 
+def get_candidate_tracks(
+    db: Session,
+    search: Optional[str] = None,
+    limit: int = 100,
+) -> list[models.Track]:
+    """Tracks offered as add-candidates in the playlist editor.
+
+    Title-ordered and capped so the editor never embeds the whole catalog.
+    When ``search`` is given, matches title or producer instead.
+    """
+    query = db.query(models.Track)
+    if search:
+        term = f"%{search}%"
+        query = query.filter(
+            or_(
+                models.Track.title.ilike(term),
+                models.Track.producer.ilike(term),
+            )
+        )
+    return query.order_by(models.Track.title.asc()).limit(limit).all()
+
+
 def get_available_dates(db: Session) -> list[datetime]:
     """Get list of dates that have historical ranking data."""
     from sqlalchemy import func

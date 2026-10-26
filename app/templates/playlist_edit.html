@@ -43,12 +43,17 @@
       <h2 class="text-2xl font-bold text-header">
         {{ _('Available Tracks') }}
       </h2>
-      <input
-        type="search"
-        id="track-search"
-        placeholder="{{ _('Search all tracks...') }}"
-        class="my-4 w-full rounded border border-border bg-background p-2 text-foreground"
-      />
+      <form method="get" action="" class="my-4">
+        <input
+          type="search"
+          id="track-search"
+          name="q"
+          value="{{ candidate_query }}"
+          placeholder="{{ _('Search all tracks...') }}"
+          aria-label="{{ _('Search all tracks...') }}"
+          class="w-full rounded border border-border bg-background p-2 text-foreground"
+        />
+      </form>
       <div
         id="all-tracks-list"
         class="h-[60vh] space-y-2 overflow-y-auto rounded border border-border bg-background p-2"
