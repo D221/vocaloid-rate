@@ -802,6 +802,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const volumeSlider = document.getElementById("player-volume-slider");
   const muteBtn = document.getElementById("player-mute-btn");
   const progressBar = document.getElementById("player-progress-bar");
+  const progressTooltip = document.getElementById("player-progress-tooltip");
   const currentTimeEl = document.getElementById("player-current-time");
   const durationEl = document.getElementById("player-duration");
   const limitFilter = document.getElementById("limit_filter");
@@ -837,8 +838,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Immediately reset the progress bar and timers to zero
     progressBar.value = 0;
-    currentTimeEl.textContent = "0:00";
-    durationEl.textContent = "0:00";
+    setProgressState(0, 0);
 
     // Show the player UI immediately
     musicPlayerEl.classList.replace("hidden", "grid");
@@ -1005,8 +1005,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     stopProgressUpdater();
     musicPlayerEl.classList.replace("grid", "hidden");
     progressBar.value = 0;
-    currentTimeEl.textContent = "0:00";
-    durationEl.textContent = "0:00";
+    setProgressState(0, 0);
     updatePlayerUI();
   }
 
@@ -1232,6 +1231,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const debouncedUpdateTracks = debounce(updateTracks, 300);
 
+  function setProgressState(currentTime, duration) {
+    currentTimeEl.textContent = formatTime(currentTime);
+    durationEl.textContent = formatTime(duration);
+    progressBar.setAttribute(
+      "aria-valuetext",
+      `${formatTime(currentTime)} / ${formatTime(duration)}`,
+    );
+    if (duration <= 0) {
+      progressTooltip.classList.add("opacity-0");
+    }
+  }
+
   function startProgressUpdater() {
     stopProgressUpdater();
     progressUpdateInterval = setInterval(() => {
@@ -1256,8 +1267,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const duration = activePlayer.getDuration();
         if (duration > 0) {
           progressBar.value = (currentTime / duration) * 100;
-          currentTimeEl.textContent = formatTime(currentTime);
-          durationEl.textContent = formatTime(duration);
+          setProgressState(currentTime, duration);
         }
       }
     }, 250);
@@ -2851,6 +2861,49 @@ document.addEventListener("DOMContentLoaded", async () => {
     seekVideo(); // Seek when user releases the slider
     startProgressUpdater(); // Resume updates
   });
+
+  // Decorative seek preview above the progress bar. Hover-capable pointers see
+  // it while hovering; touch/pen pointers only have a position while dragging,
+  // which is when mobile players show the same bubble.
+  const hoverCapable = window.matchMedia(
+    "(hover: hover) and (pointer: fine)",
+  ).matches;
+
+  const getSeekDuration = () => {
+    const activePlayer = getActivePlayer();
+    if (!activePlayer || typeof activePlayer.getDuration !== "function") {
+      return 0;
+    }
+    return activePlayer.getDuration() || 0;
+  };
+
+  const showSeekPreview = (event) => {
+    const duration = getSeekDuration();
+    const rect = progressBar.getBoundingClientRect();
+    if (!duration || !rect.width) {
+      return;
+    }
+
+    const ratio = Math.min(
+      Math.max((event.clientX - rect.left) / rect.width, 0),
+      1,
+    );
+
+    progressTooltip.textContent = formatTime(ratio * duration);
+    // Clamp so the bubble stays inside the bar at both ends.
+    progressTooltip.style.left = `clamp(1.25rem, ${ratio * 100}%, calc(100% - 1.25rem))`;
+    progressTooltip.classList.remove("opacity-0");
+  };
+
+  const hideSeekPreview = () => progressTooltip.classList.add("opacity-0");
+
+  progressBar.addEventListener("pointermove", showSeekPreview);
+  progressBar.addEventListener("pointerdown", showSeekPreview);
+  progressBar.addEventListener("pointercancel", hideSeekPreview);
+  progressBar.addEventListener(
+    hoverCapable ? "pointerleave" : "pointerup",
+    hideSeekPreview,
+  );
 
   if (limitFilter) {
     limitFilter.addEventListener("change", (e) => {

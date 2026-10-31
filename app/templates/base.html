@@ -247,16 +247,25 @@
               id="player-current-time"
               >0:00</span
             >
-            <input
-              class="grow cursor-pointer"
-              type="range"
-              id="player-progress-bar"
-              min="0"
-              max="100"
-              value="0"
-              step="0.1"
-              title="Seek"
-            />
+            <div class="relative grow">
+              <input
+                class="w-full cursor-pointer"
+                type="range"
+                id="player-progress-bar"
+                min="0"
+                max="100"
+                value="0"
+                step="0.1"
+                aria-label="Seek"
+                aria-valuetext="0:00 / 0:00"
+              />
+              <span
+                id="player-progress-tooltip"
+                class="pointer-events-none absolute bottom-full left-0 mb-1 -translate-x-1/2 rounded-md border border-border bg-header px-1.5 py-0.5 text-[0.7em] font-semibold whitespace-nowrap text-background tabular-nums opacity-0 shadow-md transition-opacity duration-150"
+                aria-hidden="true"
+                >0:00</span
+              >
+            </div>
             <span class="min-w-9 text-center text-[0.8em]" id="player-duration"
               >0:00</span
             >
