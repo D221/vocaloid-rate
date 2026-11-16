@@ -1,11 +1,13 @@
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import models, vocadb
 from app.dependencies import get_db, get_locale
+
+logger = logging.getLogger(__name__)
+
 
 router = APIRouter(tags=["VocaDB"])
 
@@ -61,7 +63,7 @@ def get_smart_lyrics(
         db.query(models.Lyric).filter(models.Lyric.track_id == track_id).all()
     )
     if cached_lyrics:
-        logging.info("Serving cached lyrics for track %s", track_id)
+        logger.info("Serving cached lyrics for track %s", track_id)
         return {"lyrics": _format_cached_lyrics(cached_lyrics, locale)}
 
     track = db.query(models.Track).filter(models.Track.id == track_id).first()
@@ -95,7 +97,7 @@ def search_vocadb(producer: str, title_en: str, title_jp: str | None = None):
 @router.get("/api/vocadb_lyrics/{song_id}")
 def get_vocadb_lyrics(
     song_id: int,
-    track_id: Optional[int] = None,
+    track_id: int | None = None,
     db: Session = Depends(get_db),
     locale: str = Depends(get_locale),
 ):
@@ -104,7 +106,7 @@ def get_vocadb_lyrics(
             db.query(models.Lyric).filter(models.Lyric.track_id == track_id).all()
         )
         if cached_lyrics:
-            logging.info("Serving cached lyrics for track %s", track_id)
+            logger.info("Serving cached lyrics for track %s", track_id)
             return {"lyrics": _format_cached_lyrics(cached_lyrics, locale)}
 
     available_lyrics = vocadb.fetch_lyrics(song_id)
@@ -123,7 +125,7 @@ def get_vocadb_lyrics(
             )
             db.add(new_lyric)
         db.commit()
-        logging.info("Cached %s lyrics for track %s", len(available_lyrics), track_id)
+        logger.info("Cached %s lyrics for track %s", len(available_lyrics), track_id)
 
     def sort_key(lyric: dict[str, str]) -> int:
         if locale == "ja":

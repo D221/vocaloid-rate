@@ -27,7 +27,7 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 # We need to import the models here so that Base is populated
-from app import models  # noqa: F401, E402
+from app import models  # noqa: F401
 
 target_metadata = Base.metadata
 
@@ -56,7 +56,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        render_as_batch=True if url and url.startswith("sqlite") else False,
+        render_as_batch=bool(url and url.startswith("sqlite")),
     )
 
     with context.begin_transaction():
@@ -81,9 +81,7 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            render_as_batch=True
-            if connectable.url.drivername.startswith("sqlite")
-            else False,
+            render_as_batch=connectable.url.drivername.startswith("sqlite"),
         )
 
         with context.begin_transaction():

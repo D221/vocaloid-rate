@@ -1,6 +1,5 @@
 import json
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
 from pydantic import BaseModel
@@ -11,12 +10,15 @@ from app.auth import get_current_user
 from app.dependencies import get_db
 from app.utils.uploads import read_upload_with_size_limit
 
+logger = logging.getLogger(__name__)
+
+
 router = APIRouter(tags=["Playlists"])
 
 
 class PlaylistUpdate(BaseModel):
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     is_public: bool = True
 
 
@@ -132,7 +134,7 @@ async def import_all_playlists(
     except HTTPException:
         raise
     except Exception:
-        logging.error("Playlists import failed", exc_info=True)
+        logger.exception("Playlists import failed")
         raise HTTPException(
             status_code=500, detail="An internal error occurred while importing."
         )
@@ -166,7 +168,7 @@ async def import_single_playlist(
     except HTTPException:
         raise
     except Exception:
-        logging.error("Playlist import failed", exc_info=True)
+        logger.exception("Playlist import failed")
         raise HTTPException(
             status_code=500, detail="An internal error occurred while importing."
         )

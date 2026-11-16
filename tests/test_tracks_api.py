@@ -134,7 +134,7 @@ def test_recently_added_tracks_partial_honors_pagination(client_factory, sample_
 def test_tracks_partial_clamps_nonpositive_page(client_factory, sample_tracks):
     from app.utils.view_helpers import build_limit_offset
 
-    limit_val, total_pages, skip = build_limit_offset("100", 300, 0)
+    _limit_val, total_pages, skip = build_limit_offset("100", 300, 0)
 
     assert skip == 0
     assert total_pages == 3
@@ -252,7 +252,7 @@ def test_track_rank_history_returns_ordered_data(
     client_factory, db_session, sample_tracks
 ):
     """Rank history endpoint returns history sorted oldest-first."""
-    from datetime import datetime, timezone, timedelta
+    from datetime import datetime, timedelta, timezone
 
     track = sample_tracks[0]
     now = datetime.now(timezone.utc)

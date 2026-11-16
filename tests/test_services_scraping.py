@@ -1,5 +1,5 @@
-from pathlib import Path
 from datetime import datetime, timezone
+from pathlib import Path
 
 from app import models
 from app.services import scraping as scraping_service

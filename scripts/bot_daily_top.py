@@ -179,7 +179,7 @@ def post_to_bsky(rich_top_10):
 
                     print(f"[BSKY] Uploaded image for {track['title']}.")
 
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001 - one bad image must not kill the post
                     print(f"[BSKY] Failed to process image for {track['title']}: {e}")
 
         # --- 2. Main post: compact Top 3 with details ---
@@ -248,7 +248,7 @@ def post_to_bsky(rich_top_10):
                     f"[BSKY] Threaded list sent: positions {start + 1}-{min(end, len(rich_top_10))}."
                 )
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - top level of the bot run
         print(f"[BSKY] ERROR: {e}")
 
 

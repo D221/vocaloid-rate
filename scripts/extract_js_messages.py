@@ -17,7 +17,7 @@ def extract_js_strings():
         extracted_strings.update(double_quote_matches)
         extracted_strings.update(single_quote_matches)
         extracted_strings.update(double_quote_matches)
-    return sorted(list(extracted_strings))
+    return sorted(extracted_strings)
 
 
 def update_js_translations_file(new_strings):

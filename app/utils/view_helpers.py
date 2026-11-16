@@ -1,6 +1,5 @@
 import json
 from datetime import datetime, timezone
-from typing import Optional
 
 from babel.support import Translations
 from fastapi import Request
@@ -83,7 +82,7 @@ def build_tracks_table_body(
     translations: Translations,
     tracks,
     locale: str,
-    current_user: Optional[models.User] = None,
+    current_user: models.User | None = None,
 ) -> str:
     # Always ensure current_user is passed correctly
     return templates.get_template("partials/tracks_table_body.html").render(
@@ -104,7 +103,7 @@ def build_tracks_partial_response(
     tracks,
     locale: str,
     pagination: dict,
-    current_user: Optional[models.User] = None,
+    current_user: models.User | None = None,
 ) -> JSONResponse:
     return JSONResponse(
         content={
@@ -120,7 +119,7 @@ def build_tracks_partial_response(
     )
 
 
-def time_ago_filter(date: Optional[datetime]) -> str:
+def time_ago_filter(date: datetime | None) -> str:
     if not date:
         return ""
     if not isinstance(date, datetime):

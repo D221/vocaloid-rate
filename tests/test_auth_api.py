@@ -1,4 +1,4 @@
-import app.auth as auth
+from app import auth
 
 
 def test_login_success_sets_auth_cookie(client_factory, monkeypatch):
@@ -37,8 +37,7 @@ def test_login_success_sets_auth_cookie(client_factory, monkeypatch):
 
 
 def test_login_accepts_username(client_factory, db_session, monkeypatch):
-    from app import main
-    from app import schemas
+    from app import main, schemas
 
     client = client_factory()
     monkeypatch.setattr(auth, "get_secret_key", lambda: "test-secret")

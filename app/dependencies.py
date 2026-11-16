@@ -1,7 +1,6 @@
 import gettext
 import logging
 from gettext import NullTranslations
-from typing import Optional
 
 from babel.support import Translations
 from fastapi import Cookie, Depends, Request
@@ -17,10 +16,13 @@ from app.constants import (
 )
 from app.database import SessionLocal
 
+logger = logging.getLogger(__name__)
+
+
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 
-async def get_slim_mode(viewModeSlim: Optional[str] = Cookie(None)) -> bool:
+async def get_slim_mode(viewModeSlim: str | None = Cookie(None)) -> bool:
     return viewModeSlim == "true"
 
 
@@ -66,7 +68,7 @@ class TranslationProxy(Translations):
         if hasattr(self._inner, "info"):
             try:
                 data.update(self._inner.info())
-            except Exception:
+            except Exception:  # noqa: BLE001 - Babel info() is optional
                 data = {}
         data.setdefault("language", self._language)
         return data
@@ -82,7 +84,7 @@ def get_translations(
     locales_path = base_path / "locales"
 
     try:
-        logging.info(
+        logger.info(
             "Attempting to load translations from: %s for locale %s",
             locales_path,
             locale,
@@ -91,8 +93,8 @@ def get_translations(
             "messages", localedir=str(locales_path), languages=[locale]
         )
         return TranslationProxy(translations, locale)
-    except Exception:
-        logging.warning(
+    except Exception:  # noqa: BLE001 - a missing catalogue falls back to the default
+        logger.warning(
             "Translations not found for %s at %s. Falling back to default.",
             locale,
             locales_path,

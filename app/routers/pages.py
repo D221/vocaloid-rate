@@ -1,6 +1,5 @@
 import json
 from datetime import datetime, timezone
-from typing import Optional
 
 from babel.support import Translations
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -34,7 +33,7 @@ def _main_module():
     return main
 
 
-def _require_current_user(current_user: Optional[models.User]) -> models.User:
+def _require_current_user(current_user: models.User | None) -> models.User:
     if current_user is None:
         raise HTTPException(status_code=307, headers={"location": "/login"})
     return current_user
@@ -70,15 +69,15 @@ async def _render_page(
 async def read_rated_tracks(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     page: int = 1,
     limit: str = "all",
-    title_filter: Optional[str] = None,
-    producer_filter: Optional[str] = None,
-    voicebank_filter: Optional[str] = None,
-    sort_by: Optional[str] = None,
+    title_filter: str | None = None,
+    producer_filter: str | None = None,
+    voicebank_filter: str | None = None,
+    sort_by: str | None = None,
     sort_dir: str = "asc",
-    exact_rating_filter: Optional[int] = None,
+    exact_rating_filter: int | None = None,
     translations: Translations = Depends(get_translations),
 ):
     if current_user is None:
@@ -160,7 +159,7 @@ async def get_robots_txt():
 @router.get("/about")
 async def view_about_page(
     request: Request,
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
     _ = translations.gettext
@@ -183,7 +182,7 @@ async def view_about_page(
 async def view_playlists_page(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
     if current_user:
@@ -206,13 +205,13 @@ async def view_playlist_detail_page(
     playlist_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     page: int = 1,
     limit: str = "all",
-    title_filter: Optional[str] = None,
-    producer_filter: Optional[str] = None,
-    voicebank_filter: Optional[str] = None,
-    sort_by: Optional[str] = None,
+    title_filter: str | None = None,
+    producer_filter: str | None = None,
+    voicebank_filter: str | None = None,
+    sort_by: str | None = None,
     sort_dir: str = "asc",
     translations: Translations = Depends(get_translations),
 ):
@@ -286,8 +285,8 @@ async def edit_playlist_page(
     playlist_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
-    q: Optional[str] = None,
+    current_user: models.User | None = Depends(get_optional_current_user),
+    q: str | None = None,
     translations: Translations = Depends(get_translations),
 ):
     user = _require_current_user(current_user)
@@ -318,7 +317,7 @@ async def edit_playlist_page(
 @router.get("/options")
 async def read_options(
     request: Request,
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
     context = {
@@ -332,7 +331,7 @@ async def read_options(
 @router.get("/login")
 async def login_page(
     request: Request,
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
     if _main_module().is_local_auth_mode() or current_user:
@@ -349,7 +348,7 @@ async def login_page(
 @router.get("/register")
 async def register_page(
     request: Request,
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
     if _main_module().is_local_auth_mode() or current_user:
@@ -367,14 +366,14 @@ async def register_page(
 async def read_root(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     page: int = 1,
-    limit: Optional[str] = None,
-    rated_filter: Optional[str] = None,
-    title_filter: Optional[str] = None,
-    producer_filter: Optional[str] = None,
-    voicebank_filter: Optional[str] = None,
-    sort_by: Optional[str] = None,
+    limit: str | None = None,
+    rated_filter: str | None = None,
+    title_filter: str | None = None,
+    producer_filter: str | None = None,
+    voicebank_filter: str | None = None,
+    sort_by: str | None = None,
     sort_dir: str = "asc",
     rank_filter: str = "ranked",
     translations: Translations = Depends(get_translations),
@@ -490,12 +489,12 @@ async def read_root(
 async def read_recently_added(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     page: int = 1,
-    limit: Optional[str] = None,
-    title_filter: Optional[str] = None,
-    producer_filter: Optional[str] = None,
-    voicebank_filter: Optional[str] = None,
+    limit: str | None = None,
+    title_filter: str | None = None,
+    producer_filter: str | None = None,
+    voicebank_filter: str | None = None,
     translations: Translations = Depends(get_translations),
 ):
     user_id = current_user.id if current_user else None
@@ -569,7 +568,7 @@ async def read_recently_added(
 async def read_recommendations(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     recent_bias: str = "off",
     translations: Translations = Depends(get_translations),
 ):
@@ -610,7 +609,7 @@ def _tracks_by_newest(tracks):
 @router.get("/explore")
 async def view_explore_page(
     request: Request,
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
     context = {
@@ -625,7 +624,7 @@ async def view_explore_page(
 async def view_profiles_index(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
     main = _main_module()
@@ -652,7 +651,7 @@ async def view_profiles_index(
 async def view_producers_index(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
     _ = translations.gettext
@@ -681,7 +680,7 @@ async def view_producer_page(
     producer_name: str,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
     _ = translations.gettext
@@ -735,7 +734,7 @@ async def view_producer_page(
 async def view_voicebanks_index(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
     _ = translations.gettext
@@ -764,7 +763,7 @@ async def view_voicebank_page(
     name: str,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
     _ = translations.gettext
@@ -816,7 +815,7 @@ async def view_user_profile(
     username: str,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     translations: Translations = Depends(get_translations),
 ):
     _ = translations.gettext
@@ -826,10 +825,11 @@ async def view_user_profile(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if not user.is_profile_public:
-        # If user profile is private, allow access ONLY if the logged-in user is the owner
-        if current_user is None or current_user.id != user.id:
-            raise HTTPException(status_code=403, detail="This profile is private")
+    # If user profile is private, allow access ONLY if the logged-in user is the owner
+    if not user.is_profile_public and (
+        current_user is None or current_user.id != user.id
+    ):
+        raise HTTPException(status_code=403, detail="This profile is private")
 
     # Get stats
     stats = crud.get_rating_statistics(db, user_id=user.id, locale=locale)
@@ -876,9 +876,9 @@ async def view_historical_ranking(
     date: str,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     page: int = 1,
-    limit: Optional[str] = None,
+    limit: str | None = None,
     translations: Translations = Depends(get_translations),
 ):
     """View historical ranking for a specific date."""
@@ -901,7 +901,7 @@ async def view_historical_ranking(
 
     total_tracks = crud.get_tracks_as_of_count(db, target_date)
 
-    limit_val: Optional[int] = None
+    limit_val: int | None = None
     if effective_limit.isdigit():
         limit_val = int(effective_limit)
 

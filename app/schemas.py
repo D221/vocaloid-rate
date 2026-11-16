@@ -1,5 +1,4 @@
 import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -26,14 +25,14 @@ class Track(BaseModel):
     voicebank: str
     published_date: datetime.datetime
     link: str
-    image_url: Optional[str] = None
-    rank: Optional[int] = None
-    ratings: List[Rating] = Field(default_factory=list)
+    image_url: str | None = None
+    rank: int | None = None
+    ratings: list[Rating] = Field(default_factory=list)
 
 
 class PlaylistBase(BaseModel):
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     is_public: bool = True
 
 
@@ -56,7 +55,7 @@ class Playlist(PlaylistBase):
 
     id: int
     created_at: datetime.datetime
-    tracks: List[PlaylistTrackDetail] = Field(default_factory=list)
+    tracks: list[PlaylistTrackDetail] = Field(default_factory=list)
 
 
 class UserBase(BaseModel):
@@ -72,7 +71,7 @@ class User(UserBase):
 
     id: int
     is_active: bool
-    username: Optional[str] = None
+    username: str | None = None
     is_profile_public: bool = False
 
 
@@ -89,4 +88,4 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    email: Optional[str] = None
+    email: str | None = None

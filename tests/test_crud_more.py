@@ -71,7 +71,7 @@ def test_get_recently_added_tracks_avoids_n_plus_one_queries(
     db_session.commit()
 
     queries = []
-    listener = lambda *args: queries.append(1)  # noqa: E731
+    listener = lambda *args: queries.append(1)
     event.listen(db_session.bind, "before_cursor_execute", listener)
     try:
         tracks = crud.get_recently_added_tracks(db_session, user_id=user.id)
