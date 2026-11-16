@@ -1,0 +1,58 @@
+name: Auto-merge Dependabot PRs
+
+# Turns on auto-merge for Dependabot pull requests once the CI workflow has
+# passed for their head commit. Runs on workflow_run (not pull_request) so the
+# job keeps a write-scoped GITHUB_TOKEN: pull_request runs from Dependabot get
+# a read-only token and could not merge anything.
+#
+# Requires "Allow auto-merge" in the repository settings.
+
+on:
+  workflow_run:
+    workflows: ["CI & CD for Vocaloid Rate"]
+    types:
+      - completed
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    name: Enable auto-merge
+    # Only successful runs of the PR pipeline, never main pushes.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Merge the Dependabot PR for this commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+
+          number="$(
+            gh pr list \
+              --repo "$REPO" \
+              --state open \
+              --author "app/dependabot" \
+              --json number,headRefOid \
+              --jq ".[] | select(.headRefOid == \"${HEAD_SHA}\") | .number"
+          )"
+
+          if [ -z "$number" ]; then
+            echo "No open Dependabot PR for ${HEAD_SHA}, nothing to do."
+            exit 0
+          fi
+
+          echo "Enabling auto-merge on #${number}"
+          gh pr merge "$number" \
+            --repo "$REPO" \
+            --auto \
+            --squash \
+            --delete-branch \
+            --match-head-commit "$HEAD_SHA"
