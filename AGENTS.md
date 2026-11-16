@@ -24,7 +24,7 @@ The program MUST function across all supported deployment modes:
 
 - Vocaloid Rate is a FastAPI + SQLAlchemy app with server-rendered Jinja pages, vanilla JS, Tailwind CSS, Alembic migrations, and a Docusaurus docs site.
 - Runtime modes: Local/self-hosted/frozen uses SQLite (`data/tracks.db`) and auto-creates an admin user; Cloud/Vercel/Postgres requires `SECRET_KEY`, and cron endpoints require `CRON_SECRET`.
-- Python target is 3.13 (`.python-version`, `pyproject.toml`, CI); prefer `uv` for Python deps.
+- Python target is 3.15 (`.python-version`, `pyproject.toml`, CI); prefer `uv` for Python deps.
 - Prefer Bun for root frontend scripts because `bun.lock` is committed; `docs/` is its own Node project.
 
 ## Common Commands
