@@ -1,19 +1,19 @@
 import os
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 
 load_dotenv()
 
-from app import models  # noqa: E402
-from app.auth import get_current_user  # noqa: E402
-from app.config import is_local_mode  # noqa: E402
-from app.services.scraping import (  # noqa: E402
+from app import models
+from app.auth import get_current_user
+from app.config import is_local_mode
+from app.services.scraping import (
     read_scrape_status,
     scrape_and_populate_task,
     write_scrape_status,
 )
-from scripts.bot_daily_top import run_bsky_bot  # noqa: E402
+from scripts.bot_daily_top import run_bsky_bot
 
 router = APIRouter(tags=["Scraping"])
 

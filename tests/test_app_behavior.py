@@ -3,8 +3,7 @@ from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
-from app import main
-import app.auth as auth
+from app import auth, main
 
 
 @asynccontextmanager

@@ -2,9 +2,9 @@ import logging
 import sys
 import threading
 import webbrowser
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator
 
 from alembic.config import Config
 from fastapi import FastAPI, HTTPException, Request, Response
@@ -22,13 +22,16 @@ from app.config import (
 from app.constants import BASE_DIR, STATIC_DIR, set_resource_base_path
 from app.database import SessionLocal
 from app.dependencies import get_db, templates
-from app.routers import auth, pages, playlists, scraping, tracks, vocadb, sitemap
+from app.routers import auth, pages, playlists, scraping, sitemap, tracks, vocadb
 from app.services.scraping import (
     initial_scrape_task,
     set_initial_scrape_in_progress,
     write_scrape_status,
 )
 from app.utils.view_helpers import time_ago_filter
+
+logger = logging.getLogger(__name__)
+
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
 
@@ -47,7 +50,9 @@ __all__ = [
 @asynccontextmanager
 async def app_lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     if getattr(sys, "frozen", False):
-        resource_base_path = Path(str(getattr(sys, "_MEIPASS")))
+        # _MEIPASS is injected at runtime by PyInstaller, so it is not a real
+        # attribute on sys and getattr keeps type checkers happy.
+        resource_base_path = Path(str(getattr(sys, "_MEIPASS")))  # noqa: B009
     else:
         resource_base_path = Path(__file__).resolve().parent.parent
     set_resource_base_path(resource_base_path)
@@ -57,7 +62,7 @@ async def app_lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
         alembic_cfg = Config(str(alembic_ini_path))
         command.upgrade(alembic_cfg, "head")
     else:
-        logging.info("Skipping Alembic migrations on startup.")
+        logger.info("Skipping Alembic migrations on startup.")
 
     db = SessionLocal()
     try:
@@ -66,7 +71,7 @@ async def app_lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
         db.close()
 
     if track_count == 0:
-        logging.info("Database is empty. Starting initial scrape.")
+        logger.info("Database is empty. Starting initial scrape.")
         set_initial_scrape_in_progress(True)
         write_scrape_status("in_progress")
         scrape_thread = threading.Thread(target=initial_scrape_task)

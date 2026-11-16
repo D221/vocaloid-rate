@@ -40,9 +40,9 @@ def test_constants_and_database_modules_cover_fallback_paths(
     monkeypatch.setenv("DATA_DIR", str(tmp_path))
     monkeypatch.delenv("VERCEL", raising=False)
 
+    import app.config as config_module
     import app.constants as constants_module
     import app.database as database_module
-    import app.config as config_module
 
     monkeypatch.setattr(config_module, "get_database_url", lambda: None)
     monkeypatch.setattr(config_module, "get_data_dir", lambda: tmp_path)

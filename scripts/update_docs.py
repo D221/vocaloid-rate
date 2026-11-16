@@ -36,7 +36,12 @@ def start_fastapi():
     if sys.platform == "win32":
         return subprocess.Popen(cmd, shell=True, cwd=PROJECT_ROOT, env=env)
     else:
-        return subprocess.Popen(cmd, preexec_fn=os.setsid, cwd=PROJECT_ROOT, env=env)
+        return subprocess.Popen(
+            cmd,
+            preexec_fn=os.setsid,  # noqa: PLW1509 - new session, POSIX only, no threads
+            cwd=PROJECT_ROOT,
+            env=env,
+        )
 
 
 def stop_fastapi(process):

@@ -1,7 +1,6 @@
 import logging
 import secrets
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 
 import bcrypt
 from fastapi import Depends, HTTPException, Request, status
@@ -13,6 +12,9 @@ from app import crud, schemas
 from app.config import get_secret_key, is_local_auth_mode
 from app.database import SessionLocal
 from app.security import ALGORITHM
+
+logger = logging.getLogger(__name__)
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
@@ -55,17 +57,17 @@ def get_password_hash(password: str) -> str:
 
 def authenticate_user(
     db: Session, identifier: str, password: str
-) -> Optional[crud.models.User]:
+) -> crud.models.User | None:
     user = crud.get_user_by_email(db, email=identifier)
     if not user:
         user = crud.get_user_by_username(db, username=identifier)
 
     if not user:
-        logging.warning("Auth failed: User %s not found", identifier)
+        logger.warning("Auth failed: User %s not found", identifier)
         return None
 
     if not verify_password(password, user.hashed_password):
-        logging.warning("Auth failed: Incorrect password for user %s", identifier)
+        logger.warning("Auth failed: Incorrect password for user %s", identifier)
         return None
 
     return user
@@ -98,7 +100,7 @@ def get_db():
 
 async def get_current_user(
     request: Request,  # Add request
-    token: Optional[str] = Depends(oauth2_scheme),
+    token: str | None = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ) -> crud.models.User:
     if is_local_auth_mode():
@@ -128,7 +130,7 @@ async def get_current_user(
     )
     try:
         payload = jwt.decode(token, secret_key, algorithms=[ALGORITHM])
-        email: Optional[str] = payload.get("sub")
+        email: str | None = payload.get("sub")
         if email is None:
             raise credentials_exception
     except JWTError:
@@ -141,9 +143,9 @@ async def get_current_user(
 
 async def get_optional_current_user(
     request: Request,  # Add request
-    token: Optional[str] = Depends(oauth2_scheme_optional),
+    token: str | None = Depends(oauth2_scheme_optional),
     db: Session = Depends(get_db),
-) -> Optional[crud.models.User]:
+) -> crud.models.User | None:
     if is_local_auth_mode():
         return get_or_create_local_user(db)
 
@@ -157,7 +159,7 @@ async def get_optional_current_user(
         return None
     try:
         payload = jwt.decode(token, secret_key, algorithms=[ALGORITHM])
-        email: Optional[str] = payload.get("sub")
+        email: str | None = payload.get("sub")
         if email is None:
             return None
     except JWTError:

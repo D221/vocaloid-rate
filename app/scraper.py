@@ -1,7 +1,6 @@
 import datetime
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from typing import Optional
 
 import requests
 from bs4 import BeautifulSoup
@@ -21,7 +20,7 @@ def _fetch_page(url: str) -> requests.Response:
 
 
 # This is the new helper function that scrapes just ONE page.
-def _scrape_single_page(page_num: int, date: Optional[str] = None) -> list[dict]:
+def _scrape_single_page(page_num: int, date: str | None = None) -> list[dict]:
     """Scrapes a single page of the ranking and returns a list of track dictionaries.
 
     Args:
@@ -121,10 +120,9 @@ def _scrape_single_page(page_num: int, date: Optional[str] = None) -> list[dict]
             tracks_on_page.append(track_data)
         except (ValueError, TypeError) as e:
             logger.error(f"Error converting data for a row on page {page_num}: {e}")
-        except Exception as e:
-            logger.error(
-                f"An unexpected error occurred parsing a row on page {page_num}: {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                f"An unexpected error occurred parsing a row on page {page_num}",
             )
 
     return tracks_on_page

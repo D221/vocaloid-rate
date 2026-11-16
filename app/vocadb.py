@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 from urllib.parse import quote
 
 import requests
@@ -10,7 +10,7 @@ VOCADB_API_BASE = "https://vocadb.net/api"
 VOCADB_BASE = "https://vocadb.net"
 
 
-def search_artist(producer: str) -> Optional[str]:
+def search_artist(producer: str) -> str | None:
     """Searches for an artist on VocaDB and returns their URL."""
     headers = {"Accept": "application/json"}
     try:
@@ -23,19 +23,18 @@ def search_artist(producer: str) -> Optional[str]:
             artist_id = data["items"][0]["id"]
             # Artist URLs on VocaDB use the /Ar/ prefix
             return f"{VOCADB_BASE}/Ar/{artist_id}"
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error calling VocaDB Artist API: {e}", exc_info=True)
-    except Exception as e:
-        logger.error(
-            f"An unexpected error occurred during VocaDB artist search: {e}",
-            exc_info=True,
+    except requests.exceptions.RequestException:
+        logger.exception("Error calling VocaDB Artist API")
+    except Exception:
+        logger.exception(
+            "An unexpected error occurred during VocaDB artist search",
         )
     return None
 
 
 def search_song(
-    producer: str, title_en: str, title_jp: Optional[str] = None
-) -> Dict[str, Any]:
+    producer: str, title_en: str, title_jp: str | None = None
+) -> dict[str, Any]:
     """Searches for a song on VocaDB and returns its URL and ID."""
     headers = {"Accept": "application/json"}
     try:
@@ -71,17 +70,15 @@ def search_song(
             song_url = f"{VOCADB_BASE}/S/{song_id}"
             return {"url": song_url, "song_id": song_id}
 
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error calling VocaDB API: {e}", exc_info=True)
-    except Exception as e:
-        logger.error(
-            f"An unexpected error occurred during VocaDB search: {e}", exc_info=True
-        )
+    except requests.exceptions.RequestException:
+        logger.exception("Error calling VocaDB API")
+    except Exception:
+        logger.exception("An unexpected error occurred during VocaDB search")
 
     return {"url": None, "song_id": None}
 
 
-def fetch_lyrics(song_id: int) -> List[Dict[str, Any]]:
+def fetch_lyrics(song_id: int) -> list[dict[str, Any]]:
     """Fetches and normalizes lyrics for a song from VocaDB."""
     headers = {"Accept": "application/json"}
     try:
@@ -131,11 +128,9 @@ def fetch_lyrics(song_id: int) -> List[Dict[str, Any]]:
 
         return normalized_lyrics
 
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error fetching lyrics from VocaDB API: {e}", exc_info=True)
-    except Exception as e:
-        logger.error(
-            f"An unexpected error occurred during lyrics fetch: {e}", exc_info=True
-        )
+    except requests.exceptions.RequestException:
+        logger.exception("Error fetching lyrics from VocaDB API")
+    except Exception:
+        logger.exception("An unexpected error occurred during lyrics fetch")
 
     return []

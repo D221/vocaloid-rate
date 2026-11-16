@@ -6,9 +6,10 @@ import sys
 sys.path.insert(0, ".")
 
 from datetime import datetime
-from app.scraper import _scrape_single_page
+
 from app import crud, models
 from app.database import SessionLocal
+from app.scraper import _scrape_single_page
 
 date = sys.argv[1] if len(sys.argv) > 1 else "2026-07-23"
 print(f"Scraping {date} (all 6 pages)...")

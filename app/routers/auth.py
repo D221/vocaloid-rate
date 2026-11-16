@@ -7,9 +7,12 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
-from app.auth import create_access_token, get_optional_current_user, get_current_user
+from app.auth import create_access_token, get_current_user, get_optional_current_user
 from app.dependencies import get_db, get_translations, templates
 from app.security import ACCESS_TOKEN_EXPIRE_MINUTES
+
+logger = logging.getLogger(__name__)
+
 
 router = APIRouter(tags=["Authentication"])
 
@@ -31,10 +34,10 @@ async def login_for_access_token(
             status_code=404, detail="Authentication is disabled in local mode"
         )
 
-    logging.info("Login attempt for username: %s", form_data.username)
+    logger.info("Login attempt for username: %s", form_data.username)
     user = main.authenticate_user(db, form_data.username, form_data.password)
     if not user:
-        logging.warning(
+        logger.warning(
             "Login failed: Incorrect username or password for %s",
             form_data.username,
         )
@@ -44,7 +47,7 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    logging.info("Login successful for user: %s", user.email)
+    logger.info("Login successful for user: %s", user.email)
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
@@ -70,15 +73,15 @@ def create_user(
             status_code=404, detail="Authentication is disabled in local mode"
         )
 
-    logging.info("Registration attempt for email: %s", user.email)
+    logger.info("Registration attempt for email: %s", user.email)
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
-        logging.warning("Registration failed: Email %s already exists", user.email)
+        logger.warning("Registration failed: Email %s already exists", user.email)
         raise HTTPException(status_code=400, detail="Email already registered")
 
     try:
         new_user = crud.create_user(db=db, user=user)
-        logging.info(
+        logger.info(
             "Successfully created user: %s with ID: %s",
             new_user.email,
             new_user.id,
@@ -97,8 +100,8 @@ def create_user(
         )
 
         return new_user
-    except Exception as exc:
-        logging.error("Database error during user creation: %s", exc, exc_info=True)
+    except Exception:
+        logger.exception("Database error during user creation")
         raise HTTPException(
             status_code=500, detail="Internal server error during registration"
         )

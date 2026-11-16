@@ -1,6 +1,5 @@
 import json
 from datetime import datetime
-from typing import Optional
 
 import anyio
 from babel.support import Translations
@@ -15,7 +14,7 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import JSONResponse
-from sqlalchemy import and_, desc, asc
+from sqlalchemy import and_, asc, desc
 from sqlalchemy.orm import Session, contains_eager
 
 from app import crud, models
@@ -35,17 +34,17 @@ router = APIRouter()
 def get_tracks_partial(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     page: int = 1,
     limit: str = "all",
-    rated_filter: Optional[str] = None,
-    title_filter: Optional[str] = None,
-    producer_filter: Optional[str] = None,
-    voicebank_filter: Optional[str] = None,
-    sort_by: Optional[str] = None,
+    rated_filter: str | None = None,
+    title_filter: str | None = None,
+    producer_filter: str | None = None,
+    voicebank_filter: str | None = None,
+    sort_by: str | None = None,
     sort_dir: str = "asc",
     rank_filter: str = "ranked",
-    exact_rating_filter: Optional[int] = None,
+    exact_rating_filter: int | None = None,
     translations: Translations = Depends(get_translations),
 ):
     user_id = current_user.id if current_user else None
@@ -150,13 +149,13 @@ def get_playlist_tracks_partial(
     playlist_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     page: int = 1,
     limit: str = "all",
-    title_filter: Optional[str] = None,
-    producer_filter: Optional[str] = None,
-    voicebank_filter: Optional[str] = None,
-    sort_by: Optional[str] = None,
+    title_filter: str | None = None,
+    producer_filter: str | None = None,
+    voicebank_filter: str | None = None,
+    sort_by: str | None = None,
     sort_dir: str = "asc",
     translations: Translations = Depends(get_translations),
 ):
@@ -218,12 +217,12 @@ def get_playlist_tracks_partial(
 def get_recently_added_tracks_partial(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     page: int = 1,
     limit: str = "all",
-    title_filter: Optional[str] = None,
-    producer_filter: Optional[str] = None,
-    voicebank_filter: Optional[str] = None,
+    title_filter: str | None = None,
+    producer_filter: str | None = None,
+    voicebank_filter: str | None = None,
     translations: Translations = Depends(get_translations),
 ):
     user_id = current_user.id if current_user else None
@@ -382,7 +381,7 @@ def delete_rating_endpoint(
 def rate_track(
     track_id: int,
     rating: int = Form(..., ge=1, le=10),
-    notes: Optional[str] = Form(None),
+    notes: str | None = Form(None),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
@@ -428,16 +427,16 @@ def get_track_playlist_status(
 @router.get("/api/playlist-snapshot", response_class=JSONResponse, tags=["Data"])
 def get_playlist_snapshot_endpoint(
     db: Session = Depends(get_db),
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     limit: str = "all",
-    rated_filter: Optional[str] = None,
-    title_filter: Optional[str] = None,
-    producer_filter: Optional[str] = None,
-    voicebank_filter: Optional[str] = None,
-    sort_by: Optional[str] = None,
+    rated_filter: str | None = None,
+    title_filter: str | None = None,
+    producer_filter: str | None = None,
+    voicebank_filter: str | None = None,
+    sort_by: str | None = None,
     sort_dir: str = "asc",
     rank_filter: str = "ranked",
-    exact_rating_filter: Optional[int] = None,
+    exact_rating_filter: int | None = None,
     translations: Translations = Depends(get_translations),
 ):
     user_id = current_user.id if current_user else None
@@ -472,12 +471,12 @@ def get_playlist_snapshot_endpoint(
 def get_playlist_snapshot_for_playlist_endpoint(
     playlist_id: int,
     db: Session = Depends(get_db),
-    current_user: Optional[models.User] = Depends(get_optional_current_user),
+    current_user: models.User | None = Depends(get_optional_current_user),
     limit: str = "all",
-    title_filter: Optional[str] = None,
-    producer_filter: Optional[str] = None,
-    voicebank_filter: Optional[str] = None,
-    sort_by: Optional[str] = None,
+    title_filter: str | None = None,
+    producer_filter: str | None = None,
+    voicebank_filter: str | None = None,
+    sort_by: str | None = None,
     sort_dir: str = "asc",
     translations: Translations = Depends(get_translations),
 ):
@@ -509,9 +508,9 @@ def get_playlist_snapshot_for_playlist_endpoint(
 @router.get("/api/recently-added-snapshot", response_class=JSONResponse, tags=["Data"])
 def get_recently_added_snapshot_endpoint(
     db: Session = Depends(get_db),
-    title_filter: Optional[str] = None,
-    producer_filter: Optional[str] = None,
-    voicebank_filter: Optional[str] = None,
+    title_filter: str | None = None,
+    producer_filter: str | None = None,
+    voicebank_filter: str | None = None,
     translations: Translations = Depends(get_translations),
 ):
     locale = translations.info()["language"]

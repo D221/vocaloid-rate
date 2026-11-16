@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from math import exp
 from statistics import median
-from typing import List, Optional
 
 from sqlalchemy import and_, desc, distinct, func, nullslast, or_, select
 from sqlalchemy.exc import IntegrityError
@@ -88,19 +87,19 @@ def update_track(db: Session, db_track: models.Track, track: dict):
 
 def get_tracks(
     db: Session,
-    user_id: Optional[int] = None,
+    user_id: int | None = None,
     skip: int = 0,
     limit: int = 300,
-    rated_filter: Optional[str] = None,
-    title_filter: Optional[str] = None,
-    producer_filter: Optional[str] = None,
-    voicebank_filter: Optional[str] = None,
-    sort_by: Optional[str] = None,
+    rated_filter: str | None = None,
+    title_filter: str | None = None,
+    producer_filter: str | None = None,
+    voicebank_filter: str | None = None,
+    sort_by: str | None = None,
     sort_dir: str = "asc",
     rank_filter: str = "ranked",
-    exact_rating_filter: Optional[int] = None,
+    exact_rating_filter: int | None = None,
     locale: str = "en",
-) -> List[models.Track]:
+) -> list[models.Track]:
     # Optimized subquery for checking if track is in ANY of the current user's playlists
     playlist_exists = (
         exists()
@@ -241,13 +240,13 @@ def get_tracks(
 
 def get_tracks_count(
     db: Session,
-    user_id: Optional[int] = None,
-    rated_filter: Optional[str] = None,
-    title_filter: Optional[str] = None,
-    producer_filter: Optional[str] = None,
-    voicebank_filter: Optional[str] = None,
+    user_id: int | None = None,
+    rated_filter: str | None = None,
+    title_filter: str | None = None,
+    producer_filter: str | None = None,
+    voicebank_filter: str | None = None,
     rank_filter: str = "ranked",
-    exact_rating_filter: Optional[int] = None,
+    exact_rating_filter: int | None = None,
     locale: str = "en",
 ) -> int:
     query = db.query(func.count(distinct(models.Track.id)))
@@ -312,9 +311,9 @@ def get_tracks_count(
 
 def _recently_added_base_query(
     db: Session,
-    title_filter: Optional[str] = None,
-    producer_filter: Optional[str] = None,
-    voicebank_filter: Optional[str] = None,
+    title_filter: str | None = None,
+    producer_filter: str | None = None,
+    voicebank_filter: str | None = None,
     locale: str = "en",
 ):
     query = db.query(models.Track)
@@ -361,11 +360,11 @@ def get_recently_added_tracks(
     db: Session,
     skip: int = 0,
     limit: int = 300,
-    title_filter: Optional[str] = None,
-    producer_filter: Optional[str] = None,
-    voicebank_filter: Optional[str] = None,
+    title_filter: str | None = None,
+    producer_filter: str | None = None,
+    voicebank_filter: str | None = None,
     locale: str = "en",
-    user_id: Optional[int] = None,
+    user_id: int | None = None,
 ):
     query = _recently_added_base_query(
         db,
@@ -392,9 +391,9 @@ def get_recently_added_tracks(
 
 def get_recently_added_tracks_count(
     db: Session,
-    title_filter: Optional[str] = None,
-    producer_filter: Optional[str] = None,
-    voicebank_filter: Optional[str] = None,
+    title_filter: str | None = None,
+    producer_filter: str | None = None,
+    voicebank_filter: str | None = None,
     locale: str = "en",
 ) -> int:
     query = _recently_added_base_query(
@@ -445,7 +444,7 @@ def get_track_rank_history(db: Session, track_id: int) -> list[dict]:
 
 
 def create_rating(
-    db: Session, track_id: int, user_id: int, rating: float, notes: Optional[str] = None
+    db: Session, track_id: int, user_id: int, rating: float, notes: str | None = None
 ):
     if rating < 1 or rating > 10:
         raise ValueError("Rating must be between 1 and 10.")
@@ -603,7 +602,7 @@ def get_last_update_time(db: Session):
     )
 
 
-def get_playlist(db: Session, playlist_id: int) -> Optional[models.Playlist]:
+def get_playlist(db: Session, playlist_id: int) -> models.Playlist | None:
     """Gets a single playlist by its ID, eagerly loading the tracks in their correct order."""
     return (
         db.query(models.Playlist)
@@ -660,9 +659,9 @@ def update_playlist(
     playlist_id: int,
     user_id: int,
     name: str,
-    description: Optional[str],
+    description: str | None,
     is_public: bool = True,
-) -> Optional[models.Playlist]:
+) -> models.Playlist | None:
     """Updates a playlist's name and description."""
     db_playlist = (
         db.query(models.Playlist).filter_by(id=playlist_id, user_id=user_id).first()
@@ -678,7 +677,7 @@ def update_playlist(
 
 def add_track_to_playlist(
     db: Session, playlist_id: int, track_id: int, user_id: int
-) -> Optional[models.Playlist]:
+) -> models.Playlist | None:
     """Adds a track to the end of a playlist."""
     db_playlist = (
         db.query(models.Playlist).filter_by(id=playlist_id, user_id=user_id).first()
@@ -777,9 +776,7 @@ def export_playlists(db: Session, user_id: int) -> list[dict]:
     return playlists_to_export
 
 
-def export_single_playlist(
-    db: Session, playlist_id: int, user_id: int
-) -> Optional[dict]:
+def export_single_playlist(db: Session, playlist_id: int, user_id: int) -> dict | None:
     """Fetches a single playlist for a specific user and formats it for JSON export."""
     playlist = (
         db.query(models.Playlist)
@@ -887,7 +884,7 @@ def get_track_playlist_membership(db: Session, track_id: int, user_id: int) -> d
     return {"member_of": member_of, "not_member_of": not_member_of}
 
 
-def _calculate_snapshot(all_track_ids: List[int], limit: str) -> List[dict]:
+def _calculate_snapshot(all_track_ids: list[int], limit: str) -> list[dict]:
     """Helper to calculate page numbers for a list of track IDs."""
     limit_val = len(all_track_ids)
     if limit.isdigit() and int(limit) > 0:
@@ -903,16 +900,16 @@ def _calculate_snapshot(all_track_ids: List[int], limit: str) -> List[dict]:
 
 def get_playlist_snapshot(
     db: Session,
-    user_id: Optional[int] = None,
+    user_id: int | None = None,
     limit: str = "all",
-    rated_filter: Optional[str] = None,
-    title_filter: Optional[str] = None,
-    producer_filter: Optional[str] = None,
-    voicebank_filter: Optional[str] = None,
-    sort_by: Optional[str] = None,
+    rated_filter: str | None = None,
+    title_filter: str | None = None,
+    producer_filter: str | None = None,
+    voicebank_filter: str | None = None,
+    sort_by: str | None = None,
     sort_dir: str = "asc",
     rank_filter: str = "ranked",
-    exact_rating_filter: Optional[int] = None,
+    exact_rating_filter: int | None = None,
     locale: str = "en",
 ) -> list[dict]:
     """
@@ -1010,10 +1007,10 @@ def get_playlist_tracks_filtered(
     user_id: int,
     skip: int = 0,
     limit: int = 1000,
-    title_filter: Optional[str] = None,
-    producer_filter: Optional[str] = None,
-    voicebank_filter: Optional[str] = None,
-    sort_by: Optional[str] = None,
+    title_filter: str | None = None,
+    producer_filter: str | None = None,
+    voicebank_filter: str | None = None,
+    sort_by: str | None = None,
     sort_dir: str = "asc",
     locale: str = "en",
 ):
@@ -1085,9 +1082,9 @@ def get_playlist_tracks_count(
     db: Session,
     playlist_id: int,
     user_id: int,
-    title_filter: Optional[str] = None,
-    producer_filter: Optional[str] = None,
-    voicebank_filter: Optional[str] = None,
+    title_filter: str | None = None,
+    producer_filter: str | None = None,
+    voicebank_filter: str | None = None,
     locale: str = "en",
 ):
     query = (
@@ -1137,10 +1134,10 @@ def get_playlist_snapshot_for_playlist(
     playlist_id: int,
     user_id: int,
     limit: str = "all",
-    title_filter: Optional[str] = None,
-    producer_filter: Optional[str] = None,
-    voicebank_filter: Optional[str] = None,
-    sort_by: Optional[str] = None,
+    title_filter: str | None = None,
+    producer_filter: str | None = None,
+    voicebank_filter: str | None = None,
+    sort_by: str | None = None,
     sort_dir: str = "asc",
     locale: str = "en",
 ) -> list[dict]:
@@ -1211,9 +1208,9 @@ def get_playlist_snapshot_for_playlist(
 def get_recently_added_snapshot(
     db: Session,
     limit: str = "all",
-    title_filter: Optional[str] = None,
-    producer_filter: Optional[str] = None,
-    voicebank_filter: Optional[str] = None,
+    title_filter: str | None = None,
+    producer_filter: str | None = None,
+    voicebank_filter: str | None = None,
     locale: str = "en",
 ) -> list[dict]:
     """
@@ -1272,7 +1269,7 @@ def get_recommended_tracks(
     locale: str = "en",
     limit: int = 25,
     recent_bias: str = "off",
-) -> List[models.Track]:
+) -> list[models.Track]:
     """
     Generates track recommendations based on user's rated producers and voicebanks.
     Producers have 3x the weight of voicebanks.
@@ -1372,11 +1369,11 @@ def get_recommended_tracks(
 
 
 # User CRUD operations
-def get_user(db: Session, user_id: int) -> Optional[models.User]:
+def get_user(db: Session, user_id: int) -> models.User | None:
     return db.query(models.User).filter(models.User.id == user_id).first()
 
 
-def get_user_by_email(db: Session, email: str) -> Optional[models.User]:
+def get_user_by_email(db: Session, email: str) -> models.User | None:
     return db.query(models.User).filter(models.User.email == email).first()
 
 
@@ -1411,7 +1408,7 @@ def create_user(db: Session, user: schemas.UserCreate) -> models.User:
     return db_user
 
 
-def get_user_by_username(db: Session, username: str) -> Optional[models.User]:
+def get_user_by_username(db: Session, username: str) -> models.User | None:
     return db.query(models.User).filter(models.User.username.ilike(username)).first()
 
 
@@ -1447,7 +1444,7 @@ def delete_user(db: Session, user_id: int) -> bool:
 
 def update_user_admin_status(
     db: Session, user_id: int, is_admin: bool
-) -> Optional[models.User]:
+) -> models.User | None:
     """Sets the admin status of a user."""
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
     if db_user:
@@ -1461,7 +1458,7 @@ def get_tracks_as_of(
     db: Session,
     target_date: datetime,
     skip: int = 0,
-    limit: Optional[int] = None,
+    limit: int | None = None,
 ) -> list[models.Track]:
     """Get track rankings as of a specific date from rank_history.
 
@@ -1474,7 +1471,7 @@ def get_tracks_as_of(
     Returns:
         List of tracks with their historical ranks
     """
-    from sqlalchemy import func, and_
+    from sqlalchemy import and_, func
 
     # Get the latest rank entry for each track before or on target_date
     subquery = (
@@ -1540,7 +1537,7 @@ def get_tracks_as_of_count(db: Session, target_date: datetime) -> int:
 
 def get_candidate_tracks(
     db: Session,
-    search: Optional[str] = None,
+    search: str | None = None,
     limit: int = 100,
 ) -> list[models.Track]:
     """Tracks offered as add-candidates in the playlist editor.
