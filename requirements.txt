@@ -119,5 +119,5 @@ urllib3==2.8.0
     # via requests
 uvicorn==0.54.0
     # via vocaloid-rate (pyproject.toml)
-websockets==15.0.1
+websockets==16.1.1
     # via atproto
