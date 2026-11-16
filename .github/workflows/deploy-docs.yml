@@ -24,7 +24,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.13" # Or your preferred Python version
+          python-version: "3.15"
 
       - name: Install Python dependencies
         run: pip install -r requirements.txt # Install all Python dependencies

@@ -4,7 +4,7 @@
 # - Frontend (CSS, JS) via Bun/Tailwind/Terser
 # - Translations (.mo files) via Python/PyBabel
 # =================================================================
-FROM python:3.13-slim AS builder
+FROM python:3.15-slim AS builder
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -35,7 +35,7 @@ RUN bun run build
 # STAGE 2: Final Python Runtime Environment
 # This stage is a slim Python image containing ONLY what's needed to run.
 # =================================================================
-FROM python:3.13-slim
+FROM python:3.15-slim
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
