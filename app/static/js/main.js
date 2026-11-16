@@ -911,7 +911,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const nextIndex = (currentIndex + 1) % activeMasterPlaylist.length;
     const nextTrackId = activeMasterPlaylist[nextIndex].id;
 
-    let pageChanged = false;
+    let pageChanged;
 
     if (playerState.isEmbedded) {
       cleanupPreviousEmbed(playerState.currentTrackId);
@@ -955,7 +955,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       activeMasterPlaylist.length;
     const prevTrackId = activeMasterPlaylist[prevIndex].id;
 
-    let pageChanged = false;
+    let pageChanged;
 
     if (playerState.isEmbedded) {
       cleanupPreviousEmbed(playerState.currentTrackId);
