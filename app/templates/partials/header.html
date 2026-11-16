@@ -194,8 +194,7 @@
           rows="2"
           class="edit-mode hidden w-full rounded border border-border bg-background p-1 text-foreground"
         >
-{{ subtitle.replace('No description.', '') }}</textarea
-        >
+{{ subtitle.replace('No description.', '') }}</textarea>
 
         {# Show edit icon only on the edit page #}
         {% if request.url.path.startswith('/playlist/edit/') %}
