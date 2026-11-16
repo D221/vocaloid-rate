@@ -6,6 +6,15 @@ on:
       - "main"
     tags:
       - "v*"
+  # Validate dependency and feature PRs before they can reach main.
+  pull_request:
+    branches:
+      - "main"
+
+# A newer push to the same ref supersedes an in-flight run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   ci-checks:
