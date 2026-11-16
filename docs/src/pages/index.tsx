@@ -5,14 +5,14 @@ import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import Layout from "@theme/Layout";
 import Heading from "@theme/Heading";
 import ImageGallery from "react-image-gallery";
-import type { ReactImageGalleryItem } from "react-image-gallery";
-import "react-image-gallery/styles/css/image-gallery.css";
+import type { GalleryItem } from "react-image-gallery";
+import "react-image-gallery/styles/image-gallery.css";
 
 import styles from "./index.module.css";
 
 import DownloadButton from "@site/src/components/DownloadButton/DownloadButton";
 
-const images: ReactImageGalleryItem[] = [
+const images: GalleryItem[] = [
   {
     original: "/vocaloid-rate/img/main.png",
     thumbnail: "/vocaloid-rate/img/main.png",
@@ -69,7 +69,7 @@ function HomepageHeader() {
   );
 }
 
-function renderImage(item: ReactImageGalleryItem) {
+function renderImage(item: GalleryItem) {
   return (
     <div className={styles["image-gallery-image"]}>
       <img src={item.original} alt={item.description} />
