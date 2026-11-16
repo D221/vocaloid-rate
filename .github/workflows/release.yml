@@ -79,7 +79,7 @@ jobs:
         shell: bash
 
       - name: Upload Asset to Latest Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.latest_tag }}
           files: ${{ matrix.artifact }}
