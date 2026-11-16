@@ -29,3 +29,9 @@ dev = [
     "ty>=0.0.33",
     "ruff>=0.15.14",
 ]
+
+[tool.ruff.lint]
+# Keep the rule set ruff used before 0.17 widened its defaults. Without this,
+# a ruff upgrade arrives as a 425-error lint diff instead of a dependency bump.
+# Widen this list deliberately when the codebase is ready for the new rules.
+select = ["E4", "E7", "E9", "F"]
