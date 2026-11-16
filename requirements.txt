@@ -33,7 +33,7 @@ click==8.4.1
     #   uvicorn
 colorama==0.4.6
     # via click
-cryptography==46.0.7
+cryptography==50.0.2
     # via atproto
 dnspython==2.8.0
     # via atproto
