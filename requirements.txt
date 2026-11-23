@@ -10,7 +10,7 @@ anyio==4.16.0
     # via
     #   httpx
     #   starlette
-atproto==0.0.74
+atproto==0.0.75
     # via vocaloid-rate (pyproject.toml)
 babel==2.18.0
     # via vocaloid-rate (pyproject.toml)
@@ -74,12 +74,12 @@ pyasn1==0.6.5
     #   rsa
 pycparser==3.11
     # via cffi
-pydantic==2.14.3
+pydantic==2.14.4
     # via
     #   vocaloid-rate (pyproject.toml)
     #   atproto
     #   fastapi
-pydantic-core==2.50.4
+pydantic-core==2.50.5
     # via pydantic
 python-dotenv==1.2.4
     # via vocaloid-rate (pyproject.toml)
@@ -95,7 +95,7 @@ six==1.17.0
     # via ecdsa
 soupsieve==2.10
     # via beautifulsoup4
-sqlalchemy==2.0.57
+sqlalchemy==2.0.58
     # via
     #   vocaloid-rate (pyproject.toml)
     #   alembic
