@@ -43,63 +43,39 @@
       <h2 class="text-2xl font-bold text-header">
         {{ _('Available Tracks') }}
       </h2>
-      <form method="get" action="" class="my-4">
-        <input
-          type="search"
-          id="track-search"
-          name="q"
-          value="{{ candidate_query }}"
-          placeholder="{{ _('Search all tracks...') }}"
-          aria-label="{{ _('Search all tracks...') }}"
-          class="w-full rounded border border-border bg-background p-2 text-foreground"
-        />
-      </form>
+      <search>
+        <form
+          method="get"
+          action=""
+          hx-get="/playlist/edit/{{ playlist.id }}/candidate-tracks"
+          hx-target="#all-tracks-list"
+          hx-swap="innerHTML"
+          hx-trigger="input changed delay:300ms, submit"
+          class="my-4"
+        >
+          <label class="sr-only" for="track-search"
+            >{{ _('Search all tracks') }}</label
+          >
+          <input
+            type="search"
+            id="track-search"
+            name="q"
+            value="{{ candidate_query }}"
+            placeholder="{{ _('Search all tracks...') }}"
+            enterkeyhint="search"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="none"
+            spellcheck="false"
+            class="w-full rounded border border-border bg-background p-2 text-foreground"
+          />
+        </form>
+      </search>
       <div
         id="all-tracks-list"
         class="h-[60vh] space-y-2 overflow-y-auto rounded border border-border bg-background p-2"
       >
-        <!-- All tracks will be loaded here by JavaScript -->
-        {% for track in all_tracks %}
-          <div
-            class="track-item flex cursor-grab items-center gap-3 rounded hover:bg-gray-hover"
-            data-track-id="{{ track.id }}"
-            data-track-link="{{ track.link }}"
-            data-track-image-url="{{ track.image_url }}"
-            data-track-title="{{ track.title }}"
-            data-track-title-jp="{{ track.title_jp or '' }}"
-            data-track-producer="{{ track.producer }}"
-            data-track-producer-jp="{{ track.producer_jp or '' }}"
-          >
-            <div data-add-indicator class="p-2 text-gray-text">
-              {{ icon('plus', size="h-6 w-6") }}
-            </div>
-            <button
-              data-play-button
-              title="{{ _('Play track') }}"
-              data-track-id="{{ track.id }}"
-              class="p-2 text-gray-text hover:text-sky-text"
-            >
-              {{ icon('play', size="h-6 w-6") }}
-            </button>
-
-            <a
-              href="{{ track.link }}"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="flex items-center gap-3"
-            >
-              <img
-                src="{{ track.image_url }}"
-                alt="{{ track.title }}"
-                class="h-10 w-10 rounded object-cover"
-              />
-              <div>
-                <div class="font-semibold">{{ track.title }}</div>
-                <div class="text-sm">{{ track.producer }}</div>
-              </div>
-            </a>
-          </div>
-        {% endfor %}
+        {% include "partials/playlist_candidate_tracks.html" %}
       </div>
     </div>
 

@@ -158,6 +158,57 @@ def test_playlist_edit_candidate_search_finds_any_track(
     assert "Cand 149" in response.text
 
 
+def test_playlist_candidate_tracks_partial_lists_tracks(
+    client_factory, db_session, user, playlist
+):
+    _make_bulk_tracks(db_session, 150, "Cand")
+
+    client = client_factory(optional_user=user)
+    response = client.get(f"/playlist/edit/{playlist.id}/candidate-tracks")
+
+    assert response.status_code == 200
+    # Only the partial is returned: bounded to 100 candidates, no page chrome.
+    assert response.text.count("data-add-indicator") == 100
+    assert "<html" not in response.text
+
+
+def test_playlist_candidate_tracks_partial_filters_by_query(
+    client_factory, db_session, user, playlist
+):
+    _make_bulk_tracks(db_session, 150, "Cand")
+
+    client = client_factory(optional_user=user)
+    response = client.get(
+        f"/playlist/edit/{playlist.id}/candidate-tracks", params={"q": "Cand 149"}
+    )
+
+    assert response.status_code == 200
+    assert response.text.count("data-add-indicator") == 1
+    assert "Cand 149" in response.text
+
+
+def test_playlist_candidate_tracks_partial_requires_owner(
+    client_factory, admin_user, playlist
+):
+    client = client_factory(optional_user=admin_user)
+    response = client.get(f"/playlist/edit/{playlist.id}/candidate-tracks")
+
+    assert response.status_code == 403
+
+
+def test_playlist_candidate_tracks_partial_shows_empty_state(
+    client_factory, user, playlist
+):
+    client = client_factory(optional_user=user)
+    response = client.get(
+        f"/playlist/edit/{playlist.id}/candidate-tracks",
+        params={"q": "zzz-no-such-track"},
+    )
+
+    assert response.status_code == 200
+    assert "No tracks match your search." in response.text
+
+
 def test_root_respects_explicit_all_limit(client_factory):
     client = client_factory()
 

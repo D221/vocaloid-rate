@@ -20,7 +20,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const playlistId = playlistContainer.dataset.playlistId;
   const allTracksList = document.getElementById("all-tracks-list");
   const playlistTracksList = document.getElementById("playlist-tracks-list");
-  const trackSearch = document.getElementById("track-search");
   const playlistPublicInput = document.getElementById("playlist-public-input");
 
   // --- HELPER FUNCTIONS ---
@@ -241,14 +240,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- GENERAL EVENT LISTENERS ---
 
-  trackSearch.addEventListener("input", () => {
-    const searchTerm = trackSearch.value.toLowerCase();
-    allTracksList.querySelectorAll(".track-item").forEach((item) => {
-      const itemText = item.textContent.toLowerCase();
-      item.style.display = itemText.includes(searchTerm) ? "flex" : "none";
-    });
-  });
-
   allTracksList.addEventListener("click", (e) => {
     // First, check if the click was on a button we should ignore.
     const playButton = e.target.closest("[data-play-button]");
@@ -378,4 +369,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   };
   updateInPlaylistIndicators();
+
+  // Re-apply "already in playlist" indicators after htmx swaps in new
+  // search results (the candidate list is replaced via innerHTML).
+  if (window.htmx && allTracksList) {
+    allTracksList.addEventListener("htmx:afterSwap", () => {
+      updateInPlaylistIndicators();
+    });
+  }
 });

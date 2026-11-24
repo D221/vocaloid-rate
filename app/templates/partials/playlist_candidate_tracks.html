@@ -1,0 +1,46 @@
+{% from "macros/icons.html" import render as icon %}
+{% for track in all_tracks %}
+  <div
+    class="track-item flex cursor-grab items-center gap-3 rounded hover:bg-gray-hover"
+    data-track-id="{{ track.id }}"
+    data-track-link="{{ track.link }}"
+    data-track-image-url="{{ track.image_url }}"
+    data-track-title="{{ track.title }}"
+    data-track-title-jp="{{ track.title_jp or '' }}"
+    data-track-producer="{{ track.producer }}"
+    data-track-producer-jp="{{ track.producer_jp or '' }}"
+  >
+    <div data-add-indicator class="p-2 text-gray-text">
+      {{ icon('plus', size="h-6 w-6") }}
+    </div>
+    <button
+      data-play-button
+      title="{{ _('Play track') }}"
+      data-track-id="{{ track.id }}"
+      class="p-2 text-gray-text hover:text-sky-text"
+    >
+      {{ icon('play', size="h-6 w-6") }}
+    </button>
+
+    <a
+      href="{{ track.link }}"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="flex items-center gap-3"
+    >
+      <img
+        src="{{ track.image_url }}"
+        alt="{{ track.title }}"
+        class="h-10 w-10 rounded object-cover"
+      />
+      <div>
+        <div class="font-semibold">{{ track.title }}</div>
+        <div class="text-sm">{{ track.producer }}</div>
+      </div>
+    </a>
+  </div>
+{% else %}
+  <div class="p-2 text-sm text-gray-text">
+    {{ _('No tracks match your search.') }}
+  </div>
+{% endfor %}

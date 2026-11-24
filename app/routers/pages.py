@@ -314,6 +314,40 @@ async def edit_playlist_page(
     return await _render_page("playlist_edit.html", request, translations, context)
 
 
+@router.get("/playlist/edit/{playlist_id}/candidate-tracks")
+async def playlist_candidate_tracks(
+    playlist_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: models.User | None = Depends(get_optional_current_user),
+    q: str | None = None,
+    translations: Translations = Depends(get_translations),
+):
+    """htmx partial: live-searchable candidate tracks for the playlist editor."""
+    user = _require_current_user(current_user)
+
+    db_playlist = crud.get_playlist(db, playlist_id)
+    if not db_playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+    if db_playlist.user_id != user.id:
+        raise HTTPException(
+            status_code=403, detail="Not authorized to edit this playlist"
+        )
+
+    search = (q or "").strip() or None
+    all_tracks = crud.get_candidate_tracks(db, search=search, limit=100)
+    context = {
+        "request": request,
+        "current_user": user,
+        "_": translations.gettext,
+        "all_tracks": all_tracks,
+    }
+
+    return await _render_page(
+        "partials/playlist_candidate_tracks.html", request, translations, context
+    )
+
+
 @router.get("/options")
 async def read_options(
     request: Request,
