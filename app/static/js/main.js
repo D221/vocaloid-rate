@@ -410,7 +410,7 @@ function cleanupPreviousEmbed(trackId) {
     }
     const container = prevRow.querySelector("div[data-embed-container]");
     if (container) {
-      container.innerHTML = "";
+      container.replaceChildren();
       container.style.display = "none";
     }
     prevEmbedBtn.classList.remove("is-open");
@@ -515,7 +515,7 @@ const updatePaginationUI = (pagination) => {
     );
     if (!pageLinks || !prevButton || !nextButton) return;
 
-    pageLinks.innerHTML = "";
+    pageLinks.replaceChildren();
 
     if (pagination.total_pages <= 1) {
       paginationContainer.style.display = "none";
@@ -589,7 +589,7 @@ const updateActiveFilterDisplay = () => {
 		`;
       ratingContainer.style.display = "block";
     } else {
-      ratingContainer.innerHTML = "";
+      ratingContainer.replaceChildren();
       ratingContainer.style.display = "none";
     }
   }
@@ -638,7 +638,7 @@ const updateActiveFilterDisplay = () => {
 
   if (!hasContent) {
     summaryContainer.classList.add("hidden");
-    summaryContainer.innerHTML = "";
+    summaryContainer.replaceChildren();
     return;
   }
 
@@ -994,7 +994,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           .closest("td")
           .querySelector("div[data-embed-container]");
         if (container) {
-          container.innerHTML = "";
+          container.replaceChildren();
           container.style.display = "none";
         }
       });
@@ -1443,7 +1443,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         ? window._("Selected: %s ★", String(selectedRating))
         : window._("Select a rating");
 
-    grid.innerHTML = "";
+    grid.replaceChildren();
     for (let i = 1; i <= 10; i += 1) {
       const button = document.createElement("button");
       button.type = "button";
@@ -2389,7 +2389,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         // Clean up DOM
-        videoContainer.innerHTML = "";
+        videoContainer.replaceChildren();
         videoContainer.style.display = "none";
 
         // Only proceed if we are closing the currently active track
@@ -2550,7 +2550,7 @@ document.addEventListener("DOMContentLoaded", async () => {
               allLyricsData = data.lyrics;
               if (allLyricsData.length === 0)
                 return Promise.reject(window._("No lyrics found"));
-              lyricsSelect.innerHTML = "";
+              lyricsSelect.replaceChildren();
               allLyricsData.forEach((lyric, index) => {
                 const option = document.createElement("option");
                 option.value = index;

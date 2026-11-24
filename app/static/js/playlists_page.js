@@ -157,6 +157,9 @@ document.addEventListener("DOMContentLoaded", () => {
     createInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
         event.preventDefault();
+        if (event.isComposing || event.keyCode === 229) {
+          return;
+        }
         createPlaylist();
       }
     });

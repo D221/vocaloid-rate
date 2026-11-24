@@ -48,6 +48,12 @@ window.applyTheme = function (theme) {
   const doc = document.documentElement;
   doc.dataset.theme = theme;
   localStorage.setItem(THEME_KEY, theme);
+  // Sync meta color-scheme with the applied theme
+  var meta = document.querySelector('meta[name="color-scheme"]');
+  if (meta) {
+    var darkThemes = ["dark", "night", "black"];
+    meta.content = darkThemes.includes(theme) ? "dark" : "light";
+  }
 };
 
 window.initializeTheme = function () {

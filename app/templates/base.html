@@ -88,6 +88,7 @@
     />
     <meta name="msapplication-TileColor" content="#da532c" />
     <meta name="theme-color" content="#ffffff" />
+    <meta name="color-scheme" content="light dark" />
 
     <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}" />
     <script>
@@ -110,6 +111,18 @@
           initialTheme = storedTheme;
         }
         document.documentElement.dataset.theme = initialTheme;
+
+        // Sync meta color-scheme with the resolved theme
+        var meta = document.querySelector('meta[name="color-scheme"]');
+        if (meta) {
+          var darkThemes = ["dark", "night", "black"];
+          meta.content =
+            !storedTheme || !THEMES.includes(storedTheme)
+              ? "light dark"
+              : darkThemes.includes(initialTheme)
+                ? "dark"
+                : "light";
+        }
       })();
 
       (function () {

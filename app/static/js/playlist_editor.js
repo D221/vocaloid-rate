@@ -185,6 +185,9 @@ document.addEventListener("DOMContentLoaded", () => {
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
+        if (e.isComposing || e.keyCode === 229) {
+          return;
+        }
         input.blur();
       } else if (e.key === "Escape") {
         // Optional: Revert changes on Escape key
