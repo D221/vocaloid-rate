@@ -10,6 +10,11 @@ DEFAULT_LOCALE = "en"
 DATA_DIR = str(get_data_dir())
 MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024  # 5 MiB
 VALID_PAGE_LIMITS = {"all", "25", "50", "100"}
+# Upper bound on rows returned for a single unauthenticated request. "all" is
+# clamped to this for anonymous callers so a crawler cannot force a full-catalog
+# render (which is ~20x the CPU of a 100-row page). Authenticated users may
+# still request the full set.
+MAX_UNAUTHENTICATED_LIMIT = 500
 
 if is_vercel():
     SCRAPE_STATUS_FILE = os.path.join("/tmp", "scrape_status.txt")

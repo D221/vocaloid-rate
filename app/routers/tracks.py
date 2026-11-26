@@ -25,6 +25,7 @@ from app.utils.uploads import read_upload_with_size_limit
 from app.utils.view_helpers import (
     build_limit_offset,
     build_tracks_partial_response,
+    limit_ceiling,
 )
 
 router = APIRouter()
@@ -36,7 +37,7 @@ def get_tracks_partial(
     db: Session = Depends(get_db),
     current_user: models.User | None = Depends(get_optional_current_user),
     page: int = 1,
-    limit: str = "all",
+    limit: str = "100",
     rated_filter: str | None = None,
     title_filter: str | None = None,
     producer_filter: str | None = None,
@@ -67,7 +68,9 @@ def get_tracks_partial(
         locale=locale,
     )
 
-    limit_val, total_pages, skip = build_limit_offset(limit, total_tracks, page)
+    limit_val, total_pages, skip = build_limit_offset(
+        limit, total_tracks, page, ceiling=limit_ceiling(current_user)
+    )
 
     tracks = crud.get_tracks(
         db,
@@ -181,7 +184,9 @@ def get_playlist_tracks_partial(
         locale=locale,
     )
 
-    limit_val, total_pages, skip = build_limit_offset(limit, total_tracks, page)
+    limit_val, total_pages, skip = build_limit_offset(
+        limit, total_tracks, page, ceiling=limit_ceiling(current_user)
+    )
 
     tracks = crud.get_playlist_tracks_filtered(
         db,
@@ -236,7 +241,9 @@ def get_recently_added_tracks_partial(
         locale=locale,
     )
 
-    limit_val, total_pages, skip = build_limit_offset(limit, total_tracks, page)
+    limit_val, total_pages, skip = build_limit_offset(
+        limit, total_tracks, page, ceiling=limit_ceiling(current_user)
+    )
 
     tracks = crud.get_recently_added_tracks(
         db,

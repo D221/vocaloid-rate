@@ -7,7 +7,13 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app import models
+from app.constants import MAX_UNAUTHENTICATED_LIMIT
 from app.dependencies import templates
+
+
+def limit_ceiling(current_user) -> int | None:
+    """Row ceiling for a request: unlimited for users, capped for anonymous."""
+    return None if current_user else MAX_UNAUTHENTICATED_LIMIT
 
 
 def serialize_tracks(tracks) -> str:
@@ -68,10 +74,12 @@ def get_user_filter_options(
 
 
 def build_limit_offset(
-    limit: str, total_tracks: int, page: int
+    limit: str, total_tracks: int, page: int, ceiling: int | None = None
 ) -> tuple[int, int, int]:
     page = max(1, page)
     limit_val = total_tracks if limit == "all" else int(limit)
+    if ceiling is not None and limit_val > ceiling:
+        limit_val = ceiling
     total_pages = (total_tracks + limit_val - 1) // limit_val if limit_val > 0 else 1
     skip = (page - 1) * limit_val
     return limit_val, total_pages, skip

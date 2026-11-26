@@ -21,6 +21,7 @@ from app.utils.view_helpers import (
     build_limit_offset,
     collect_producers_and_voicebanks,
     get_user_filter_options,
+    limit_ceiling,
     serialize_tracks,
 )
 
@@ -108,7 +109,9 @@ async def read_rated_tracks(
         locale=locale,
     )
 
-    limit_val, total_pages, skip = build_limit_offset(limit, total_tracks, page)
+    limit_val, total_pages, skip = build_limit_offset(
+        limit, total_tracks, page, ceiling=limit_ceiling(current_user)
+    )
 
     tracks = crud.get_tracks(
         db,
@@ -240,7 +243,9 @@ async def view_playlist_detail_page(
         locale=locale,
         **filters,
     )
-    limit_val, total_pages, skip = build_limit_offset(limit, total_tracks, page)
+    limit_val, total_pages, skip = build_limit_offset(
+        limit, total_tracks, page, ceiling=limit_ceiling(current_user)
+    )
 
     tracks_in_playlist = crud.get_playlist_tracks_filtered(
         db,
@@ -455,6 +460,11 @@ async def read_root(
     limit_val = 10000
     if effective_limit.isdigit():
         limit_val = int(effective_limit)
+    # Clamp "all" (and any oversized explicit limit) for anonymous callers so a
+    # crawler cannot force a full-catalog render.
+    ceiling = limit_ceiling(current_user)
+    if ceiling is not None and limit_val > ceiling:
+        limit_val = ceiling
 
     total_pages = 1
     if limit_val != 10000:
@@ -556,6 +566,9 @@ async def read_recently_added(
     limit_val = 10000
     if effective_limit.isdigit():
         limit_val = int(effective_limit)
+    ceiling = limit_ceiling(current_user)
+    if ceiling is not None and limit_val > ceiling:
+        limit_val = ceiling
 
     total_pages = 1
     if limit_val != 10000:
@@ -938,6 +951,11 @@ async def view_historical_ranking(
     limit_val: int | None = None
     if effective_limit.isdigit():
         limit_val = int(effective_limit)
+
+    # Clamp "all"/oversized limits for anonymous callers.
+    ceiling = limit_ceiling(current_user)
+    if ceiling is not None and (limit_val is None or limit_val > ceiling):
+        limit_val = ceiling
 
     total_pages = 1
     if limit_val is not None:
