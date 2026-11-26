@@ -1,5 +1,6 @@
 import gettext
 import logging
+from functools import lru_cache
 from gettext import NullTranslations
 
 from babel.support import Translations
@@ -77,15 +78,17 @@ class TranslationProxy(Translations):
         return getattr(self._inner, name)
 
 
-def get_translations(
-    locale: str = Depends(get_locale),
-) -> Translations | NullTranslations:
+@lru_cache(maxsize=len(SUPPORTED_LOCALES))
+def _load_translations(locale: str) -> TranslationProxy:
+    """Load and parse a locale catalogue once per process (catalogue is
+    immutable per deploy). Reused across requests instead of re-reading the
+    .mo file from disk on every invocation."""
     base_path = get_resource_base_path()
     locales_path = base_path / "locales"
 
     try:
-        logger.info(
-            "Attempting to load translations from: %s for locale %s",
+        logger.debug(
+            "Loading translations from: %s for locale %s",
             locales_path,
             locale,
         )
@@ -100,6 +103,12 @@ def get_translations(
             locales_path,
         )
         return TranslationProxy(NullTranslations(), locale)
+
+
+def get_translations(
+    locale: str = Depends(get_locale),
+) -> Translations | NullTranslations:
+    return _load_translations(locale)
 
 
 async def locale_template_response(

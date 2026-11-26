@@ -42,3 +42,16 @@ def test_get_tracks_partial_defaults_to_100(client_factory, sample_tracks):
     response = client.get("/_/get_tracks")
     assert response.status_code == 200
     assert response.json()["pagination"]["limit"] == "100"
+
+
+# --- Fix 3: memoize translations per locale -----------------------------------
+
+
+def test_translations_are_memoized_per_locale():
+    from app.dependencies import _load_translations, get_translations
+
+    _load_translations.cache_clear()
+    first = get_translations("en")
+    second = get_translations("en")
+    assert first is second
+    assert _load_translations.cache_info().hits >= 1
