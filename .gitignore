@@ -37,3 +37,4 @@ docs/static/openapi.json
 
 # Vercel build output (copied from app/static by scripts/copy_static.mjs)
 public/
+.venv313/
