@@ -375,3 +375,22 @@ def test_static_url_prefix_unchanged():
     from app.constants import STATIC_DIR
 
     assert STATIC_DIR.name == "static"
+
+
+def test_metrics_warns_once_when_table_missing(monkeypatch, caplog):
+    import logging
+
+    from app.services import metrics
+
+    monkeypatch.setenv("RECORD_METRICS_SAMPLE", "1")
+    monkeypatch.setattr(metrics, "_warned_missing", False)
+
+    def boom():
+        raise RuntimeError('relation "request_metrics" does not exist')
+
+    monkeypatch.setattr(metrics, "SessionLocal", boom)
+    with caplog.at_level(logging.WARNING, logger="app.services.metrics"):
+        metrics.record("/", 200, "human", 1.0, 0, False)
+        metrics.record("/", 200, "human", 1.0, 0, False)
+    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(warnings) == 1

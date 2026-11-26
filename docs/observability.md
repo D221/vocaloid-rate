@@ -88,3 +88,27 @@ vice-versa). The only shared-cached responses are anonymous-identical
 (robots/sitemap/static). If a future route must be both personalized and cached,
 it needs an explicit `Vary` on a header the CDN is documented to key on (e.g.
 `Accept-Language` for locale) — not `Cookie`.
+
+## Applying the request_metrics migration (Vercel Postgres)
+
+Migrations are **skipped on Vercel** (`RUN_MIGRATIONS_ON_STARTUP` defaults to
+false), so the `request_metrics` table must be created once, out-of-band:
+
+1. Pull the production DB URL locally:
+   ```bash
+   vercel env pull .env.production
+   ```
+2. Point Alembic at it and upgrade (works for both SQLite and Postgres):
+   ```bash
+   DATABASE_URL="$(grep '^DATABASE_URL=' .env.production | cut -d= -f2-)" \
+     uv run alembic upgrade head
+   ```
+   (or run the same in CI with the `DATABASE_URL` secret).
+3. Verify:
+   ```bash
+   psql "$DATABASE_URL" -c "\d request_metrics"
+   ```
+
+The recorder is **fail-open**: if the table is missing it logs **one warning per
+instance** and pauses recording — requests are never broken. Set
+`RECORD_METRICS_SAMPLE=20` only after the table exists.

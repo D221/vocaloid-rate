@@ -25,6 +25,7 @@ RECORD_METRICS_SAMPLE_ENV = "RECORD_METRICS_SAMPLE"
 PRUNE_AFTER_DAYS = 14
 
 _cold_start_consumed = False
+_warned_missing = False
 
 
 def _sample_rate() -> int:
@@ -86,7 +87,16 @@ def record(
         )
         db.commit()
     except Exception as exc:  # noqa: BLE001 - metrics must never break requests
-        logger.debug("request metric write failed: %s", exc)
+        global _warned_missing
+        if not _warned_missing:
+            _warned_missing = True
+            logger.warning(
+                "request metrics unavailable (table missing?); recording paused "
+                "for this instance: %s",
+                exc,
+            )
+        else:
+            logger.debug("request metric write failed: %s", exc)
         if db is not None:
             try:
                 db.rollback()
