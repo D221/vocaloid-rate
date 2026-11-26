@@ -15,6 +15,10 @@ VALID_PAGE_LIMITS = {"all", "25", "50", "100"}
 # render (which is ~20x the CPU of a 100-row page). Authenticated users may
 # still request the full set.
 MAX_UNAUTHENTICATED_LIMIT = 500
+# Cap on tracks rendered on producer/voicebank entity pages. These pages are
+# public and listed in the sitemap, so an unbounded track list is a crawler
+# amplifier; the full catalog remains reachable via the paginated main chart.
+ENTITY_PAGE_LIMIT = 200
 
 if is_vercel():
     SCRAPE_STATUS_FILE = os.path.join("/tmp", "scrape_status.txt")

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app import crud, models
 from app.auth import get_optional_current_user
 from app.config import get_public_base_url
-from app.constants import VALID_PAGE_LIMITS
+from app.constants import ENTITY_PAGE_LIMIT, VALID_PAGE_LIMITS
 from app.dependencies import (
     get_db,
     get_slim_mode,
@@ -740,7 +740,7 @@ async def view_producer_page(
     if not producer:
         raise HTTPException(status_code=404, detail="Producer not found")
 
-    tracks = _tracks_by_newest(producer.tracks)
+    tracks = _tracks_by_newest(producer.tracks)[:ENTITY_PAGE_LIMIT]
     entity_json_ld = {
         "@context": "https://schema.org",
         "@type": "MusicGroup",
@@ -820,7 +820,7 @@ async def view_voicebank_page(
     if not voicebank:
         raise HTTPException(status_code=404, detail="Voicebank not found")
 
-    tracks = _tracks_by_newest(voicebank.tracks)
+    tracks = _tracks_by_newest(voicebank.tracks)[:ENTITY_PAGE_LIMIT]
     entity_json_ld = {
         "@context": "https://schema.org",
         "@type": "MusicGroup",

@@ -109,3 +109,38 @@ def test_atproto_not_imported_on_cold_start():
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == "False"
+
+
+# --- Fix 6: producer/voicebank pages cap rendered tracks ----------------------
+
+
+def test_producer_page_caps_rendered_tracks(client_factory, db_session):
+    from datetime import datetime, timezone
+
+    from app import models
+    from app.constants import ENTITY_PAGE_LIMIT
+
+    producer = models.Producer(name="Prolific", name_jp="P")
+    db_session.add(producer)
+    db_session.flush()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    total = ENTITY_PAGE_LIMIT + 5
+    for i in range(total):
+        track = models.Track(
+            title=f"T{i}",
+            producer="Prolific",
+            voicebank="V",
+            published_date=now,
+            link=f"https://x/{i}",
+            rank=None,
+        )
+        db_session.add(track)
+        db_session.flush()
+        track.producers.append(producer)
+    db_session.commit()
+
+    client = client_factory()
+    response = client.get("/producer/Prolific")
+    assert response.status_code == 200
+    rendered = response.text.count("truncate font-bold text-cyan-text")
+    assert rendered == ENTITY_PAGE_LIMIT
