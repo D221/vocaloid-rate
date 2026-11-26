@@ -169,7 +169,9 @@ async def guard_heavy_queries(request: Request, call_next) -> Response:
         page = request.query_params.get("page")
         if page is not None:
             try:
-                if not page.isdigit() or int(page) > _MAX_PAGE:
+                # Non-positive pages are clamped by the route; only reject
+                # non-numeric or absurdly large values here.
+                if int(page) > _MAX_PAGE:
                     raise ValueError
             except ValueError:
                 return JSONResponse({"detail": "Invalid page."}, status_code=400)

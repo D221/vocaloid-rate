@@ -57,7 +57,7 @@ async def test_cache_middleware_leaves_non_static_requests_untouched():
         {
             "type": "http",
             "method": "GET",
-            "path": "/",
+            "path": "/login",
             "query_string": b"",
             "headers": [],
         }
