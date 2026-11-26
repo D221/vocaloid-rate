@@ -172,6 +172,8 @@ def build_endpoints(names: dict) -> list[tuple[str, str]]:
         ("GET", f"/voicebank/{names['voicebank']}"),
         ("GET", "/sitemap.xml"),
         ("GET", "/robots.txt"),
+        ("GET", "/static/js/global.js"),
+        ("GET", "/api/translations?lang=en"),
     ]
 
 
@@ -186,9 +188,9 @@ def time_endpoint(client: TestClient, method: str, path: str) -> dict:
     for _ in range(REPEATS):
         c0 = time.process_time()
         for _ in range(BATCH):
-            resp = client.request(method, path)
+            resp = client.request(method, path, headers={"Accept-Encoding": "gzip"})
         c1 = time.process_time()
-        last_bytes = len(resp.content)
+        last_bytes = int(resp.headers.get("content-length") or len(resp.content))
         last_status = resp.status_code
         samples_ms.append(((c1 - c0) / BATCH) * 1000.0)
 
