@@ -30,6 +30,7 @@ from app.constants import (
 from app.database import SessionLocal
 from app.dependencies import get_db, templates
 from app.routers import auth, pages, playlists, scraping, sitemap, tracks, vocadb
+from app.services import metrics
 from app.services.scraping import (
     initial_scrape_task,
     set_initial_scrape_in_progress,
@@ -231,13 +232,17 @@ async def add_cache_control_header(request: Request, call_next) -> Response:
 
 @app.middleware("http")
 async def log_request_metrics(request: Request, call_next) -> Response:
-    """Env-gated (LOG_REQUEST_METRICS) one-line-per-request telemetry.
+    """Env-gated per-request telemetry.
 
-    Logs method, route template (not raw IDs), status, wall ms, process_time ms,
-    response bytes, UA class and cache status. Read via `vercel logs` and
-    aggregate by the route field. See docs/observability.md.
+    LOG_REQUEST_METRICS=1 -> one log line per request (short diagnostic windows).
+    RECORD_METRICS_SAMPLE=N -> append ~1/N requests to the request_metrics table
+    (durable, for daily aggregation; Hobby logs only retain ~1h). Both are
+    fail-open. See docs/observability.md.
     """
-    if not _env_flag("LOG_REQUEST_METRICS"):
+    cold = metrics.is_cold_start()
+    do_log = _env_flag("LOG_REQUEST_METRICS")
+    do_record = metrics.enabled()
+    if not do_log and not do_record:
         return await call_next(request)
 
     wall_start = time.perf_counter()
@@ -248,19 +253,30 @@ async def log_request_metrics(request: Request, call_next) -> Response:
 
     route = request.scope.get("route")
     path_template = getattr(route, "path", None) or request.url.path
-    bytes_sent = response.headers.get("content-length", "0")
-    logger.info(
-        "REQ method=%s path=%s status=%s wall_ms=%.1f cpu_ms=%.1f bytes=%s "
-        "ua=%s cache=%s",
-        request.method,
-        path_template,
-        response.status_code,
-        wall_ms,
-        cpu_ms,
-        bytes_sent,
-        _ua_class(request.headers.get("user-agent", "")),
-        _cache_status(response.headers.get("cache-control")),
-    )
+    bytes_header = response.headers.get("content-length", "0")
+    try:
+        bytes_sent = int(bytes_header)
+    except ValueError:
+        bytes_sent = 0
+    ua_class = _ua_class(request.headers.get("user-agent", ""))
+    if do_log:
+        logger.info(
+            "REQ method=%s path=%s status=%s wall_ms=%.1f cpu_ms=%.1f bytes=%s "
+            "ua=%s cache=%s cold=%s",
+            request.method,
+            path_template,
+            response.status_code,
+            wall_ms,
+            cpu_ms,
+            bytes_header,
+            ua_class,
+            _cache_status(response.headers.get("cache-control")),
+            cold,
+        )
+    if do_record:
+        metrics.record(
+            path_template, response.status_code, ua_class, cpu_ms, bytes_sent, cold
+        )
     return response
 
 

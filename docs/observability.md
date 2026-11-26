@@ -1,69 +1,71 @@
-# Request metrics log (Fluid Active CPU investigation)
+# Observability & CPU attribution (Fluid Active CPU)
 
-`app/main.py` includes an **env-gated** middleware, `log_request_metrics`, that
-emits one structured line per request. It is off by default and only active when
-the environment variable `LOG_REQUEST_METRICS` is truthy (`1`, `true`, `yes`,
-`on`).
+This project runs on Vercel **Hobby**, where runtime logs are retained for only
+**~1 hour / 4000 rows** (Vercel docs: Runtime Logs, Hobby = 1 hour). That is too
+short for daily aggregation, so there are two layers: short-window log lines and
+an opt-in durable Postgres table.
 
-## What it logs
+## Layer 1 — log lines (short diagnostic windows)
 
-Each line (logger `app.main`, level INFO) contains:
-
-| Field     | Meaning                                                                                                                                            |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `method`  | HTTP method                                                                                                                                        |
-| `path`    | **Route template** (e.g. `/producer/{producer_name}`), not raw IDs. Falls back to the raw path only when no route matched.                         |
-| `status`  | HTTP status code                                                                                                                                   |
-| `wall_ms` | Wall-clock milliseconds for the request                                                                                                            |
-| `cpu_ms`  | `time.process_time()` delta in ms — the closest in-process proxy for the CPU that Fluid bills (Postgres/HTTP wait is excluded from `process_time`) |
-| `bytes`   | Response `Content-Length`                                                                                                                          |
-| `ua`      | `bot` or `human` (best-effort user-agent classifier)                                                                                               |
-| `cache`   | Cache status derived from `Cache-Control`: `public`, `private`, `no-store`, or `none`                                                              |
-
-Example:
+`LOG_REQUEST_METRICS=1` makes `app/main.py:log_request_metrics` emit one line per
+request (logger `app.main`):
 
 ```
-INFO:app.main REQ method=GET path=/ status=200 wall_ms=41.2 cpu_ms=33.8 bytes=1078089 ua=bot cache=private
+REQ method=GET path=/ status=200 wall_ms=41.2 cpu_ms=33.8 bytes=35021 ua=bot cache=private cold=true
 ```
 
-## Reading it on Vercel
+`path` is the **route template** (e.g. `/producer/{producer_name}`), not raw IDs.
+`cpu_ms` is `time.process_time()` (process-wide CPU ≈ what Fluid bills; DB/HTTP
+wait excluded). `cold` marks the first request per process instance.
 
-1. Set `LOG_REQUEST_METRICS=1` in the Vercel project's Environment Variables and
-   redeploy.
-2. Stream logs:
+Read with `vercel logs <deployment>` (live only) or the dashboard Logs tab
+(historical, within the 1h window). Aggregate by the `path` field.
 
-   ```bash
-   vercel logs <deployment-url>
-   ```
+## Layer 2 — durable sampled table (for daily aggregation)
 
-   Or open the deployment's **Logs** tab in the Vercel dashboard and filter for
-   `REQ `.
+Set `RECORD_METRICS_SAMPLE=N` (e.g. `20`) to append ~1 in N requests to the
+`request_metrics` Postgres table. Writes are **fail-open** (a DB error never
+breaks a request) and the table is pruned after 14 days inside the daily cron
+(`prune_request_metrics` runs alongside the scrape).
 
-## Aggregating by route
-
-Pull a window of logs to a file and reduce locally. For example, total CPU by
-route template over a day:
+Summary (read-only):
 
 ```bash
-vercel logs <deployment-url> > req.log
-grep -o 'path=[^ ]* .*cpu_ms=[0-9.]*' req.log \
-  | sed -E 's/.*path=([^ ]*).*cpu_ms=([0-9.]+).*/\1 \2/' \
-  | awk '{cpu[$1]+=$2; n[$1]++} END{for (p in cpu) printf "%8.1f ms  %5d req  %s\n", cpu[p], n[p], p}' \
-  | sort -rn
+uv run python scripts/metrics_summary.py --days 7
 ```
 
-Bot vs human split for a route:
+prints top routes by total CPU, by count, bot vs human, and cold-start share.
 
-```bash
-grep 'path=/producer/' req.log | grep -o 'ua=[a-z]*' | sort | uniq -c
-```
+## Vercel Firewall / bot mitigation (available on Hobby, no add-on)
 
-## Notes
+Verified in Vercel docs (2026):
 
-- `cpu_ms` is process-wide CPU during the request and includes any other threads
-  active in the same instance; treat it as a relative signal, not a precise
-  per-request figure.
-- The classifier is deliberately simple (substring match on common bot tokens);
-  it will misclassify some clients. Use it for trends, not exact counts.
-- Leave the flag **off** in normal operation — it logs one line per request and
-  is intended for short diagnostic windows.
+- **Bot Protection** (managed ruleset) is generally available **at no additional
+  cost on all plans**; Log-Only or Challenge actions; verified bots are excluded.
+- **Attack Challenge Mode** is free on all plans; challenged traffic is **not
+  billed** (per Vercel WAF comparison).
+- **WAF custom rules**: Hobby allows **3**; **IP blocking**: Hobby allows **3**.
+
+Recommended: enable Bot Protection in **Log-Only** first, confirm what it would
+challenge, then switch to **Challenge**. This is the no-code lever most likely to
+cut crawler-driven invocations (and therefore Active CPU) on Hobby.
+
+## Fluid Active CPU billing (what counts)
+
+- Active CPU bills time the CPU is **actually busy**; time awaiting Postgres or
+  outbound HTTP is **not** counted.
+- **Cold starts**: the function init (imports, module load) runs on a cold start
+  and its CPU **is** billed. **Instance reuse** (Fluid) means warm invocations do
+  **not** re-pay init. (Vercel Fluid docs.)
+- How many cold starts/day would make init CPU matter is **unknown without
+  telemetry** — it depends on instance churn. With `import app.main` reduced
+  (alembic + atproto now lazy), init CPU is much smaller than before; the
+  `cold=true` rows from Layer 2 will quantify it.
+
+## Aggregation tips
+
+- `cpu_ms` is process-wide and includes other threads active in the same
+  instance; treat as a relative signal.
+- The bot classifier is a simple substring match; use for trends, not counts.
+- Leave `LOG_REQUEST_METRICS` **off** normally; use `RECORD_METRICS_SAMPLE` for
+  always-on low-overhead sampling.

@@ -8,6 +8,7 @@ load_dotenv()
 from app import models
 from app.auth import get_current_user
 from app.config import is_local_mode
+from app.services.metrics import prune as prune_request_metrics
 from app.services.scraping import (
     read_scrape_status,
     scrape_and_populate_task,
@@ -47,6 +48,7 @@ def cron_scrape(request: Request, background_tasks: BackgroundTasks):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     background_tasks.add_task(scrape_and_populate_task)
+    background_tasks.add_task(prune_request_metrics)
     return {"message": "Scraping task has been queued."}
 
 

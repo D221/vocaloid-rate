@@ -205,3 +205,27 @@ class Voicebank(Base):
     tracks: Mapped[list["Track"]] = relationship(
         "Track", secondary=track_voicebanks, back_populates="voicebanks"
     )
+
+
+class RequestMetric(Base):
+    """Sampled per-request telemetry for CPU attribution (opt-in).
+
+    Written by app.services.metrics when RECORD_METRICS_SAMPLE > 0. Append-only;
+    pruned after 14 days by the daily cron. Kept tiny and fail-open so it never
+    breaks a request.
+    """
+
+    __tablename__ = "request_metrics"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime,
+        default=datetime.datetime.now(datetime.timezone.utc),
+        index=True,
+    )
+    route: Mapped[str] = mapped_column(String(200))
+    status: Mapped[int] = mapped_column(Integer)
+    ua_class: Mapped[str] = mapped_column(String(10))
+    cpu_ms: Mapped[float] = mapped_column(Float)
+    bytes_sent: Mapped[int] = mapped_column(Integer)
+    is_cold_start: Mapped[bool] = mapped_column(Boolean, default=False)

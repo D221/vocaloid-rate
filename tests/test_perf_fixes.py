@@ -289,3 +289,42 @@ def test_guard_allows_sort_and_search_variants(client_factory, sample_tracks):
     for sort_by in ("published_date", "title", "rank", "rank_change", "rating"):
         r = client.get("/", params={"sort_by": sort_by, "sort_dir": "asc"})
         assert r.status_code == 200, sort_by
+
+
+# --- Task D: durable sampled metrics recorder ---------------------------------
+
+
+def test_metrics_record_and_prune(monkeypatch, session_factory, db_session):
+    from app import models
+    from app.services import metrics
+
+    monkeypatch.setenv("RECORD_METRICS_SAMPLE", "1")
+    monkeypatch.setattr(metrics, "SessionLocal", session_factory)
+    metrics.record("/producer/{producer_name}", 200, "bot", 12.5, 1000, False)
+    metrics.record("/", 200, "human", 50.0, 2000, True)
+    rows = db_session.query(models.RequestMetric).all()
+    assert len(rows) == 2
+    assert metrics.prune(days=-1) == 2  # negative cutoff removes everything
+
+
+def test_metrics_fail_open(monkeypatch):
+    from app.services import metrics
+
+    monkeypatch.setenv("RECORD_METRICS_SAMPLE", "1")
+
+    def boom():
+        raise RuntimeError("db down")
+
+    monkeypatch.setattr(metrics, "SessionLocal", boom)
+    # Must not raise even though the write fails.
+    metrics.record("/", 200, "human", 1.0, 0, False)
+
+
+def test_metrics_disabled_by_default(monkeypatch, session_factory, db_session):
+    from app import models
+    from app.services import metrics
+
+    monkeypatch.delenv("RECORD_METRICS_SAMPLE", raising=False)
+    monkeypatch.setattr(metrics, "SessionLocal", session_factory)
+    metrics.record("/", 200, "human", 1.0, 0, False)
+    assert db_session.query(models.RequestMetric).count() == 0
