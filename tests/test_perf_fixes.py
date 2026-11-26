@@ -252,3 +252,40 @@ def test_error_response_is_not_edge_cached(client_factory, sample_tracks):
     r = client.get("/?page=notanumber")
     assert r.status_code == 400
     assert "s-maxage" not in r.headers.get("cache-control", "")
+
+
+# --- Task B3: guard must not block real frontend requests ---------------------
+
+
+def test_guard_allows_real_frontend_params(client_factory, sample_tracks):
+    client = client_factory()
+    params = {
+        "page": "2",
+        "limit": "100",
+        "rated_filter": "all",
+        "title_filter": "a",
+        "producer_filter": "b",
+        "voicebank_filter": "c",
+        "sort_by": "title",
+        "sort_dir": "desc",
+        "rank_filter": "ranked",
+        "exact_rating_filter": "8",
+        "lang": "en",
+    }
+    assert client.get("/", params=params).status_code == 200
+    assert client.get("/_/get_tracks", params=params).status_code == 200
+    assert client.get("/recently_added", params=params).status_code == 200
+
+
+def test_guard_allows_all_page_size_variants(client_factory, sample_tracks):
+    client = client_factory()
+    for lim in ("all", "25", "50", "100", "250", "1"):
+        r = client.get("/_/get_tracks", params={"limit": lim, "page": "1"})
+        assert r.status_code == 200, lim
+
+
+def test_guard_allows_sort_and_search_variants(client_factory, sample_tracks):
+    client = client_factory()
+    for sort_by in ("published_date", "title", "rank", "rank_change", "rating"):
+        r = client.get("/", params={"sort_by": sort_by, "sort_dir": "asc"})
+        assert r.status_code == 200, sort_by
