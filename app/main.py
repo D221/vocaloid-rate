@@ -184,7 +184,15 @@ async def add_cache_control_header(request: Request, call_next) -> Response:
     path = request.url.path
 
     if path.startswith("/static/"):
-        response.headers["Cache-Control"] = "public, max-age=86400"
+        # sw.js must revalidate so service-worker updates roll out; other assets
+        # are content-stable per deploy and cached at the edge (s-maxage) so
+        # repeat asset requests are served by the Vercel CDN, not the function.
+        if path == "/static/sw.js":
+            response.headers["Cache-Control"] = "public, max-age=0, must-revalidate"
+        else:
+            response.headers["Cache-Control"] = (
+                "public, max-age=0, s-maxage=86400, stale-while-revalidate=604800"
+            )
         return response
 
     # Respect an explicit cache-control set by a route (e.g. sitemap).

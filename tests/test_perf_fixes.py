@@ -195,3 +195,15 @@ def test_request_metrics_disabled_by_default(client_factory, caplog, sample_trac
     with caplog.at_level(logging.INFO, logger="app.main"):
         client.get("/robots.txt")
     assert not any("REQ method=" in r.getMessage() for r in caplog.records)
+
+
+# --- Task A3: static assets are edge-cacheable (CDN, not per-view function) ---
+
+
+def test_static_assets_are_edge_cacheable(client_factory):
+    client = client_factory()
+    asset = client.get("/static/js/global.js")
+    assert asset.status_code == 200
+    assert "s-maxage=" in asset.headers["cache-control"]
+    sw = client.get("/static/sw.js")
+    assert "must-revalidate" in sw.headers["cache-control"]
