@@ -23,7 +23,9 @@ def test_static_assets_get_cache_control_header(bare_client):
     response = bare_client.get("/static/js/main.js")
 
     assert response.status_code == 200
-    assert response.headers["cache-control"] == "public, max-age=86400"
+    assert response.headers["cache-control"] == (
+        "public, max-age=0, s-maxage=86400, stale-while-revalidate=604800"
+    )
 
 
 def test_service_worker_route_sets_allowed_header(bare_client):

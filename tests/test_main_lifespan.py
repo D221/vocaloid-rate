@@ -61,8 +61,10 @@ async def test_app_lifespan_runs_migrations_and_initial_scrape_when_empty(monkey
 
     monkeypatch.setattr(main, "should_run_migrations_on_startup", lambda: True)
     monkeypatch.setattr(main, "SessionLocal", lambda: FakeSession())
+    import alembic.command
+
     monkeypatch.setattr(
-        main.command, "upgrade", lambda cfg, head: seen.update(upgrade=True)
+        alembic.command, "upgrade", lambda cfg, head: seen.update(upgrade=True)
     )
     monkeypatch.setattr(main.threading, "Thread", FakeThread)
     monkeypatch.setattr(main, "set_initial_scrape_in_progress", lambda value: None)
