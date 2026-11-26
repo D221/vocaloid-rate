@@ -167,3 +167,31 @@ def test_robots_disallows_heavy_paths(client_factory):
     assert "Disallow: /_/" in body
     assert "Disallow: /api/" in body
     assert "Disallow: /*?limit=all" in body
+
+
+# --- Phase 4: env-gated request metrics log -----------------------------------
+
+
+def test_request_metrics_logged_when_enabled(
+    client_factory, monkeypatch, caplog, sample_tracks
+):
+    import logging
+
+    monkeypatch.setenv("LOG_REQUEST_METRICS", "1")
+    client = client_factory()
+    with caplog.at_level(logging.INFO, logger="app.main"):
+        client.get("/robots.txt")
+    messages = [r.getMessage() for r in caplog.records]
+    assert any(
+        "REQ method=GET" in m and "path=/robots.txt" in m and "status=200" in m
+        for m in messages
+    )
+
+
+def test_request_metrics_disabled_by_default(client_factory, caplog, sample_tracks):
+    import logging
+
+    client = client_factory()
+    with caplog.at_level(logging.INFO, logger="app.main"):
+        client.get("/robots.txt")
+    assert not any("REQ method=" in r.getMessage() for r in caplog.records)

@@ -1,6 +1,9 @@
 import logging
+import os
+import re
 import sys
 import threading
+import time
 import webbrowser
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -54,6 +57,34 @@ __all__ = [
 
 # Reject page numbers beyond this as absurd (no legitimate view goes this deep).
 _MAX_PAGE = 100_000
+
+# Simple bot/human classifier for the request log (best-effort, no dependency).
+_BOT_UA_RE = re.compile(
+    r"(?i)(bot|crawl|spider|slurp|bingpreview|headless|phantom|selenium|"
+    r"scrapy|facebookexternalhit|whatsapp|telegram|discord|semrush|ahrefs|"
+    r"mj12|dotbot|petalbot|yandex|baidu|duckduck|applebot|google)"
+)
+
+
+def _env_flag(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _ua_class(user_agent: str) -> str:
+    return "bot" if _BOT_UA_RE.search(user_agent or "") else "human"
+
+
+def _cache_status(cache_control: str | None) -> str:
+    if not cache_control:
+        return "none"
+    value = cache_control.lower()
+    if "no-store" in value:
+        return "no-store"
+    if "private" in value:
+        return "private"
+    if "s-maxage" in value or "public" in value:
+        return "public"
+    return "none"
 
 
 @asynccontextmanager
@@ -172,6 +203,41 @@ async def add_cache_control_header(request: Request, call_next) -> Response:
 
     _add_vary_cookie(response)
     response.headers["Cache-Control"] = _PUBLIC_CACHE_CONTROL
+    return response
+
+
+@app.middleware("http")
+async def log_request_metrics(request: Request, call_next) -> Response:
+    """Env-gated (LOG_REQUEST_METRICS) one-line-per-request telemetry.
+
+    Logs method, route template (not raw IDs), status, wall ms, process_time ms,
+    response bytes, UA class and cache status. Read via `vercel logs` and
+    aggregate by the route field. See docs/observability.md.
+    """
+    if not _env_flag("LOG_REQUEST_METRICS"):
+        return await call_next(request)
+
+    wall_start = time.perf_counter()
+    cpu_start = time.process_time()
+    response = await call_next(request)
+    wall_ms = (time.perf_counter() - wall_start) * 1000.0
+    cpu_ms = (time.process_time() - cpu_start) * 1000.0
+
+    route = request.scope.get("route")
+    path_template = getattr(route, "path", None) or request.url.path
+    bytes_sent = response.headers.get("content-length", "0")
+    logger.info(
+        "REQ method=%s path=%s status=%s wall_ms=%.1f cpu_ms=%.1f bytes=%s "
+        "ua=%s cache=%s",
+        request.method,
+        path_template,
+        response.status_code,
+        wall_ms,
+        cpu_ms,
+        bytes_sent,
+        _ua_class(request.headers.get("user-agent", "")),
+        _cache_status(response.headers.get("cache-control")),
+    )
     return response
 
 
