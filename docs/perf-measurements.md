@@ -37,3 +37,35 @@ init CPU could be a large fraction of the bill. **Confirm/reject with:** the
 and Vercel's per-function **init duration** in the dashboard. If
 `Σ init_ms` ≈ hundreds of seconds/day, cold starts dominate; if it is a few
 seconds, they are negligible and the cause is request volume (bots).
+
+## Reconciliation — what is measured vs guessed
+
+Budget: **600–1020 CPU-s/day** (10–17 min).
+
+**[Measured]**
+
+- Per-invocation CPU (gzip, process-wide, SQLite): doc `/` ≈ 56 ms, `/_/get_tracks`
+  (100) ≈ 48 ms, snapshot ≈ 33 ms, static ≈ 8 ms each, translations ≈ 8 ms,
+  `/?limit=all` (capped) ≈ 185 ms.
+- A page view issues ~8–9 same-origin function calls (pre-fix) ≈ **~110 ms**.
+- Tracked ~45 views/day; even ×10 = 450 views/day ⇒ **~50 CPU-s/day**.
+
+**[Inferred]**
+
+- 50 CPU-s is only **~5–8%** of 600–1020. Reaching the budget at ~110 ms/view
+  needs **~5,500–9,300 page-equivalents/day** ⇒ the bulk is **non-human
+  (crawler/bot) volume** Umami does not count.
+- After the fixes, static + translations + doc are CDN-cached (`s-maxage`), so a
+  crawler's repeat page fetches cost ~0 function CPU (cache HIT); only
+  cache-miss/cold requests pay.
+
+**[Guessed] — the unexplained fraction**
+
+- **~92–95% of the 600–1020 CPU-s/day is not explained by measured human
+  traffic.** It is a guess split across: (H_bot) crawler volume, (H_cold) cold
+  starts (~1.7 CPU-s each; ~350–600/day would alone equal the budget), and
+  (H_miss) cache-miss / heavy `limit=all` requests.
+- **Telemetry to close it:** `request_metrics` rows (route, ua_class, cpu_ms,
+  is_cold_start) + `startup: init_ms` lines + `x-vercel-cache` HIT ratio, over a
+  few days. `scripts/metrics_summary.py` ranks routes by CPU and splits bot vs
+  human; the `cold=true` rows and `init_ms` lines quantify H_cold.
