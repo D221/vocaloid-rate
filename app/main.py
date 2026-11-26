@@ -88,12 +88,63 @@ async def app_lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(lifespan=app_lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
+# Paths whose anonymous responses are safe to cache at the edge. Authenticated
+# or otherwise personalised responses are forced to private/no-store below.
+_PUBLIC_CACHE_EXACT = frozenset(
+    {
+        "/",
+        "/robots.txt",
+        "/sitemap.xml",
+        "/recently_added",
+        "/api/playlist-snapshot",
+        "/api/recently-added-snapshot",
+    }
+)
+_PUBLIC_CACHE_PREFIXES = ("/producer/", "/voicebank/", "/_/get_tracks")
+# Anonymous edge-cached responses: revalidate in the background and serve stale
+# while revalidating so crawlers and repeat visitors rarely invoke the function.
+_PUBLIC_CACHE_CONTROL = "public, max-age=0, s-maxage=60, stale-while-revalidate=300"
+
+
+def _is_public_cacheable_path(path: str) -> bool:
+    return path in _PUBLIC_CACHE_EXACT or path.startswith(_PUBLIC_CACHE_PREFIXES)
+
+
+def _add_vary_cookie(response: Response) -> None:
+    existing = response.headers.get("vary")
+    if not existing:
+        response.headers["Vary"] = "Cookie"
+    elif "cookie" not in existing.lower():
+        response.headers["Vary"] = f"{existing}, Cookie"
+
 
 @app.middleware("http")
 async def add_cache_control_header(request: Request, call_next) -> Response:
     response = await call_next(request)
-    if request.url.path.startswith("/static/"):
+    path = request.url.path
+
+    if path.startswith("/static/"):
         response.headers["Cache-Control"] = "public, max-age=86400"
+        return response
+
+    # Respect an explicit cache-control set by a route (e.g. sitemap).
+    if "cache-control" in response.headers:
+        return response
+
+    if request.method not in ("GET", "HEAD"):
+        return response
+
+    if not _is_public_cacheable_path(path):
+        return response
+
+    personalised = "set-cookie" in response.headers or "access_token" in request.cookies
+    if personalised:
+        # Never let shared caches store user- or session-specific responses.
+        response.headers["Cache-Control"] = "private, no-store"
+        return response
+
+    _add_vary_cookie(response)
+    response.headers["Cache-Control"] = _PUBLIC_CACHE_CONTROL
     return response
 
 

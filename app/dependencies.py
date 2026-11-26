@@ -80,7 +80,7 @@ class TranslationProxy(Translations):
 
 @lru_cache(maxsize=len(SUPPORTED_LOCALES))
 def _load_translations(locale: str) -> TranslationProxy:
-    """Load and parse a locale catalogue once per process (catalogue is
+    """Load and parse a locale catalogue once per process (the catalogue is
     immutable per deploy). Reused across requests instead of re-reading the
     .mo file from disk on every invocation."""
     base_path = get_resource_base_path()
@@ -130,7 +130,11 @@ async def locale_template_response(
             db.close()
 
     response = templates.TemplateResponse(request, template_name, context)
-    response.set_cookie(key="language", value=get_locale(request))
+    # Only emit the language cookie when it actually changes, so repeat anonymous
+    # visitors (and crawlers that send no cookie) don't get a Set-Cookie on every
+    # response — which would otherwise defeat edge caching.
+    if request.cookies.get("language") != get_locale(request):
+        response.set_cookie(key="language", value=get_locale(request))
     return response
 
 

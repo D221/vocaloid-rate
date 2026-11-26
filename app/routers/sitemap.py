@@ -14,6 +14,9 @@ from app.dependencies import get_db
 
 router = APIRouter()
 SITEMAP_CACHE_TTL_SECONDS = 900
+# Edge cache: serve stale for a day while revalidating in the background so
+# crawlers rarely trigger a rebuild.
+SITEMAP_CACHE_CONTROL = "public, max-age=0, s-maxage=900, stale-while-revalidate=86400"
 _sitemap_cache: tuple[float, str] | None = None
 
 
@@ -45,7 +48,7 @@ def generate_sitemap(db: Session = Depends(get_db)):
         return Response(
             content=_sitemap_cache[1],
             media_type="application/xml",
-            headers={"Cache-Control": "public, max-age=900"},
+            headers={"Cache-Control": SITEMAP_CACHE_CONTROL},
         )
 
     base_url = get_public_base_url()
@@ -104,7 +107,7 @@ def generate_sitemap(db: Session = Depends(get_db)):
     return Response(
         content=sitemap,
         media_type="application/xml",
-        headers={"Cache-Control": "public, max-age=900"},
+        headers={"Cache-Control": SITEMAP_CACHE_CONTROL},
     )
 
 
@@ -115,5 +118,5 @@ def generate_sitemap_head():
     return Response(
         content=b"",
         media_type="application/xml",
-        headers={"Cache-Control": "public, max-age=900"},
+        headers={"Cache-Control": SITEMAP_CACHE_CONTROL},
     )

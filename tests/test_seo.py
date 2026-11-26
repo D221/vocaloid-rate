@@ -10,7 +10,10 @@ def test_sitemap_lists_public_pages_and_encoded_entity_urls(
 
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("application/xml")
-    assert response.headers["cache-control"] == "public, max-age=900"
+    assert (
+        response.headers["cache-control"]
+        == "public, max-age=0, s-maxage=900, stale-while-revalidate=86400"
+    )
 
     root = ElementTree.fromstring(response.text)
     namespace = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
@@ -155,5 +158,8 @@ def test_sitemap_head_request_succeeds(client_factory, sample_tracks):
 
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("application/xml")
-    assert response.headers["cache-control"] == "public, max-age=900"
+    assert (
+        response.headers["cache-control"]
+        == "public, max-age=0, s-maxage=900, stale-while-revalidate=86400"
+    )
     assert response.text == ""

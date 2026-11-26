@@ -55,3 +55,32 @@ def test_translations_are_memoized_per_locale():
     second = get_translations("en")
     assert first is second
     assert _load_translations.cache_info().hits >= 1
+
+
+# --- Fix 4: cache-control policy ----------------------------------------------
+
+
+def test_robots_is_publicly_cacheable(client_factory):
+    client = client_factory()
+    response = client.get("/robots.txt")
+    cache = response.headers["cache-control"]
+    assert cache.startswith("public")
+    assert "s-maxage=" in cache
+    assert "stale-while-revalidate=" in response.headers["cache-control"]
+    assert "cookie" in response.headers.get("vary", "").lower()
+
+
+def test_snapshot_is_publicly_cacheable_for_anonymous(client_factory, sample_tracks):
+    client = client_factory()
+    response = client.get("/api/playlist-snapshot")
+    assert response.status_code == 200
+    assert response.headers["cache-control"].startswith("public")
+
+
+def test_personalised_request_is_private_no_store(client_factory, sample_tracks):
+    client = client_factory()
+    # A session cookie marks the response as personalised even on a public path.
+    response = client.get(
+        "/api/playlist-snapshot", cookies={"access_token": "session-token"}
+    )
+    assert response.headers["cache-control"] == "private, no-store"
