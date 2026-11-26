@@ -69,3 +69,22 @@ cut crawler-driven invocations (and therefore Active CPU) on Hobby.
 - The bot classifier is a simple substring match; use for trends, not counts.
 - Leave `LOG_REQUEST_METRICS` **off** normally; use `RECORD_METRICS_SAMPLE` for
   always-on low-overhead sampling.
+
+## Cache scope & residual CDN risk
+
+Only routes whose output is **identical for every visitor** are shared-cacheable
+(`public, s-maxage`): `/robots.txt`, `/sitemap.xml`, and static assets (served
+from `public/` by the CDN). Everything else (`/`, `/_/get_tracks`,
+`/api/playlist-snapshot`, `/producer/*`, `/voicebank/*`, `/recently_added`,
+`/rated_tracks`, `/user/*`, …) is `private, no-store`, because its body depends
+on cookies, locale, or auth.
+
+**Residual risk [Inferred]:** Vercel's CDN cache key is the path + query + the
+request headers named in `Vary`; it is not documented to key on the `Cookie`
+header. We therefore do **not** rely on `Vary: Cookie`. Because every
+cookie/locale/auth-dependent response is `private, no-store`, a shared cache
+stores none of them, so a logged-in user cannot be served an anonymous body (or
+vice-versa). The only shared-cached responses are anonymous-identical
+(robots/sitemap/static). If a future route must be both personalized and cached,
+it needs an explicit `Vary` on a header the CDN is documented to key on (e.g.
+`Accept-Language` for locale) — not `Cookie`.

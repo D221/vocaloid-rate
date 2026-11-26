@@ -133,34 +133,11 @@ async def app_lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(lifespan=app_lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-# Paths whose anonymous responses are safe to cache at the edge. Authenticated
-# or otherwise personalised responses are forced to private/no-store below.
-_PUBLIC_CACHE_EXACT = frozenset(
-    {
-        "/",
-        "/robots.txt",
-        "/sitemap.xml",
-        "/recently_added",
-        "/api/playlist-snapshot",
-        "/api/recently-added-snapshot",
-    }
-)
-_PUBLIC_CACHE_PREFIXES = ("/producer/", "/voicebank/", "/_/get_tracks")
-# Anonymous edge-cached responses: revalidate in the background and serve stale
-# while revalidating so crawlers and repeat visitors rarely invoke the function.
+# Only routes whose output is identical for every visitor (independent of
+# cookies, locale and auth) are edge-cacheable. Everything else is dynamic and
+# marked private/no-store so it is never stored in a shared cache.
+_PUBLIC_CACHE_PATHS = frozenset({"/robots.txt", "/sitemap.xml"})
 _PUBLIC_CACHE_CONTROL = "public, max-age=0, s-maxage=60, stale-while-revalidate=300"
-
-
-def _is_public_cacheable_path(path: str) -> bool:
-    return path in _PUBLIC_CACHE_EXACT or path.startswith(_PUBLIC_CACHE_PREFIXES)
-
-
-def _add_vary_cookie(response: Response) -> None:
-    existing = response.headers.get("vary")
-    if not existing:
-        response.headers["Vary"] = "Cookie"
-    elif "cookie" not in existing.lower():
-        response.headers["Vary"] = f"{existing}, Cookie"
 
 
 @app.middleware("http")
@@ -189,9 +166,8 @@ async def add_cache_control_header(request: Request, call_next) -> Response:
     path = request.url.path
 
     if path.startswith("/static/"):
-        # sw.js must revalidate so service-worker updates roll out; other assets
-        # are content-stable per deploy and cached at the edge (s-maxage) so
-        # repeat asset requests are served by the Vercel CDN, not the function.
+        # Local/dev only: on Vercel /static is served from public/ by the CDN
+        # (see vercel.json), so this branch is not reached there.
         if path == "/static/sw.js":
             response.headers["Cache-Control"] = "public, max-age=0, must-revalidate"
         else:
@@ -200,7 +176,7 @@ async def add_cache_control_header(request: Request, call_next) -> Response:
             )
         return response
 
-    # Respect an explicit cache-control set by a route (e.g. sitemap).
+    # Respect an explicit cache-control set by a route (e.g. sitemap, translations).
     if "cache-control" in response.headers:
         return response
 
@@ -211,22 +187,13 @@ async def add_cache_control_header(request: Request, call_next) -> Response:
     if request.method not in ("GET", "HEAD"):
         return response
 
-    if not _is_public_cacheable_path(path):
-        return response
-
-    # robots.txt and sitemap.xml are identical for every visitor.
-    if path in ("/robots.txt", "/sitemap.xml"):
+    # Only truly identical-for-everyone routes are shared-cacheable.
+    if path in _PUBLIC_CACHE_PATHS:
         response.headers["Cache-Control"] = _PUBLIC_CACHE_CONTROL
         return response
 
-    personalised = "set-cookie" in response.headers or "access_token" in request.cookies
-    if personalised:
-        # Never let shared caches store user- or session-specific responses.
-        response.headers["Cache-Control"] = "private, no-store"
-        return response
-
-    _add_vary_cookie(response)
-    response.headers["Cache-Control"] = _PUBLIC_CACHE_CONTROL
+    # Everything else may depend on cookies/locale/auth -> never shared-cache.
+    response.headers["Cache-Control"] = "private, no-store"
     return response
 
 

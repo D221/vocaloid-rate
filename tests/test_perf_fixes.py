@@ -69,11 +69,11 @@ def test_robots_is_publicly_cacheable(client_factory):
     assert "stale-while-revalidate=" in response.headers["cache-control"]
 
 
-def test_snapshot_is_publicly_cacheable_for_anonymous(client_factory, sample_tracks):
+def test_snapshot_is_private_no_store(client_factory, sample_tracks):
     client = client_factory()
     response = client.get("/api/playlist-snapshot")
     assert response.status_code == 200
-    assert response.headers["cache-control"].startswith("public")
+    assert response.headers["cache-control"] == "private, no-store"
 
 
 def test_personalised_request_is_private_no_store(client_factory, sample_tracks):
@@ -218,16 +218,37 @@ def _client_with(client_factory, **cookies):
     return client
 
 
-def test_anon_repeat_visitor_gets_public_cache(client_factory, sample_tracks):
-    # language cookie already set (repeat anon) -> no Set-Cookie -> cacheable.
+def test_dynamic_routes_are_private_no_store_for_everyone(
+    client_factory, sample_tracks
+):
+    # /, /producer/*, snapshot, /_/get_tracks depend on cookies/locale/auth and
+    # must never be stored in a shared cache.
     client = _client_with(client_factory, language="en")
-    for path in ("/", "/producer/Producer%20A", "/api/playlist-snapshot"):
+    for path in (
+        "/",
+        "/producer/Producer%20A",
+        "/api/playlist-snapshot",
+        "/_/get_tracks",
+    ):
         r = client.get(path)
         assert r.status_code == 200, path
-        assert r.headers["cache-control"].startswith("public"), (
+        assert r.headers["cache-control"] == "private, no-store", (
             path,
             r.headers.get("cache-control"),
         )
+
+
+def test_anon_then_logged_in_same_url_not_cross_served(client_factory, sample_tracks):
+    anon = client_factory()
+    r1 = anon.get("/")
+    assert r1.headers["cache-control"] == "private, no-store"
+    logged = _client_with(client_factory, access_token="session", language="en")
+    r2 = logged.get("/")
+    assert r2.headers["cache-control"] == "private, no-store"
+    # no-store means a shared cache stores neither, so the second request is
+    # never served the first's body.
+    assert "no-store" in r1.headers["cache-control"]
+    assert "no-store" in r2.headers["cache-control"]
 
 
 def test_logged_in_user_gets_private_no_store(client_factory, sample_tracks):

@@ -67,4 +67,4 @@ async def test_cache_middleware_leaves_non_static_requests_untouched():
 
     response = await main.add_cache_control_header(request, call_next)
 
-    assert "Cache-Control" not in response.headers
+    assert response.headers["cache-control"] == "private, no-store"
