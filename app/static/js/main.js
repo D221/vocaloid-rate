@@ -343,6 +343,30 @@ if (recBody) {
   playerState.masterPlaylist = playerState.playlist;
 }
 
+// Lazy full-catalog snapshot: fetched on first play/shuffle, not on page load.
+// Until then masterPlaylist holds only the current page's tracks.
+let masterPlaylistPromise = null;
+function ensureMasterPlaylist() {
+  if (masterPlaylistPromise) return masterPlaylistPromise;
+  const tableBody = document.getElementById("tracks-table-body");
+  const snapshotUrl =
+    (tableBody && tableBody.dataset.snapshotUrl) || "/api/playlist-snapshot";
+  const params = new URLSearchParams(window.location.search);
+  if (!params.has("page")) params.set("page", String(currentPage));
+  if (!params.has("limit")) params.set("limit", currentLimit);
+  masterPlaylistPromise = fetch(`${snapshotUrl}?${params.toString()}`)
+    .then((res) => (res.ok ? res.json() : Promise.reject()))
+    .then((data) => {
+      if (Array.isArray(data)) {
+        playerState.masterPlaylist = data;
+        if (playerState.isShuffle) generateShuffledPlaylist();
+      }
+      return data;
+    })
+    .catch(() => null);
+  return masterPlaylistPromise;
+}
+
 function generateShuffledPlaylist() {
   // Create a shuffled copy of the MASTER playlist
   playerState.shuffledMasterPlaylist = [...playerState.masterPlaylist];
@@ -814,6 +838,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
+    // Warm the full-catalog snapshot in the background so cross-page
+    // next/prev and shuffle work without having loaded it on page load.
+    ensureMasterPlaylist();
+
     const trackIndex = playerState.playlist.findIndex((t) => t.id === trackId);
     if (trackIndex === -1) {
       // This can happen if the track is on another page, but the page hasn't loaded yet.
@@ -1110,6 +1138,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // Update the master playlist in the global state
         playerState.masterPlaylist = masterPlaylistData;
+        // A fresh snapshot was fetched for the new filters; reset the lazy cache.
+        masterPlaylistPromise = Promise.resolve(masterPlaylistData);
         if (playerState.isShuffle) {
           generateShuffledPlaylist(); // Re-shuffle with the new master list
         }
@@ -2804,6 +2834,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       e.currentTarget.classList.toggle("active", playerState.isShuffle);
 
       if (playerState.isShuffle) {
+        // Ensure the full catalog is available, then reshuffle once it loads.
+        ensureMasterPlaylist().then(() => generateShuffledPlaylist());
         generateShuffledPlaylist();
       }
       // When shuffle is turned off, the next/prev buttons will just revert to the original playlist.
@@ -2989,7 +3021,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   // --- Initial Page Load Logic ---
   if (document.getElementById("tracks-table-body")) {
     const urlParams = new URLSearchParams(window.location.search);
-    const tableBody = document.getElementById("tracks-table-body");
     const serverPage =
       parseInt(primaryPaginationContainer?.dataset.initialPage, 10) || 1;
     const serverTotalPages =
@@ -3023,27 +3054,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       updateTracks();
     } else {
       // Preserve first paint: use server-rendered rows as initial player data.
+      // The full-catalog snapshot is loaded lazily on first play/shuffle
+      // (see ensureMasterPlaylist) instead of on every page load.
       playerState.masterPlaylist = [...playerState.playlist];
-
-      // Warm up full playlist state in the background without re-rendering.
-      const snapshotUrl =
-        tableBody.dataset.snapshotUrl || "/api/playlist-snapshot";
-      const snapshotParams = new URLSearchParams(urlParams.toString());
-      if (!snapshotParams.has("page")) {
-        snapshotParams.set("page", String(currentPage));
-      }
-      if (!snapshotParams.has("limit")) {
-        snapshotParams.set("limit", currentLimit);
-      }
-      fetch(`${snapshotUrl}?${snapshotParams.toString()}`)
-        .then((res) => (res.ok ? res.json() : Promise.reject()))
-        .then((masterPlaylistData) => {
-          playerState.masterPlaylist = masterPlaylistData;
-          if (playerState.isShuffle) {
-            generateShuffledPlaylist();
-          }
-        })
-        .catch(() => {});
     }
   }
 
