@@ -9,6 +9,7 @@ from pathlib import Path
 from alembic.config import Config
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from alembic import command
@@ -19,7 +20,12 @@ from app.config import (
     should_run_migrations_on_startup,
     should_use_secure_cookies,
 )
-from app.constants import BASE_DIR, STATIC_DIR, set_resource_base_path
+from app.constants import (
+    BASE_DIR,
+    STATIC_DIR,
+    VALID_PAGE_LIMITS,
+    set_resource_base_path,
+)
 from app.database import SessionLocal
 from app.dependencies import get_db, templates
 from app.routers import auth, pages, playlists, scraping, sitemap, tracks, vocadb
@@ -45,6 +51,9 @@ __all__ = [
     "is_local_auth_mode",
     "should_use_secure_cookies",
 ]
+
+# Reject page numbers beyond this as absurd (no legitimate view goes this deep).
+_MAX_PAGE = 100_000
 
 
 @asynccontextmanager
@@ -116,6 +125,24 @@ def _add_vary_cookie(response: Response) -> None:
         response.headers["Vary"] = "Cookie"
     elif "cookie" not in existing.lower():
         response.headers["Vary"] = f"{existing}, Cookie"
+
+
+@app.middleware("http")
+async def guard_heavy_queries(request: Request, call_next) -> Response:
+    """Reject absurd pagination params early with 400 so crawlers cannot force
+    pathological queries (e.g. limit=notanumber, page=99999999)."""
+    if request.method in ("GET", "HEAD"):
+        limit = request.query_params.get("limit")
+        if limit is not None and limit not in VALID_PAGE_LIMITS and not limit.isdigit():
+            return JSONResponse({"detail": "Invalid limit."}, status_code=400)
+        page = request.query_params.get("page")
+        if page is not None:
+            try:
+                if not page.isdigit() or int(page) > _MAX_PAGE:
+                    raise ValueError
+            except ValueError:
+                return JSONResponse({"detail": "Invalid page."}, status_code=400)
+    return await call_next(request)
 
 
 @app.middleware("http")

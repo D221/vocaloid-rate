@@ -155,7 +155,14 @@ async def read_rated_tracks(
 @router.get("/robots.txt", response_class=Response)
 async def get_robots_txt():
     base_url = get_public_base_url()
-    content = f"User-agent: *\nAllow: /\nSitemap: {base_url}/sitemap.xml\n"
+    content = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Disallow: /_/\n"
+        "Disallow: /api/\n"
+        "Disallow: /*?limit=all\n"
+        f"Sitemap: {base_url}/sitemap.xml\n"
+    )
     return Response(content=content, media_type="text/plain")
 
 

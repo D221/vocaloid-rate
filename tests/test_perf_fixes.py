@@ -144,3 +144,26 @@ def test_producer_page_caps_rendered_tracks(client_factory, db_session):
     assert response.status_code == 200
     rendered = response.text.count("truncate font-bold text-cyan-text")
     assert rendered == ENTITY_PAGE_LIMIT
+
+
+# --- Fix 7: bot guard rejects absurd query params -----------------------------
+
+
+def test_absurd_limit_is_rejected(client_factory, sample_tracks):
+    client = client_factory()
+    assert client.get("/_/get_tracks?limit=abc").status_code == 400
+    assert client.get("/?page=notanumber").status_code == 400
+    assert client.get("/?page=99999999").status_code == 400
+
+
+def test_valid_limit_all_is_allowed(client_factory, sample_tracks):
+    client = client_factory()
+    assert client.get("/?limit=all").status_code == 200
+
+
+def test_robots_disallows_heavy_paths(client_factory):
+    client = client_factory()
+    body = client.get("/robots.txt").text
+    assert "Disallow: /_/" in body
+    assert "Disallow: /api/" in body
+    assert "Disallow: /*?limit=all" in body
