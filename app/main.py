@@ -199,10 +199,19 @@ async def add_cache_control_header(request: Request, call_next) -> Response:
     if "cache-control" in response.headers:
         return response
 
+    # Never cache error responses (e.g. guard 400s) at the edge.
+    if response.status_code != 200:
+        return response
+
     if request.method not in ("GET", "HEAD"):
         return response
 
     if not _is_public_cacheable_path(path):
+        return response
+
+    # robots.txt and sitemap.xml are identical for every visitor.
+    if path in ("/robots.txt", "/sitemap.xml"):
+        response.headers["Cache-Control"] = _PUBLIC_CACHE_CONTROL
         return response
 
     personalised = "set-cookie" in response.headers or "access_token" in request.cookies

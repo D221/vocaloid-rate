@@ -67,7 +67,6 @@ def test_robots_is_publicly_cacheable(client_factory):
     assert cache.startswith("public")
     assert "s-maxage=" in cache
     assert "stale-while-revalidate=" in response.headers["cache-control"]
-    assert "cookie" in response.headers.get("vary", "").lower()
 
 
 def test_snapshot_is_publicly_cacheable_for_anonymous(client_factory, sample_tracks):
@@ -207,3 +206,49 @@ def test_static_assets_are_edge_cacheable(client_factory):
     assert "s-maxage=" in asset.headers["cache-control"]
     sw = client.get("/static/sw.js")
     assert "must-revalidate" in sw.headers["cache-control"]
+
+
+# --- Task B2: cache safety across route classes -------------------------------
+
+
+def _client_with(client_factory, **cookies):
+    client = client_factory()
+    for k, v in cookies.items():
+        client.cookies.set(k, v)
+    return client
+
+
+def test_anon_repeat_visitor_gets_public_cache(client_factory, sample_tracks):
+    # language cookie already set (repeat anon) -> no Set-Cookie -> cacheable.
+    client = _client_with(client_factory, language="en")
+    for path in ("/", "/producer/Producer%20A", "/api/playlist-snapshot"):
+        r = client.get(path)
+        assert r.status_code == 200, path
+        assert r.headers["cache-control"].startswith("public"), (
+            path,
+            r.headers.get("cache-control"),
+        )
+
+
+def test_logged_in_user_gets_private_no_store(client_factory, sample_tracks):
+    client = _client_with(client_factory, access_token="session", language="en")
+    for path in ("/", "/producer/Producer%20A", "/api/playlist-snapshot"):
+        r = client.get(path)
+        assert r.status_code == 200, path
+        assert r.headers["cache-control"] == "private, no-store", (
+            path,
+            r.headers.get("cache-control"),
+        )
+
+
+def test_sitemap_and_robots_always_public(client_factory, sample_tracks):
+    client = _client_with(client_factory, access_token="session")
+    assert client.get("/sitemap.xml").headers["cache-control"].startswith("public")
+    assert client.get("/robots.txt").headers["cache-control"].startswith("public")
+
+
+def test_error_response_is_not_edge_cached(client_factory, sample_tracks):
+    client = client_factory()
+    r = client.get("/?page=notanumber")
+    assert r.status_code == 400
+    assert "s-maxage" not in r.headers.get("cache-control", "")
