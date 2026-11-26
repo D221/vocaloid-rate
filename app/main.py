@@ -54,6 +54,9 @@ __all__ = [
     "should_use_secure_cookies",
 ]
 
+# Module import start, used to log cold-start init wall time in the lifespan.
+_PROCESS_START = time.perf_counter()
+
 # Reject page numbers beyond this as absurd (no legitimate view goes this deep).
 _MAX_PAGE = 100_000
 
@@ -125,6 +128,9 @@ async def app_lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     if getattr(sys, "frozen", False):
         threading.Timer(1.5, lambda: webbrowser.open("http://localhost:8000")).start()
 
+    logger.info(
+        "startup: init_ms=%.0f", (time.perf_counter() - _PROCESS_START) * 1000.0
+    )
     print("--- Application startup complete. ---")
     yield
     print("--- Application shutting down. ---")
