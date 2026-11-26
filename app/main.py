@@ -9,13 +9,11 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from alembic.config import Config
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from alembic import command
 from app import crud, models
 from app.auth import authenticate_user, get_current_user, get_optional_current_user
 from app.config import (
@@ -98,6 +96,12 @@ async def app_lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     set_resource_base_path(resource_base_path)
 
     if should_run_migrations_on_startup():
+        # Imported lazily: alembic is only needed when migrations run, which is
+        # never on Vercel (RUN_MIGRATIONS_ON_STARTUP defaults false there).
+        from alembic.config import Config
+
+        from alembic import command
+
         alembic_ini_path = resource_base_path / "alembic.ini"
         alembic_cfg = Config(str(alembic_ini_path))
         command.upgrade(alembic_cfg, "head")
