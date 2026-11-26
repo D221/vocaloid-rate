@@ -84,3 +84,28 @@ def test_personalised_request_is_private_no_store(client_factory, sample_tracks)
         "/api/playlist-snapshot", cookies={"access_token": "session-token"}
     )
     assert response.headers["cache-control"] == "private, no-store"
+
+
+# --- Fix 5: atproto is not imported on cold start -----------------------------
+
+
+def test_atproto_not_imported_on_cold_start():
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    project_root = Path(__file__).resolve().parents[1]
+    env = dict(os.environ)
+    env["PYTHONPATH"] = str(project_root)
+    code = "import sys; import app.main; print('atproto' in sys.modules)"
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        check=False,
+        capture_output=True,
+        text=True,
+        cwd=str(project_root),
+        env=env,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "False"

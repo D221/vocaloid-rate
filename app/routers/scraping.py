@@ -13,7 +13,6 @@ from app.services.scraping import (
     scrape_and_populate_task,
     write_scrape_status,
 )
-from scripts.bot_daily_top import run_bsky_bot
 
 router = APIRouter(tags=["Scraping"])
 
@@ -64,6 +63,10 @@ def cron_bot_bsky(request: Request, background_tasks: BackgroundTasks):
 
     if auth_header != f"Bearer {cron_secret}":
         raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # Imported lazily: atproto (and its cryptography/libipld/httpx tree) is only
+    # needed by this endpoint, so it must not be imported on every cold start.
+    from scripts.bot_daily_top import run_bsky_bot
 
     background_tasks.add_task(run_bsky_bot)
     return {"message": "Bluesky bot task has been queued."}
