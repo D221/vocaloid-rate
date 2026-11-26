@@ -328,3 +328,29 @@ def test_metrics_disabled_by_default(monkeypatch, session_factory, db_session):
     monkeypatch.setattr(metrics, "SessionLocal", session_factory)
     metrics.record("/", 200, "human", 1.0, 0, False)
     assert db_session.query(models.RequestMetric).count() == 0
+
+
+# --- Item 1: static served from public/ (CDN), url_for unchanged --------------
+
+
+def test_vercel_serves_static_from_public_dir():
+    import json
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    cfg = json.loads((root / "vercel.json").read_text(encoding="utf-8"))
+    assert cfg["outputDirectory"] == "public"
+    assert str(cfg["buildCommand"]).endswith("copy_static.mjs")
+    assert (root / "scripts" / "copy_static.mjs").exists()
+    # Catch-all rewrite still present (public/ is matched before it).
+    assert any(r.get("source") == "/(.*)" for r in cfg["rewrites"])
+    # Static cache header rule present.
+    assert any(h.get("source") == "/static/(.*)" for h in cfg["headers"])
+
+
+def test_static_url_prefix_unchanged():
+    # url_for('static', path=...) resolves to /static/... which public/static
+    # (Vercel) and the StaticFiles mount (local) both serve.
+    from app.constants import STATIC_DIR
+
+    assert STATIC_DIR.name == "static"

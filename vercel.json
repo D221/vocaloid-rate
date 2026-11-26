@@ -1,9 +1,35 @@
 {
   "version": 2,
+  "buildCommand": "node scripts/copy_static.mjs",
+  "outputDirectory": "public",
   "rewrites": [
     {
       "source": "/(.*)",
       "destination": "/api/index.py"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/static/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        },
+        {
+          "key": "Vercel-CDN-Cache-Control",
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+      ]
+    },
+    {
+      "source": "/static/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
     }
   ],
   "crons": [

@@ -34,3 +34,6 @@ docs/static/openapi.json
 # MCP servers (local-only session state: console logs, page snapshots)
 .playwright-mcp/
 .mcp/
+
+# Vercel build output (copied from app/static by scripts/copy_static.mjs)
+public/
