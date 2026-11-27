@@ -70,8 +70,14 @@ jobs:
           fi
 
           echo "Merging #${number}"
-          gh pr merge "$number" \
+          if ! gh pr merge "$number" \
             --repo "$REPO" \
             --squash \
             --delete-branch \
-            --match-head-commit "$HEAD_SHA"
+            --match-head-commit "$HEAD_SHA"; then
+            # A second Dependabot PR usually reaches the same conclusion at the
+            # same moment: whichever merge runs first moves main, and the other
+            # one is then refused with "Base branch was modified". That is a
+            # lost race, not a failure, so leave it for the next attempt.
+            echo "Merge of #${number} was refused (likely a concurrent Dependabot merge); retrying later."
+          fi
