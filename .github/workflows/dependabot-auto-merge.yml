@@ -59,6 +59,16 @@ jobs:
             exit 0
           fi
 
+          # Several Dependabot PRs touch package.json and bun.lock at once, so a
+          # merge can land on a conflicted branch. Dependabot rebases and pushes
+          # again, which starts a fresh CI run and a fresh attempt; there is
+          # nothing to do until then, and no reason to fail this run.
+          state="$(gh pr view "$number" --repo "$REPO" --json mergeable --jq .mergeable)"
+          if [ "$state" = "CONFLICTING" ]; then
+            echo "#${number} is conflicted; waiting for Dependabot to rebase it."
+            exit 0
+          fi
+
           echo "Merging #${number}"
           gh pr merge "$number" \
             --repo "$REPO" \
