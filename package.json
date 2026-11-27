@@ -45,7 +45,7 @@
     "@eslint/js": "^10.0.1",
     "@release-it/conventional-changelog": "^12.0.2",
     "@tailwindcss/cli": "^4.3.5",
-    "bestzip": "^2.2.1",
+    "bestzip": "^4.0.4",
     "chokidar-cli": "^3.0.0",
     "concurrently": "^10.0.7",
     "cross-env": "^10.1.0",
