@@ -1,11 +1,21 @@
 name: Auto-merge Dependabot PRs
 
-# Turns on auto-merge for Dependabot pull requests once the CI workflow has
-# passed for their head commit. Runs on workflow_run (not pull_request) so the
-# job keeps a write-scoped GITHUB_TOKEN: pull_request runs from Dependabot get
-# a read-only token and could not merge anything.
+# Merges Dependabot pull requests once the CI workflow has passed for their
+# head commit. Runs on workflow_run (not pull_request) so the job keeps a
+# write-scoped GITHUB_TOKEN: pull_request runs from Dependabot get a
+# read-only token and could not merge anything.
 #
-# Requires "Allow auto-merge" in the repository settings.
+# This is a direct squash merge, not `gh pr merge --auto`. GitHub refuses to
+# enable auto-merge unless the target branch has required status checks, and
+# main is deliberately unprotected so a solo maintainer can push straight to
+# it. CI already gated the exact commit being merged, and --match-head-commit
+# rejects the merge if the branch moved in the meantime.
+#
+# Every update type is merged, majors included: CI runs Ruff, pytest, ESLint,
+# Prettier, the frontend build and the Docker build on the PR, so a bump that
+# breaks the app fails the run instead of reaching main. Only release-time
+# tooling (bestzip, del-cli, docker/metadata-action) is exercised solely when a
+# tag is pushed, so a broken major there surfaces at the next release.
 
 on:
   workflow_run:
@@ -19,7 +29,7 @@ permissions:
 
 jobs:
   auto-merge:
-    name: Enable auto-merge
+    name: Merge the Dependabot PR
     # Only successful runs of the PR pipeline, never main pushes.
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
@@ -49,10 +59,9 @@ jobs:
             exit 0
           fi
 
-          echo "Enabling auto-merge on #${number}"
+          echo "Merging #${number}"
           gh pr merge "$number" \
             --repo "$REPO" \
-            --auto \
             --squash \
             --delete-branch \
             --match-head-commit "$HEAD_SHA"
