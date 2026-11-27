@@ -11,6 +11,7 @@ export default defineConfig([
       "coverage.xml",
       "__pycache__/",
       ".venv/",
+      ".venv313/",
       "docs/",
       "dist/",
       "build/",
@@ -51,6 +52,17 @@ export default defineConfig([
     files: ["**/*.js"],
     languageOptions: {
       sourceType: "script",
+    },
+  },
+  {
+    // Node-side build scripts (the Vercel static copy) run in Node, not the
+    // browser, and use ESM.
+    files: ["scripts/**/*.{js,mjs,cjs}"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+      sourceType: "module",
     },
   },
 ]);
